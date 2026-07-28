@@ -29,6 +29,15 @@ class GRC_REST_RDV {
 			],
 		] );
 
+		register_rest_route( $ns, '/rdv/durees', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'list_durees' ],
+			'permission_callback' => '__return_true',
+			'args'                => [
+				'service_id' => [ 'required' => true, 'type' => 'integer' ],
+			],
+		] );
+
 		register_rest_route( $ns, '/rdv', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'book' ],
@@ -153,6 +162,25 @@ class GRC_REST_RDV {
 				'statut'           => $statut,
 			];
 		}, $rows );
+	}
+
+	/**
+	 * Retourne les durées de créneau réellement configurées pour un service
+	 * (issues du modèle hebdomadaire), pour construire dynamiquement le
+	 * sélecteur de durée côté citoyen plutôt que de supposer 30/60 min en dur.
+	 */
+	public static function list_durees( WP_REST_Request $request ) {
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'disponibilites';
+
+		$service_id = absint( $request->get_param( 'service_id' ) );
+
+		$durees = $wpdb->get_col( $wpdb->prepare(
+			"SELECT DISTINCT duree_minutes FROM {$table} WHERE service_id = %d AND actif = 1 ORDER BY duree_minutes ASC",
+			$service_id
+		) );
+
+		return array_map( 'intval', $durees );
 	}
 
 	public static function book( WP_REST_Request $request ) {

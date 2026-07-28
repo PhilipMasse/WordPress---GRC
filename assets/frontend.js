@@ -636,6 +636,7 @@
 			var rdvBannerName = el( '#grc-rdv-connected-name' );
 			var rdvServiceSelect = el( '#grc-rdv-service', rdvForm );
 			var rdvDureeField = el( '#grc-rdv-duree-field', rdvForm );
+			var rdvDureeToggle = el( '#grc-rdv-duree-toggle', rdvForm );
 			var rdvCalendarField = el( '#grc-rdv-calendar-field', rdvForm );
 			var rdvCreneauxField = el( '#grc-rdv-creneaux-field', rdvForm );
 			var rdvCreneauxContainer = el( '#grc-rdv-creneaux', rdvForm );
@@ -789,30 +790,60 @@
 				} );
 			}
 
+			function loadDureesEtCalendrier() {
+				var serviceId = rdvServiceSelect.value;
+				fetch( grcConfig.restUrl + '/rdv/durees?service_id=' + serviceId + '&_=' + Date.now() )
+					.then( function ( res ) { return res.json(); } )
+					.then( function ( durees ) {
+						if ( ! durees || ! durees.length ) {
+							rdvDureeField.style.display = 'none';
+							rdvCalendarField.style.display = 'block';
+							calendarGrid.innerHTML = '<p class="grc-hint">Aucun horaire n\'est configuré pour ce service actuellement.</p>';
+							return;
+						}
+
+						if ( durees.length > 1 ) {
+							rdvDureeField.style.display = 'block';
+							rdvDureeToggle.innerHTML = durees.map( function ( d, i ) {
+								var label = d >= 60 ? ( d / 60 ) + ' h' + ( d % 60 ? ( d % 60 ) : '' ) : d + ' min';
+								return '<button type="button" class="grc-duree-btn' + ( 0 === i ? ' grc-duree-btn--active' : '' ) + '" data-duree="' + d + '">' + label + '</button>';
+							} ).join( '' );
+
+							rdvDureeToggle.querySelectorAll( '.grc-duree-btn' ).forEach( function ( btn ) {
+								btn.addEventListener( 'click', function () {
+									rdvDureeToggle.querySelectorAll( '.grc-duree-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-duree-btn--active' ); } );
+									btn.classList.add( 'grc-duree-btn--active' );
+									selectedDuree = parseInt( btn.dataset.duree, 10 );
+									selectedDay = null;
+									rdvCreneauxField.style.display = 'none';
+									loadMonthCreneaux();
+								} );
+							} );
+						} else {
+							rdvDureeField.style.display = 'none';
+						}
+
+						selectedDuree = durees[ 0 ];
+						rdvCalendarField.style.display = 'block';
+						currentMonthDate = new Date();
+						currentMonthDate.setDate( 1 );
+						loadMonthCreneaux();
+					} )
+					.catch( function () {
+						rdvCalendarField.style.display = 'block';
+						calendarGrid.innerHTML = '<p class="grc-hint">Erreur lors du chargement des disponibilités.</p>';
+					} );
+			}
+
 			rdvServiceSelect.addEventListener( 'change', function () {
 				selectedDay = null;
 				rdvCreneauxField.style.display = 'none';
 				if ( rdvServiceSelect.value ) {
-					rdvDureeField.style.display = 'block';
-					rdvCalendarField.style.display = 'block';
-					currentMonthDate = new Date();
-					currentMonthDate.setDate( 1 );
-					loadMonthCreneaux();
+					loadDureesEtCalendrier();
 				} else {
 					rdvDureeField.style.display = 'none';
 					rdvCalendarField.style.display = 'none';
 				}
-			} );
-
-			rdvForm.querySelectorAll( '.grc-duree-btn' ).forEach( function ( btn ) {
-				btn.addEventListener( 'click', function () {
-					rdvForm.querySelectorAll( '.grc-duree-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-duree-btn--active' ); } );
-					btn.classList.add( 'grc-duree-btn--active' );
-					selectedDuree = parseInt( btn.dataset.duree, 10 );
-					selectedDay = null;
-					rdvCreneauxField.style.display = 'none';
-					loadMonthCreneaux();
-				} );
 			} );
 
 			el( '#grc-cal-prev', rdvForm ).addEventListener( 'click', function () {

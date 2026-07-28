@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.2 — Correctif durée : sélecteur dynamique au lieu de 30/60 fixes
+
+- Cause du calendrier vide identifiée : le sélecteur citoyen proposait uniquement "30 min" et "1h" en dur, alors que la durée réellement configurée en admin peut être différente (15, 45 min...) — aucun des deux boutons ne correspondait, filtrant tous les créneaux
+- Nouvel endpoint `GET /rdv/durees` : retourne les durées réellement configurées pour un service (issues du modèle hebdomadaire)
+- Le sélecteur de durée sur `[grc_rdv_form]` se construit désormais dynamiquement à partir de ces vraies durées ; s'il n'y a qu'une seule durée configurée pour le service, le sélecteur est même masqué (inutile de choisir s'il n'y a qu'une option)
+
 ## 0.15.1 — Correctif cache calendrier + confirmation visuelle admin
 
 - Ajout d'un paramètre anti-cache sur la requête de chargement du calendrier citoyen (`/rdv/creneaux`), ce site ayant déjà rencontré plusieurs fois des soucis de mise en cache masquant des données à jour

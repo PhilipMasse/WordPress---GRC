@@ -279,10 +279,7 @@ class GRC_Frontend {
 
 				<div class="grc-field" id="grc-rdv-duree-field" style="display:none;">
 					<label>Durée du rendez-vous</label>
-					<div class="grc-duree-toggle">
-						<button type="button" class="grc-duree-btn grc-duree-btn--active" data-duree="30">30 min</button>
-						<button type="button" class="grc-duree-btn" data-duree="60">1 heure</button>
-					</div>
+					<div class="grc-duree-toggle" id="grc-rdv-duree-toggle"></div>
 				</div>
 
 				<div class="grc-field" id="grc-rdv-calendar-field" style="display:none;">

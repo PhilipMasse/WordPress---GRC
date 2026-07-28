@@ -70,6 +70,7 @@ class GRC_REST_API {
 			'#^/grc/v1/pieces-jointes/\d+$#',
 			'#^/grc/v1/rdv/creneaux$#',
 			'#^/grc/v1/rdv/disponibilites$#',
+			'#^/grc/v1/rdv/durees$#',
 			'#^/grc/v1/demarches/types$#',
 			'#^/grc/v1/demarches$#',
 			'#^/grc/v1/rdv$#',
