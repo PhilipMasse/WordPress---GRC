@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.4 — Correctif largeur : la classe .card de WordPress limitait à 520px
+
+- La classe `card` native de WordPress impose un `max-width` d'environ 520px, qui écrasait le `flex:1` appliqué à la colonne de droite — les tableaux restaient donc étroits malgré le conteneur élargi. Ajout de `max-width:none` en style inline sur les trois cartes concernées (Demandes, Démarches, Rendez-vous) pour neutraliser cette limite.
+
 ## 0.18.3 — Fiche citoyen : sections de droite plus larges
 
 - La colonne Coordonnées/Résumé passe en largeur fixe (320px, inchangée visuellement) tandis que les sections Demandes/Signalements, Démarches et Rendez-vous occupent désormais tout l'espace restant de l'écran, quelle que soit sa largeur.

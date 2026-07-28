@@ -219,7 +219,7 @@ class GRC_Admin_Citoyens {
 				</div>
 
 				<div style="flex:1;min-width:0;">
-					<div class="card" style="padding:16px;margin-bottom:16px;">
+					<div class="card" style="padding:16px;margin-bottom:16px;max-width:none;">
 						<h2>Demandes / Signalements</h2>
 						<?php if ( empty( $demandes ) ) : ?>
 							<p><em>Aucune demande.</em></p>
@@ -243,7 +243,7 @@ class GRC_Admin_Citoyens {
 						<?php endif; ?>
 					</div>
 
-					<div class="card" style="padding:16px;margin-bottom:16px;">
+					<div class="card" style="padding:16px;margin-bottom:16px;max-width:none;">
 						<h2>Démarches</h2>
 						<?php if ( empty( $demarches ) ) : ?>
 							<p><em>Aucune démarche.</em></p>
@@ -265,7 +265,7 @@ class GRC_Admin_Citoyens {
 						<?php endif; ?>
 					</div>
 
-					<div class="card" style="padding:16px;">
+					<div class="card" style="padding:16px;max-width:none;">
 						<h2>Rendez-vous</h2>
 						<?php if ( empty( $rdv_list ) ) : ?>
 							<p><em>Aucun rendez-vous.</em></p>
