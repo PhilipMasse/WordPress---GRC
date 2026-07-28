@@ -125,6 +125,7 @@ class GRC_Admin_Demarches {
 			'type_deleted'   => [ 'success', 'Type de démarche supprimé.' ],
 			'statut_updated' => [ 'success', 'Statut du dossier mis à jour.' ],
 			'error'          => [ 'error', 'Une erreur est survenue (vérifiez le format JSON des champs).' ],
+			'archive_error'  => [ 'error', 'Seule une démarche Validée ou Rejetée peut être archivée.' ],
 		];
 		if ( isset( $messages[ $code ] ) ) {
 			[ $type, $text ] = $messages[ $code ];
@@ -339,8 +340,10 @@ class GRC_Admin_Demarches {
 							<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarches&dossier_id=' . $d->id ) ); ?>">Voir</a>
 							<?php if ( $d->archive ) : ?>
 								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_demarche&id=' . $d->id ), 'grc_archive_demarche_' . $d->id ) ); ?>">Désarchiver</a>
-							<?php else : ?>
+							<?php elseif ( in_array( $d->statut, [ 'valide', 'rejete' ], true ) ) : ?>
 								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_demarche&id=' . $d->id ), 'grc_archive_demarche_' . $d->id ) ); ?>">Archiver</a>
+							<?php else : ?>
+								<span class="button button-small" style="opacity:0.4;cursor:not-allowed;" title="Seule une démarche Validée ou Rejetée peut être archivée">Archiver</span>
 							<?php endif; ?>
 						</td>
 					</tr>
@@ -626,7 +629,15 @@ class GRC_Admin_Demarches {
 			wp_die( 'Permission refusée.' );
 		}
 		global $wpdb;
-		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches', [ 'archive' => 1 ], [ 'id' => $id ] );
+		$table  = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+		$statut = $wpdb->get_var( $wpdb->prepare( "SELECT statut FROM {$table} WHERE id = %d", $id ) );
+
+		if ( ! in_array( $statut, [ 'valide', 'rejete' ], true ) ) {
+			wp_safe_redirect( add_query_arg( 'grc_notice', 'archive_error', wp_get_referer() ?: admin_url( 'admin.php?page=grc-demarches' ) ) );
+			exit;
+		}
+
+		$wpdb->update( $table, [ 'archive' => 1 ], [ 'id' => $id ] );
 		GRC_Audit_Log::log( 'demarche_archived', 'demarche', $id );
 		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-demarches' ) );
 		exit;

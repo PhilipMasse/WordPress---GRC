@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.1 — Règles d'archivage par statut (demandes/démarches)
+
+- Une **demande/signalement** ne peut être archivée que si son statut est **Résolu** ou **Clôturé**
+- Une **démarche** ne peut être archivée que si son statut est **Validé** ou **Rejeté**
+- Le bouton "Archiver" est grisé (non cliquable) dans les listes tant que la condition n'est pas remplie, avec une info-bulle expliquant pourquoi
+- Contrôle également appliqué côté serveur (impossible de contourner via une requête directe)
+
 ## 0.19.0 — Archivage des demandes, démarches, rendez-vous et comptes citoyens
 
 - Nouvelle colonne `archive` sur les quatre tables concernées (`wp_grc_demandes`, `wp_grc_demarches`, `wp_grc_rdv`, `wp_grc_citoyens`)

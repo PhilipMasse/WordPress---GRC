@@ -37,6 +37,7 @@ class GRC_Admin_Demandes {
 			'statut_updated' => [ 'success', 'Statut mis à jour.' ],
 			'message_added'  => [ 'success', 'Message ajouté.' ],
 			'error'          => [ 'error', 'Une erreur est survenue.' ],
+			'archive_error'  => [ 'error', 'Seule une demande Résolue ou Clôturée peut être archivée.' ],
 		];
 		if ( isset( $messages[ $code ] ) ) {
 			[ $type, $text ] = $messages[ $code ];
@@ -214,7 +215,11 @@ class GRC_Admin_Demandes {
 								<?php if ( $row->archive ) : ?>
 									<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_demande&id=' . $row->id ), 'grc_archive_demande_' . $row->id ) ); ?>">Désarchiver</a>
 								<?php else : ?>
+									<?php if ( in_array( $row->statut, [ 'resolu', 'cloture' ], true ) ) : ?>
 									<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_demande&id=' . $row->id ), 'grc_archive_demande_' . $row->id ) ); ?>">Archiver</a>
+								<?php else : ?>
+									<span class="button button-small" style="opacity:0.4;cursor:not-allowed;" title="Seule une demande Résolue ou Clôturée peut être archivée">Archiver</span>
+								<?php endif; ?>
 								<?php endif; ?>
 							</td>
 						</tr>
@@ -567,7 +572,15 @@ class GRC_Admin_Demandes {
 			wp_die( 'Permission refusée.' );
 		}
 		global $wpdb;
-		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes', [ 'archive' => 1 ], [ 'id' => $id ] );
+		$table  = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
+		$statut = $wpdb->get_var( $wpdb->prepare( "SELECT statut FROM {$table} WHERE id = %d", $id ) );
+
+		if ( ! in_array( $statut, [ 'resolu', 'cloture' ], true ) ) {
+			wp_safe_redirect( add_query_arg( 'grc_notice', 'archive_error', wp_get_referer() ?: admin_url( 'admin.php?page=grc-demandes' ) ) );
+			exit;
+		}
+
+		$wpdb->update( $table, [ 'archive' => 1 ], [ 'id' => $id ] );
 		GRC_Audit_Log::log( 'demande_archived', 'demande', $id );
 		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-demandes' ) );
 		exit;
