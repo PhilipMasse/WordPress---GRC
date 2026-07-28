@@ -97,10 +97,68 @@
 				html += '<p class="grc-demande-pj">' + d.pieces_jointes.length + ' pièce(s) jointe(s)</p>';
 			}
 			html += '<p class="grc-demande-date">Créée le ' + new Date( d.created_at ).toLocaleDateString( 'fr-FR' ) + '</p>';
+			if ( d.peut_etre_note ) {
+				html += '<div class="grc-satisfaction-form" data-demande-id="' + d.id + '">';
+				html += '<p class="grc-hint">Cette demande est résolue, donnez votre avis :</p>';
+				html += '<div class="grc-stars">';
+				for ( var n = 1; n <= 5; n++ ) {
+					html += '<button type="button" class="grc-star" data-note="' + n + '">★</button>';
+				}
+				html += '</div>';
+				html += '<textarea class="grc-satisfaction-comment" placeholder="Commentaire (facultatif)" rows="2"></textarea>';
+				html += '<button type="button" class="grc-btn-submit grc-satisfaction-submit" disabled>Envoyer mon avis</button>';
+				html += '</div>';
+			}
 			html += '</div>';
 		} );
 		html += '</div>';
 		container.innerHTML = html;
+		attachSatisfactionHandlers( container );
+	}
+
+	function attachSatisfactionHandlers( container ) {
+		container.querySelectorAll( '.grc-satisfaction-form' ).forEach( function ( formEl ) {
+			var selectedNote = 0;
+			var stars = formEl.querySelectorAll( '.grc-star' );
+			var submitBtn = formEl.querySelector( '.grc-satisfaction-submit' );
+
+			stars.forEach( function ( star ) {
+				star.addEventListener( 'click', function () {
+					selectedNote = parseInt( star.dataset.note, 10 );
+					stars.forEach( function ( s ) {
+						s.classList.toggle( 'grc-star--active', parseInt( s.dataset.note, 10 ) <= selectedNote );
+					} );
+					submitBtn.disabled = false;
+				} );
+			} );
+
+			submitBtn.addEventListener( 'click', function () {
+				var demandeId = formEl.dataset.demandeId;
+				var commentaire = formEl.querySelector( '.grc-satisfaction-comment' ).value;
+				submitBtn.disabled = true;
+				submitBtn.textContent = 'Envoi...';
+
+				var body = { note: selectedNote, commentaire: commentaire };
+				var guestEmail = container.dataset.guestEmail;
+				if ( guestEmail ) {
+					body.email = guestEmail;
+				}
+
+				authFetch( grcConfig.restUrl + '/demandes/' + demandeId + '/satisfaction', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( body )
+				} )
+					.then( function ( res ) { return res.ok ? res.json() : Promise.reject(); } )
+					.then( function () {
+						formEl.innerHTML = '<p class="grc-form-message grc-form-message--success" style="display:block;">Merci pour votre avis !</p>';
+					} )
+					.catch( function () {
+						submitBtn.disabled = false;
+						submitBtn.textContent = 'Envoyer mon avis';
+					} );
+			} );
+		} );
 	}
 
 	document.addEventListener( 'DOMContentLoaded', function () {
@@ -338,6 +396,7 @@
 							resultsContainer.innerHTML = '<p>Aucune demande trouvée pour ces informations.</p>';
 							return;
 						}
+						resultsContainer.dataset.guestEmail = payload.email;
 						renderDemandesList( resultsContainer, [ result.data ] );
 					} )
 					.catch( function () {

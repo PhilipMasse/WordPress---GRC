@@ -8,6 +8,8 @@ require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-citoyen.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-demandes.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-rdv.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-attachments.php';
+require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-demarches.php';
+require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-satisfaction.php';
 
 class GRC_REST_API {
 
@@ -24,6 +26,8 @@ class GRC_REST_API {
 		GRC_REST_Demandes::register_routes();
 		GRC_REST_RDV::register_routes();
 		GRC_REST_Attachments::register_routes();
+		GRC_REST_Demarches::register_routes();
+		GRC_REST_Satisfaction::register_routes();
 	}
 
 	/**
@@ -48,8 +52,11 @@ class GRC_REST_API {
 			'#^/grc/v1/demandes/guest-lookup$#',
 			'#^/grc/v1/demandes/public-submit$#',
 			'#^/grc/v1/demandes/\d+/pieces-jointes$#',
+			'#^/grc/v1/demandes/\d+/satisfaction$#',
 			'#^/grc/v1/pieces-jointes/\d+$#',
 			'#^/grc/v1/rdv/creneaux$#',
+			'#^/grc/v1/demarches/types$#',
+			'#^/grc/v1/demarches$#',
 		];
 
 		$is_public_route = false;

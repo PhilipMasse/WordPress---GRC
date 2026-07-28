@@ -288,6 +288,9 @@ class GRC_REST_Demandes {
 			$demande->id
 		) );
 
+		$satisfaction_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'satisfaction';
+		$deja_note = (bool) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$satisfaction_table} WHERE demande_id = %d", $demande->id ) );
+
 		return [
 			'id'            => (int) $demande->id,
 			'numero_suivi'  => $demande->numero_suivi,
@@ -300,6 +303,7 @@ class GRC_REST_Demandes {
 			'created_at'    => $demande->created_at,
 			'updated_at'    => $demande->updated_at,
 			'resolved_at'   => $demande->resolved_at,
+			'peut_etre_note'=> in_array( $demande->statut, [ 'resolu', 'cloture' ], true ) && ! $deja_note,
 			'pieces_jointes'=> array_map( function ( $p ) {
 				return [
 					'id'           => (int) $p->id,

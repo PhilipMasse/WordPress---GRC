@@ -31,6 +31,11 @@ class GRC_Notifications {
 
 		$subject = '[Mairie de Berre-les-Alpes] Mise à jour de votre demande';
 		$body    = sprintf( "Bonjour,\n\nVotre demande %s.\n\nCordialement,\nMairie de Berre-les-Alpes", $label );
+
+		if ( 'resolu' === $nouveau_statut ) {
+			$body .= "\n\nVotre avis nous intéresse : rendez-vous sur la page de suivi de vos demandes pour noter le traitement de ce signalement.";
+		}
+
 		wp_mail( $email, $subject, $body );
 	}
 

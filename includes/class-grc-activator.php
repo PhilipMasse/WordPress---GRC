@@ -183,6 +183,19 @@ class GRC_Activator {
 			KEY debut (debut)
 		) $charset_collate;";
 
+		// --- Types de démarches (définitions des champs par type) -----------
+		$sql[] = "CREATE TABLE {$p}demarche_types (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			nom VARCHAR(191) NOT NULL,
+			slug VARCHAR(100) NOT NULL,
+			description TEXT NULL,
+			champs_json LONGTEXT NULL,
+			actif TINYINT(1) NOT NULL DEFAULT 1,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY slug (slug)
+		) $charset_collate;";
+
 		// --- Démarches administratives --------------------------------------
 		$sql[] = "CREATE TABLE {$p}demarches (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

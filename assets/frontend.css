@@ -211,3 +211,39 @@
 	margin-bottom: 16px;
 	font-size: 14px;
 }
+
+.grc-satisfaction-form {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px dashed #ddd;
+}
+
+.grc-stars {
+	display: flex;
+	gap: 4px;
+	margin: 8px 0;
+}
+
+.grc-star {
+	background: none;
+	border: none;
+	font-size: 24px;
+	color: #ccc;
+	cursor: pointer;
+	padding: 0;
+	line-height: 1;
+}
+
+.grc-star--active {
+	color: #DEA128;
+}
+
+.grc-satisfaction-comment {
+	width: 100%;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	font-size: 13px;
+	box-sizing: border-box;
+	margin-bottom: 8px;
+}

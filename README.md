@@ -61,6 +61,12 @@ Namespace : `/wp-json/grc/v1/`
 | `/rdv` | POST | JWT | Réserver un rendez-vous |
 | `/demandes/{id}/pieces-jointes` | POST | Selon contexte | Uploader une pièce jointe (agent, citoyen connecté ou invité avec email) |
 | `/pieces-jointes/{id}` | GET | Selon contexte | Télécharger une pièce jointe (autorisation vérifiée) |
+| `/demarches/types` | GET | Non | Liste des types de démarches actifs et leurs champs |
+| `/demarches` | POST | Non (JWT citoyen optionnel) | Soumettre un dossier de démarche |
+| `/mes-demarches` | GET | JWT citoyen | Dossiers de démarches du citoyen connecté |
+| `/demarches/{id}/statut` | POST | JWT agent | Changer le statut d'un dossier |
+| `/demandes/{id}/satisfaction` | POST | Selon contexte | Noter une demande résolue (1-5 + commentaire) |
+| `/satisfaction/stats` | GET | JWT agent | Moyenne et répartition des notes de satisfaction |
 
 **Important** : les comptes **agents/élus/admin** (staff municipal) utilisent les comptes WordPress natifs (`wp_users`) via `/auth/*`. Les comptes **citoyens** sont entièrement indépendants (table `wp_grc_citoyens`, mot de passe hashé séparément) via `/citoyen/*`. Les deux émettent des JWT mais avec un claim `type` différent (`agent` vs `citoyen`), qui détermine comment chaque token est traité par le middleware d'authentification — un token citoyen ne peut jamais s'authentifier comme un utilisateur WordPress.
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0 — Démarches administratives + Satisfaction citoyenne
+
+### Démarches administratives
+- Nouvelle table `wp_grc_demarche_types` : chaque type de démarche définit ses propres champs (JSON simple : clé, label, type, requis)
+- Endpoints REST : `GET /demarches/types`, `POST /demarches` (soumission validée contre la définition du type, compte citoyen ou invité), `GET /mes-demarches`, `POST /demarches/{id}/statut`
+- Interface admin **Démarches** : gestion des types (CRUD avec champs JSON), liste des dossiers soumis, vue détail par dossier avec changement de statut (en attente / en cours / validé / rejeté / complément requis)
+
+### Satisfaction citoyenne
+- Endpoint `POST /demandes/{id}/satisfaction` : notation 1-5 + commentaire, autorisée uniquement sur une demande résolue/clôturée, une seule fois, par le citoyen propriétaire (JWT) ou en invité (email correspondant)
+- Endpoint `GET /satisfaction/stats` (agents/élus) : moyenne globale + répartition des notes
+- Le front-office (`[grc_mes_demandes]`) affiche désormais un formulaire de notation (étoiles + commentaire) directement sur les demandes résolues non encore évaluées
+- La page Statistiques de l'administration affiche la moyenne de satisfaction et sa répartition
+- L'email de résolution invite le citoyen à évaluer sa demande
+
 ## 0.5.0 — Admin Services & Catégories + indicateur citoyen connecté
 
 - Nouvelle page d'administration **Services & Catégories** : CRUD complet (ajout, édition inline, suppression) pour les services et les catégories/sous-catégories, avec configuration du SLA (délai en heures) et de l'ordre d'affichage par catégorie

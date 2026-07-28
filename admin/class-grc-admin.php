@@ -10,6 +10,7 @@ class GRC_Admin {
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
 		GRC_Admin_Demandes::init();
 		GRC_Admin_Services::init();
+		GRC_Admin_Demarches::init();
 	}
 
 	public static function register_menu() {
@@ -27,6 +28,7 @@ class GRC_Admin {
 		add_submenu_page( 'grc-dashboard', 'Demandes', 'Demandes', 'grc_manage_demandes', 'grc-demandes', [ __CLASS__, 'render_demandes' ] );
 		add_submenu_page( 'grc-dashboard', 'Rendez-vous', 'Rendez-vous', 'grc_manage_demandes', 'grc-rdv', [ __CLASS__, 'render_rdv' ] );
 		add_submenu_page( 'grc-dashboard', 'Services & Catégories', 'Services & Catégories', 'grc_manage_settings', 'grc-services', [ __CLASS__, 'render_services' ] );
+		add_submenu_page( 'grc-dashboard', 'Démarches', 'Démarches', 'grc_manage_demandes', 'grc-demarches', [ __CLASS__, 'render_demarches' ] );
 		add_submenu_page( 'grc-dashboard', 'Statistiques', 'Statistiques', 'grc_view_stats', 'grc-stats', [ __CLASS__, 'render_stats' ] );
 		add_submenu_page( 'grc-dashboard', 'Réglages', 'Réglages', 'grc_manage_settings', 'grc-settings', [ __CLASS__, 'render_settings' ] );
 	}
@@ -77,8 +79,34 @@ class GRC_Admin {
 		GRC_Admin_Services::render();
 	}
 
+	public static function render_demarches() {
+		GRC_Admin_Demarches::render();
+	}
+
 	public static function render_stats() {
-		echo '<div class="wrap"><h1>Statistiques</h1><p><em>Graphiques, répartition par catégorie/quartier, export CSV — à implémenter.</em></p></div>';
+		global $wpdb;
+		$satisfaction_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'satisfaction';
+		$row = $wpdb->get_row( "SELECT COUNT(*) as total, AVG(note) as moyenne FROM {$satisfaction_table}" );
+		$repartition = $wpdb->get_results( "SELECT note, COUNT(*) as total FROM {$satisfaction_table} GROUP BY note ORDER BY note DESC" );
+		?>
+		<div class="wrap">
+			<h1>Statistiques</h1>
+
+			<h2>Satisfaction citoyenne</h2>
+			<?php if ( empty( $row->total ) ) : ?>
+				<p><em>Aucune évaluation pour le moment.</em></p>
+			<?php else : ?>
+				<p><strong style="font-size:28px;color:#DEA128;"><?php echo esc_html( round( (float) $row->moyenne, 1 ) ); ?> / 5</strong> — basé sur <?php echo (int) $row->total; ?> évaluation(s)</p>
+				<table class="wp-list-table widefat fixed striped" style="max-width:300px;">
+					<?php foreach ( $repartition as $r ) : ?>
+						<tr><td><?php echo str_repeat( '★', (int) $r->note ); ?></td><td><?php echo (int) $r->total; ?></td></tr>
+					<?php endforeach; ?>
+				</table>
+			<?php endif; ?>
+
+			<p style="margin-top:24px;"><em>Graphiques par catégorie/quartier, cartographie thermique, export CSV — à implémenter.</em></p>
+		</div>
+		<?php
 	}
 
 	public static function render_settings() {
