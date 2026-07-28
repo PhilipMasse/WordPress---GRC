@@ -82,17 +82,21 @@ class GRC_REST_API {
 		}
 
 		$auth_header = $request->get_header( 'authorization' );
-		$has_token   = $auth_header && 0 === stripos( $auth_header, 'Bearer ' );
+		$has_bearer_header = $auth_header && 0 === stripos( $auth_header, 'Bearer ' );
 
-		// L'authentification cookie+nonce native de WordPress (utilisée par le front-office
-		// web via X-WP-Nonce) authentifie déjà l'utilisateur avant ce filtre. Dans ce cas,
-		// is_user_logged_in() est déjà vrai et on n'exige pas de JWT en plus.
+		// Fallback : un lien <a href> classique (ex: ouvrir/télécharger une pièce
+		// jointe dans un nouvel onglet) ne peut pas transporter d'en-tête HTTP
+		// personnalisé. On accepte donc aussi le JWT citoyen en paramètre "token"
+		// pour ces cas précis, en plus de l'en-tête Authorization habituel.
+		$token_param = $request->get_param( 'token' );
+		$has_token   = $has_bearer_header || ! empty( $token_param );
+
 		if ( ! $is_public_route && ! $has_token && ! is_user_logged_in() ) {
 			return new WP_Error( 'grc_no_token', 'Authentification requise.', [ 'status' => 401 ] );
 		}
 
 		if ( $has_token ) {
-			$token   = trim( substr( $auth_header, 7 ) );
+			$token   = $has_bearer_header ? trim( substr( $auth_header, 7 ) ) : (string) $token_param;
 			$payload = GRC_JWT::verify( $token );
 
 			if ( is_wp_error( $payload ) ) {

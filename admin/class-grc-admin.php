@@ -8,9 +8,59 @@ class GRC_Admin {
 	public static function init() {
 		add_action( 'admin_menu', [ __CLASS__, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+		add_action( 'admin_post_grc_download_piece', [ __CLASS__, 'handle_download_piece' ] );
 		GRC_Admin_Demandes::init();
 		GRC_Admin_Services::init();
 		GRC_Admin_Demarches::init();
+	}
+
+	/**
+	 * Téléchargement d'une pièce jointe depuis l'administration, via admin-post.php
+	 * plutôt que l'API REST : un lien <a href> classique ne peut pas transporter
+	 * l'en-tête Authorization (JWT) ni le nonce REST — l'authentification par
+	 * cookie WordPress classique (déjà active dans l'admin) fonctionne ici nativement.
+	 */
+	public static function handle_download_piece() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_download_piece_' . $id );
+
+		if ( ! current_user_can( 'grc_manage_demandes' ) && ! current_user_can( 'grc_view_all' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'pieces_jointes';
+		$piece = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ) );
+
+		if ( ! $piece ) {
+			wp_die( 'Fichier introuvable.' );
+		}
+
+		$upload_dir = wp_upload_dir();
+		$full_path  = trailingslashit( $upload_dir['basedir'] ) . $piece->chemin_fichier;
+
+		if ( ! file_exists( $full_path ) ) {
+			wp_die( 'Le fichier n\'existe plus sur le serveur.' );
+		}
+
+		GRC_Audit_Log::log( 'piece_jointe_downloaded_admin', $piece->demande_id ? 'demande' : 'demarche', (int) ( $piece->demande_id ?: $piece->demarche_id ), [ 'attachment_id' => $id ] );
+
+		header( 'Content-Type: ' . $piece->mime_type );
+		header( 'Content-Disposition: inline; filename="' . sanitize_file_name( $piece->nom_original ) . '"' );
+		header( 'Content-Length: ' . filesize( $full_path ) );
+		header( 'X-Content-Type-Options: nosniff' );
+		readfile( $full_path );
+		exit;
+	}
+
+	/**
+	 * Génère l'URL de téléchargement admin (avec nonce) pour une pièce jointe donnée.
+	 */
+	public static function get_download_url( int $piece_id ): string {
+		return wp_nonce_url(
+			admin_url( 'admin-post.php?action=grc_download_piece&id=' . $piece_id ),
+			'grc_download_piece_' . $piece_id
+		);
 	}
 
 	public static function register_menu() {

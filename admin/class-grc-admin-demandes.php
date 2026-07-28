@@ -310,7 +310,7 @@ class GRC_Admin_Demandes {
 						<h2>Pièces jointes (<?php echo count( $pieces ); ?>)</h2>
 						<div style="display:flex;gap:12px;flex-wrap:wrap;">
 							<?php foreach ( $pieces as $piece ) : ?>
-								<?php $url = rest_url( 'grc/v1/pieces-jointes/' . $piece->id ); ?>
+								<?php $url = GRC_Admin::get_download_url( $piece->id ); ?>
 								<a href="<?php echo esc_url( $url ); ?>" target="_blank" style="display:block;width:120px;text-align:center;font-size:12px;">
 									<?php if ( 0 === strpos( $piece->mime_type, 'image/' ) ) : ?>
 										<span class="dashicons dashicons-format-image" style="font-size:48px;width:48px;height:48px;color:#2D6AB0;"></span>

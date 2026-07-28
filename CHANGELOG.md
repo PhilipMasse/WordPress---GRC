@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2 — Correctif téléchargement des pièces jointes (403)
+
+- Un lien `<a href>` classique ne peut transporter ni l'en-tête `Authorization` (JWT citoyen) ni le nonce REST (auth cookie WordPress), ce qui provoquait un `403 grc_forbidden` systématique au clic sur un document, aussi bien en administration que côté citoyen.
+- **Côté admin** : les liens de téléchargement passent désormais par `admin-post.php` (authentification cookie WordPress native, hors API REST), avec vérification de capacité et nonce dédié.
+- **Côté citoyen** : le JWT peut désormais être transmis en paramètre d'URL (`?token=...`) en plus de l'en-tête `Authorization`, spécifiquement pour ce cas où un lien classique est nécessaire (ouverture dans un nouvel onglet).
+
 ## 0.10.1 — Correctif compatibilité PHP 8.5 (finfo_close déprécié)
 
 - `finfo_close()` est dépréciée depuis PHP 8.5 (les objets `finfo` sont désormais libérés automatiquement). Sur un serveur avec l'affichage des erreurs actif, cet appel produisait un warning affiché en clair **avant** la réponse JSON de l'API, cassant son parsing côté client (`Unexpected token '<'... is not valid JSON`) — alors même que l'opération (upload de fichier) réussissait réellement en arrière-plan.

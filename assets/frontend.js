@@ -648,9 +648,11 @@
 			if ( ! pieces || ! pieces.length ) {
 				return '';
 			}
+			var token = getAccessToken();
 			var html = '<div class="grc-message-attachments">';
 			pieces.forEach( function ( p ) {
-				html += '<a href="' + p.download_url + '" target="_blank" class="grc-attachment-chip">📄 ' + p.nom_original + '</a>';
+				var url = p.download_url + ( token ? ( p.download_url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'token=' + encodeURIComponent( token ) : '' );
+				html += '<a href="' + url + '" target="_blank" class="grc-attachment-chip">📄 ' + p.nom_original + '</a>';
 			} );
 			html += '</div>';
 			return html;

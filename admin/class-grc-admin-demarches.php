@@ -203,7 +203,7 @@ class GRC_Admin_Demarches {
 				<ul style="margin:0;">
 					<?php foreach ( $pieces as $piece ) : ?>
 						<li>
-							<a href="<?php echo esc_url( rest_url( 'grc/v1/pieces-jointes/' . $piece->id ) ); ?>" target="_blank">
+							<a href="<?php echo esc_url( GRC_Admin::get_download_url( $piece->id ) ); ?>" target="_blank">
 								<?php echo esc_html( $piece->nom_original ); ?>
 							</a>
 							<span style="color:#666;font-size:12px;"> (<?php echo esc_html( strtoupper( pathinfo( $piece->nom_original, PATHINFO_EXTENSION ) ) ); ?>)</span>
@@ -227,7 +227,7 @@ class GRC_Admin_Demarches {
 						$msg_pieces = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$pj_table} WHERE demarche_message_id = %d", $m->id ) );
 						foreach ( $msg_pieces as $mp ) :
 							?>
-							<p style="margin:4px 0 0;"><a href="<?php echo esc_url( rest_url( 'grc/v1/pieces-jointes/' . $mp->id ) ); ?>" target="_blank">📄 <?php echo esc_html( $mp->nom_original ); ?></a></p>
+							<p style="margin:4px 0 0;"><a href="<?php echo esc_url( GRC_Admin::get_download_url( $mp->id ) ); ?>" target="_blank">📄 <?php echo esc_html( $mp->nom_original ); ?></a></p>
 						<?php endforeach; ?>
 					</div>
 				<?php endforeach; ?>
