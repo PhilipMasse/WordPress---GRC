@@ -157,7 +157,14 @@ class GRC_Admin_RDV {
 					];
 					?>
 					<tr>
-						<td><?php echo esc_html( $nom_complet ?: '—' ); ?></td>
+						<td>
+							<?php if ( $r->citoyen_id ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $r->citoyen_id ) ); ?>"><?php echo esc_html( $nom_complet ?: '—' ); ?></a>
+								<br><code style="font-size:11px;color:#888;"><?php echo esc_html( GRC_Citoyen_Helper::numero( (int) $r->citoyen_id ) ); ?></code>
+							<?php else : ?>
+								—
+							<?php endif; ?>
+						</td>
 						<td><?php echo esc_html( $r->service_nom ?: '—' ); ?></td>
 						<td><?php echo $r->debut ? esc_html( mysql2date( 'd/m/Y H:i', $r->debut ) ) : '—'; ?></td>
 						<td><?php echo esc_html( $r->motif ?: '—' ); ?></td>

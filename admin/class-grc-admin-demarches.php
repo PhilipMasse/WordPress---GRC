@@ -365,8 +365,10 @@ class GRC_Admin_Demarches {
 			<div class="card" style="padding:16px;max-width:600px;margin-bottom:16px;">
 				<h2>Citoyen</h2>
 				<?php if ( $citoyen ) : ?>
+					<p><code style="color:#888;"><?php echo esc_html( GRC_Citoyen_Helper::numero( (int) $citoyen->id ) ); ?></code></p>
 					<p><?php echo esc_html( trim( ( $citoyen->prenom ? GRC_Encryption::decrypt( $citoyen->prenom ) : '' ) . ' ' . ( $citoyen->nom ? GRC_Encryption::decrypt( $citoyen->nom ) : '' ) ) ?: '—' ); ?></p>
 					<?php if ( $citoyen->email ) : ?><p><?php echo esc_html( GRC_Encryption::decrypt( $citoyen->email ) ); ?></p><?php endif; ?>
+					<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $citoyen->id ) ); ?>">Voir la fiche complète →</a></p>
 				<?php endif; ?>
 			</div>
 

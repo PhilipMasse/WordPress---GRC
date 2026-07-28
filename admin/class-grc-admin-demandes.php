@@ -182,7 +182,14 @@ class GRC_Admin_Demandes {
 						<tr>
 							<td><code><?php echo esc_html( $row->numero_suivi ); ?></code></td>
 							<td><?php echo esc_html( $row->titre ); ?></td>
-							<td><?php echo esc_html( $nom_complet ?: '—' ); ?></td>
+							<td>
+								<?php if ( $row->citoyen_id ) : ?>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $row->citoyen_id ) ); ?>"><?php echo esc_html( $nom_complet ?: '—' ); ?></a>
+									<br><code style="font-size:11px;color:#888;"><?php echo esc_html( GRC_Citoyen_Helper::numero( (int) $row->citoyen_id ) ); ?></code>
+								<?php else : ?>
+									—
+								<?php endif; ?>
+							</td>
 							<td><?php echo esc_html( $row->categorie_nom ?: '—' ); ?></td>
 							<td><?php echo esc_html( $row->service_nom ?: '—' ); ?></td>
 							<td><?php self::render_statut_badge( $row->statut ); ?></td>
@@ -355,10 +362,14 @@ class GRC_Admin_Demandes {
 				<div style="flex:1;">
 					<div class="card" style="padding:16px;margin-bottom:16px;">
 						<h2>Citoyen</h2>
+						<?php if ( $citoyen ) : ?>
+							<p><code style="color:#888;"><?php echo esc_html( GRC_Citoyen_Helper::numero( (int) $citoyen->id ) ); ?></code></p>
+						<?php endif; ?>
 						<p><strong><?php echo esc_html( trim( "$prenom $nom" ) ?: 'Non renseigné' ); ?></strong></p>
 						<?php if ( $email ) : ?><p><?php echo esc_html( $email ); ?></p><?php endif; ?>
 						<?php if ( $telephone ) : ?><p><?php echo esc_html( $telephone ); ?></p><?php endif; ?>
 						<?php if ( $citoyen && $citoyen->is_guest ) : ?><p><em>Mode invité</em></p><?php endif; ?>
+						<?php if ( $citoyen ) : ?><p><a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $citoyen->id ) ); ?>">Voir la fiche complète →</a></p><?php endif; ?>
 					</div>
 
 					<div class="card" style="padding:16px;margin-bottom:16px;">

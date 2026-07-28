@@ -78,6 +78,7 @@ class GRC_Admin {
 
 		add_submenu_page( 'grc-dashboard', 'Tableau de bord', 'Tableau de bord', 'grc_manage_demandes', 'grc-dashboard', [ __CLASS__, 'render_dashboard' ] );
 		add_submenu_page( 'grc-dashboard', 'Demandes', 'Demandes', 'grc_manage_demandes', 'grc-demandes', [ __CLASS__, 'render_demandes' ] );
+		add_submenu_page( 'grc-dashboard', 'Citoyens', 'Citoyens', 'grc_manage_demandes', 'grc-citoyens', [ __CLASS__, 'render_citoyens' ] );
 		add_submenu_page( 'grc-dashboard', 'Rendez-vous', 'Rendez-vous', 'grc_manage_demandes', 'grc-rdv', [ __CLASS__, 'render_rdv' ] );
 		add_submenu_page( 'grc-dashboard', 'Services & Catégories', 'Services & Catégories', 'grc_manage_settings', 'grc-services', [ __CLASS__, 'render_services' ] );
 		add_submenu_page( 'grc-dashboard', 'Types de démarches', 'Types de démarches', 'grc_manage_settings', 'grc-demarche-types', [ __CLASS__, 'render_demarche_types' ] );
@@ -122,6 +123,10 @@ class GRC_Admin {
 
 	public static function render_demandes() {
 		GRC_Admin_Demandes::render();
+	}
+
+	public static function render_citoyens() {
+		GRC_Admin_Citoyens::render();
 	}
 
 	public static function render_rdv() {

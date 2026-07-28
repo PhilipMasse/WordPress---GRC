@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.17.0 — Numéro citoyen unique + tableau de bord citoyen
+
+### Numéro citoyen unique
+- Chaque citoyen dispose désormais d'un numéro lisible (`CIT-000042`), basé sur son identifiant unique en base — aucune migration nécessaire
+- Affiché partout où un citoyen apparaît en administration : listes des demandes, démarches, rendez-vous, et vues détail
+- Permet de distinguer sans ambiguïté des homonymes
+
+### Tableau de bord citoyen (nouvel écran "Citoyens")
+- Liste de tous les citoyens (numéro, nom, email, type de compte, date d'inscription), avec recherche par numéro ou email exact (la recherche par nom n'est pas possible : les noms sont chiffrés en base, principe de sécurité du plugin)
+- **Fiche complète par citoyen** : coordonnées, type de compte, consentement RGPD, et surtout l'historique complet de toutes ses demandes, démarches et rendez-vous, avec liens directs vers chaque dossier
+- Accessible en un clic depuis n'importe quelle liste ou vue détail (demande, démarche, rendez-vous) via le nom ou le lien "Voir la fiche complète"
+
 ## 0.16.0 — Workflow de validation des rendez-vous
 
 - Les rendez-vous ne sont plus confirmés automatiquement : ils sont créés avec le statut **"En attente"** et nécessitent une validation manuelle par un agent
