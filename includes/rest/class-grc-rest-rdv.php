@@ -246,23 +246,23 @@ class GRC_REST_RDV {
 			'service_id' => $creneau->service_id,
 			'creneau_id' => $creneau_id,
 			'motif'      => $motif,
-			'statut'     => 'confirme',
+			'statut'     => 'en_attente',
 			'created_at' => current_time( 'mysql' ),
 		] );
 		$rdv_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'rdv_created', 'rdv', $rdv_id );
 
-		// Email de confirmation si on connaît l'email (citoyen ou invité).
+		// Email si on connaît l'email (citoyen ou invité) : la demande est en attente de validation.
 		if ( ! $email && $citoyen_id ) {
 			$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $citoyen_id ) );
 			$email = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : null;
 		}
 		if ( $email ) {
-			GRC_Notifications::send_rdv_confirmation( $email, $creneau->debut );
+			GRC_Notifications::send_rdv_pending( $email, $creneau->debut );
 		}
 
-		return [ 'success' => true, 'id' => $rdv_id ];
+		return [ 'success' => true, 'id' => $rdv_id, 'statut' => 'en_attente' ];
 	}
 
 	public static function my_rdv( WP_REST_Request $request ) {
@@ -304,8 +304,8 @@ class GRC_REST_RDV {
 		if ( ! $rdv ) {
 			return new WP_Error( 'grc_not_found', 'Rendez-vous introuvable.', [ 'status' => 404 ] );
 		}
-		if ( 'annule' === $rdv->statut ) {
-			return new WP_Error( 'grc_already_cancelled', 'Ce rendez-vous est déjà annulé.', [ 'status' => 400 ] );
+		if ( ! in_array( $rdv->statut, [ 'confirme', 'en_attente' ], true ) ) {
+			return new WP_Error( 'grc_already_cancelled', 'Ce rendez-vous ne peut plus être annulé.', [ 'status' => 400 ] );
 		}
 
 		$wpdb->update( $rdv_table, [ 'statut' => 'annule' ], [ 'id' => $id ] );

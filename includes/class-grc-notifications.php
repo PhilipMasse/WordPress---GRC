@@ -21,12 +21,36 @@ class GRC_Notifications {
 		wp_mail( $email, $subject, $body );
 	}
 
-	public static function send_rdv_confirmation( string $email, string $debut ) {
-		$subject = '[Mairie de Berre-les-Alpes] Confirmation de votre rendez-vous';
+	public static function send_rdv_pending( string $email, string $debut ) {
+		$subject = '[Mairie de Berre-les-Alpes] Votre demande de rendez-vous est enregistrée';
 		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
 		$body = sprintf(
-			"Bonjour,\n\nVotre rendez-vous est confirmé pour le %s.\n\nSi vous ne pouvez pas vous présenter, merci de l'annuler depuis votre espace citoyen afin de libérer le créneau pour un autre usager.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			"Bonjour,\n\nVotre demande de rendez-vous pour le %s a bien été enregistrée et est en attente de validation par nos services.\n\nVous recevrez un email de confirmation ou d'information dès qu'elle aura été traitée.\n\nCordialement,\nMairie de Berre-les-Alpes",
 			$date_formatee
+		);
+		wp_mail( $email, $subject, $body );
+	}
+
+	public static function send_rdv_validated( string $email, string $debut ) {
+		$subject = '[Mairie de Berre-les-Alpes] Votre rendez-vous est confirmé';
+		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
+		$body = sprintf(
+			"Bonjour,\n\nVotre rendez-vous du %s a été validé et est confirmé.\n\nSi vous ne pouvez pas vous présenter, merci de l'annuler depuis votre espace citoyen afin de libérer le créneau pour un autre usager.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			$date_formatee
+		);
+		wp_mail( $email, $subject, $body );
+	}
+
+	public static function send_rdv_refused( string $email, string $debut, bool $automatique = false ) {
+		$subject = '[Mairie de Berre-les-Alpes] Votre demande de rendez-vous n\'a pas pu être confirmée';
+		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
+		$motif = $automatique
+			? "\n\nCette demande n'a pas été traitée dans le délai imparti et a été automatiquement annulée."
+			: '';
+		$body = sprintf(
+			"Bonjour,\n\nNous sommes au regret de vous informer que votre demande de rendez-vous du %s n'a pas pu être confirmée.%s\n\nVous pouvez soumettre une nouvelle demande sur un autre créneau depuis notre site.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			$date_formatee,
+			$motif
 		);
 		wp_mail( $email, $subject, $body );
 	}

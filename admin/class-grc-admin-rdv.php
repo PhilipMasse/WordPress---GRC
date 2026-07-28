@@ -19,6 +19,8 @@ class GRC_Admin_RDV {
 		add_action( 'admin_post_grc_save_absence', [ __CLASS__, 'handle_save_absence' ] );
 		add_action( 'admin_post_grc_delete_absence', [ __CLASS__, 'handle_delete_absence' ] );
 		add_action( 'admin_post_grc_cancel_rdv', [ __CLASS__, 'handle_cancel_rdv' ] );
+		add_action( 'admin_post_grc_validate_rdv', [ __CLASS__, 'handle_validate_rdv' ] );
+		add_action( 'admin_post_grc_refuse_rdv', [ __CLASS__, 'handle_refuse_rdv' ] );
 	}
 
 	public static function render() {
@@ -61,6 +63,8 @@ class GRC_Admin_RDV {
 			'absence_saved'        => [ 'success', 'Absence enregistrée.' ],
 			'absence_deleted'      => [ 'success', 'Absence supprimée.' ],
 			'rdv_cancelled'        => [ 'success', 'Rendez-vous annulé.' ],
+			'rdv_validated'        => [ 'success', 'Rendez-vous validé et confirmé.' ],
+			'rdv_refused'          => [ 'success', 'Rendez-vous refusé.' ],
 			'error'                => [ 'error', 'Une erreur est survenue.' ],
 		];
 		if ( isset( $messages[ $code ] ) ) {
@@ -125,7 +129,9 @@ class GRC_Admin_RDV {
 			</select>
 			<select name="statut">
 				<option value="">Tous les statuts</option>
+				<option value="en_attente" <?php selected( $filtre_statut, 'en_attente' ); ?>>En attente</option>
 				<option value="confirme" <?php selected( $filtre_statut, 'confirme' ); ?>>Confirmé</option>
+				<option value="refuse" <?php selected( $filtre_statut, 'refuse' ); ?>>Refusé</option>
 				<option value="annule" <?php selected( $filtre_statut, 'annule' ); ?>>Annulé</option>
 			</select>
 			<button type="submit" class="button">Filtrer</button>
@@ -143,15 +149,24 @@ class GRC_Admin_RDV {
 						( $r->c_prenom ? GRC_Encryption::decrypt( $r->c_prenom ) : '' ) . ' ' .
 						( $r->c_nom ? GRC_Encryption::decrypt( $r->c_nom ) : '' )
 					);
+					$badges = [
+						'en_attente' => '<span style="color:#DEA128;font-weight:600;">En attente</span>',
+						'confirme'   => '<span style="color:#587526;">Confirmé</span>',
+						'refuse'     => '<span style="color:#b32d2e;">Refusé</span>',
+						'annule'     => '<span style="color:#888;">Annulé</span>',
+					];
 					?>
 					<tr>
 						<td><?php echo esc_html( $nom_complet ?: '—' ); ?></td>
 						<td><?php echo esc_html( $r->service_nom ?: '—' ); ?></td>
 						<td><?php echo $r->debut ? esc_html( mysql2date( 'd/m/Y H:i', $r->debut ) ) : '—'; ?></td>
 						<td><?php echo esc_html( $r->motif ?: '—' ); ?></td>
-						<td><?php echo 'confirme' === $r->statut ? '<span style="color:#587526;">Confirmé</span>' : '<span style="color:#b32d2e;">Annulé</span>'; ?></td>
-						<td>
-							<?php if ( 'confirme' === $r->statut ) : ?>
+						<td><?php echo $badges[ $r->statut ] ?? esc_html( $r->statut ); ?></td>
+						<td style="white-space:nowrap;">
+							<?php if ( 'en_attente' === $r->statut ) : ?>
+								<a class="button button-small button-primary" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_validate_rdv&id=' . $r->id ), 'grc_validate_rdv_' . $r->id ) ); ?>">Valider</a>
+								<a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_refuse_rdv&id=' . $r->id ), 'grc_refuse_rdv_' . $r->id ) ); ?>" onclick="return confirm('Refuser ce rendez-vous ?');">Refuser</a>
+							<?php elseif ( 'confirme' === $r->statut ) : ?>
 								<a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_cancel_rdv&id=' . $r->id ), 'grc_cancel_rdv_' . $r->id ) ); ?>" onclick="return confirm('Annuler ce rendez-vous ?');">Annuler</a>
 							<?php endif; ?>
 						</td>
@@ -442,6 +457,84 @@ class GRC_Admin_RDV {
 		exit;
 	}
 
+	public static function handle_validate_rdv() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_validate_rdv_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		global $wpdb;
+		$rdv_table      = $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv';
+		$creneaux_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
+		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+
+		$rdv = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$rdv_table} WHERE id = %d", $id ) );
+		if ( $rdv && 'en_attente' === $rdv->statut ) {
+			$wpdb->update( $rdv_table, [ 'statut' => 'confirme' ], [ 'id' => $id ] );
+			GRC_Audit_Log::log( 'rdv_validated', 'rdv', $id );
+
+			$creneau = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$creneaux_table} WHERE id = %d", $rdv->creneau_id ) );
+			$email   = self::get_rdv_email( $rdv->citoyen_id );
+			if ( $email && $creneau ) {
+				GRC_Notifications::send_rdv_validated( $email, $creneau->debut );
+			}
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&grc_notice=rdv_validated' ) );
+		exit;
+	}
+
+	public static function handle_refuse_rdv() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_refuse_rdv_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		self::refuse_rdv( $id, false );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&grc_notice=rdv_refused' ) );
+		exit;
+	}
+
+	/**
+	 * Refuse un rendez-vous (manuellement par un agent, ou automatiquement par
+	 * le cron après expiration du délai de validation) : libère le créneau et
+	 * notifie le citoyen.
+	 */
+	public static function refuse_rdv( int $id, bool $automatique ) {
+		global $wpdb;
+		$rdv_table      = $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv';
+		$creneaux_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
+
+		$rdv = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$rdv_table} WHERE id = %d", $id ) );
+		if ( ! $rdv || 'en_attente' !== $rdv->statut ) {
+			return;
+		}
+
+		$wpdb->update( $rdv_table, [ 'statut' => 'refuse' ], [ 'id' => $id ] );
+		$wpdb->query( $wpdb->prepare( "UPDATE {$creneaux_table} SET reserve = GREATEST(0, reserve - 1) WHERE id = %d", $rdv->creneau_id ) );
+
+		GRC_Audit_Log::log( $automatique ? 'rdv_refused_auto' : 'rdv_refused', 'rdv', $id );
+
+		$creneau = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$creneaux_table} WHERE id = %d", $rdv->creneau_id ) );
+		$email   = self::get_rdv_email( $rdv->citoyen_id );
+		if ( $email && $creneau ) {
+			GRC_Notifications::send_rdv_refused( $email, $creneau->debut, $automatique );
+		}
+	}
+
+	private static function get_rdv_email( ?int $citoyen_id ): ?string {
+		if ( ! $citoyen_id ) {
+			return null;
+		}
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+		$encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$table} WHERE id = %d", $citoyen_id ) );
+		return $encrypted ? GRC_Encryption::decrypt( $encrypted ) : null;
+	}
+
 	public static function handle_cancel_rdv() {
 		$id = absint( $_GET['id'] ?? 0 );
 		check_admin_referer( 'grc_cancel_rdv_' . $id );
@@ -454,7 +547,7 @@ class GRC_Admin_RDV {
 		$creneaux_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
 
 		$rdv = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$rdv_table} WHERE id = %d", $id ) );
-		if ( $rdv && 'confirme' === $rdv->statut ) {
+		if ( $rdv && in_array( $rdv->statut, [ 'confirme', 'en_attente' ], true ) ) {
 			$wpdb->update( $rdv_table, [ 'statut' => 'annule' ], [ 'id' => $id ] );
 			$wpdb->query( $wpdb->prepare( "UPDATE {$creneaux_table} SET reserve = GREATEST(0, reserve - 1) WHERE id = %d", $rdv->creneau_id ) );
 			GRC_Audit_Log::log( 'rdv_cancelled_admin', 'rdv', $id );

@@ -14,9 +14,35 @@ class GRC_Cron {
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'purge_rgpd_expired' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'send_rdv_reminders' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'extend_creneaux_generation' ] );
+		add_action( 'grc_hourly_maintenance', [ __CLASS__, 'check_rdv_auto_refus' ] );
 
 		if ( ! wp_next_scheduled( 'grc_daily_maintenance' ) ) {
 			wp_schedule_event( time(), 'daily', 'grc_daily_maintenance' );
+		}
+		if ( ! wp_next_scheduled( 'grc_hourly_maintenance' ) ) {
+			wp_schedule_event( time(), 'hourly', 'grc_hourly_maintenance' );
+		}
+	}
+
+	/**
+	 * Refuse automatiquement les demandes de rendez-vous en attente depuis plus
+	 * longtemps que le délai configuré (Réglages GRC), et notifie le citoyen.
+	 */
+	public static function check_rdv_auto_refus() {
+		$delai_heures = max( 1, (int) get_option( 'grc_rdv_delai_validation_heures', 48 ) );
+
+		global $wpdb;
+		$rdv_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv';
+
+		$limite = gmdate( 'Y-m-d H:i:s', time() - ( $delai_heures * HOUR_IN_SECONDS ) );
+
+		$expires = $wpdb->get_col( $wpdb->prepare(
+			"SELECT id FROM {$rdv_table} WHERE statut = 'en_attente' AND created_at <= %s",
+			$limite
+		) );
+
+		foreach ( $expires as $rdv_id ) {
+			GRC_Admin_RDV::refuse_rdv( (int) $rdv_id, true );
 		}
 	}
 

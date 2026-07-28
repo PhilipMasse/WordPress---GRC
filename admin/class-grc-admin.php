@@ -9,6 +9,7 @@ class GRC_Admin {
 		add_action( 'admin_menu', [ __CLASS__, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
 		add_action( 'admin_post_grc_download_piece', [ __CLASS__, 'handle_download_piece' ] );
+		add_action( 'admin_post_grc_save_settings', [ __CLASS__, 'handle_save_settings' ] );
 		GRC_Admin_Demandes::init();
 		GRC_Admin_Services::init();
 		GRC_Admin_Demarches::init();
@@ -167,6 +168,12 @@ class GRC_Admin {
 
 	public static function render_settings() {
 		$status = get_option( 'grc_init_status' );
+
+		if ( isset( $_GET['grc_notice'] ) && 'settings_saved' === $_GET['grc_notice'] ) {
+			echo '<div class="notice notice-success is-dismissible"><p>Réglages enregistrés.</p></div>';
+		}
+
+		$delai_validation = (int) get_option( 'grc_rdv_delai_validation_heures', 48 );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
@@ -179,8 +186,38 @@ class GRC_Admin {
 			<?php else : ?>
 				<div class="notice notice-success"><p>Clés de sécurité correctement configurées et chargées.</p></div>
 			<?php endif; ?>
-			<p><em>Durée de rétention RGPD, modèles d'emails, catégories par défaut — à implémenter.</em></p>
+
+			<h2>Rendez-vous</h2>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="grc_save_settings">
+				<?php wp_nonce_field( 'grc_save_settings' ); ?>
+				<table class="form-table">
+					<tr>
+						<th><label for="grc-delai-validation">Délai de validation avant refus automatique</label></th>
+						<td>
+							<input type="number" id="grc-delai-validation" name="delai_validation_heures" value="<?php echo esc_attr( $delai_validation ); ?>" min="1" style="width:80px;"> heures
+							<p class="description">Passé ce délai sans validation manuelle par un agent, une demande de rendez-vous en attente est automatiquement refusée (le citoyen est notifié par email).</p>
+						</td>
+					</tr>
+				</table>
+				<button type="submit" class="button button-primary">Enregistrer</button>
+			</form>
+
+			<p style="margin-top:24px;"><em>Durée de rétention RGPD, modèles d'emails, catégories par défaut — à implémenter.</em></p>
 		</div>
 		<?php
+	}
+
+	public static function handle_save_settings() {
+		check_admin_referer( 'grc_save_settings' );
+		if ( ! current_user_can( 'grc_manage_settings' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		$delai = max( 1, absint( $_POST['delai_validation_heures'] ?? 48 ) );
+		update_option( 'grc_rdv_delai_validation_heures', $delai );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-settings&grc_notice=settings_saved' ) );
+		exit;
 	}
 }

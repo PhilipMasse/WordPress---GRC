@@ -888,7 +888,7 @@
 						if ( ! result.ok ) {
 							throw new Error( result.data.message || 'Erreur lors de la prise de rendez-vous.' );
 						}
-						showMessage( msgBox, 'Votre rendez-vous est confirmé ! Un email de confirmation vous a été envoyé.', 'success' );
+						showMessage( msgBox, 'Votre demande de rendez-vous a bien été enregistrée et est en attente de validation. Vous recevrez un email dès qu\'elle sera traitée.', 'success' );
 						rdvForm.reset();
 						selectedCreneauId = null;
 						selectedDay = null;
@@ -1042,7 +1042,13 @@
 		}
 
 		function rdvStatutLabel( statut ) {
-			return 'confirme' === statut ? 'Confirmé' : 'Annulé';
+			var labels = {
+				en_attente: 'En attente de validation',
+				confirme: 'Confirmé',
+				refuse: 'Refusé',
+				annule: 'Annulé'
+			};
+			return labels[ statut ] || statut;
 		}
 
 		function renderRdvList( container, rdvList ) {
@@ -1056,7 +1062,8 @@
 				html += '<div class="grc-demande-card">';
 				html += '<div class="grc-demande-card-header">';
 				html += '<strong>' + ( r.service_nom || '' ) + '</strong>';
-				html += '<span class="grc-badge grc-badge--' + ( 'confirme' === r.statut ? 'resolu' : 'reouvert' ) + '">' + rdvStatutLabel( r.statut ) + '</span>';
+				var badgeClasses = { en_attente: 'assigne', confirme: 'resolu', refuse: 'rejete', annule: 'cloture' };
+			html += '<span class="grc-badge grc-badge--' + ( badgeClasses[ r.statut ] || 'cloture' ) + '">' + rdvStatutLabel( r.statut ) + '</span>';
 				html += '</div>';
 				if ( r.debut ) {
 					html += '<p class="grc-demande-date">' + new Date( r.debut ).toLocaleString( 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' } ) + '</p>';
@@ -1064,7 +1071,7 @@
 				if ( r.motif ) {
 					html += '<p>' + r.motif + '</p>';
 				}
-				if ( 'confirme' === r.statut && ! isPast ) {
+				if ( ( 'confirme' === r.statut || 'en_attente' === r.statut ) && ! isPast ) {
 					html += '<button type="button" class="grc-btn-link grc-rdv-cancel" data-id="' + r.id + '">Annuler ce rendez-vous</button>';
 				}
 				html += '</div>';

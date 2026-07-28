@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.16.0 — Workflow de validation des rendez-vous
+
+- Les rendez-vous ne sont plus confirmés automatiquement : ils sont créés avec le statut **"En attente"** et nécessitent une validation manuelle par un agent
+- Nouveaux statuts : `en_attente`, `refuse` (en plus de `confirme` et `annule`)
+- Admin (**GRC Citoyenne → Rendez-vous**) : boutons **Valider** / **Refuser** sur les rendez-vous en attente ; le refus libère automatiquement le créneau
+- **Refus automatique paramétrable** : passé un délai configurable (**GRC Citoyenne → Réglages**, 48h par défaut), une demande non traitée est automatiquement refusée par un cron horaire, avec notification au citoyen
+- Emails adaptés : accusé de réception "en attente de validation" à la demande, email de confirmation à la validation, email d'information (manuel ou automatique) en cas de refus
+- Le citoyen peut annuler une demande aussi bien en attente que confirmée depuis `[grc_mes_demandes]`
+
 ## 0.15.3 — Correctif : comparaison stricte float/int filtrait tous les créneaux
 
 - `round()` en PHP retourne toujours un nombre à virgule flottante (`30.0`), comparé en strict (`!==`) à la durée demandée (entier `30`) — cette comparaison échouait systématiquement même quand les valeurs étaient "égales", filtrant silencieusement **tous** les créneaux quel que soit le paramètre `duree` envoyé. C'est ce qui causait un calendrier toujours vide malgré des créneaux bien générés et un sélecteur de durée correctement détecté.
