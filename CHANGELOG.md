@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 — Admin Services & Catégories + indicateur citoyen connecté
+
+- Nouvelle page d'administration **Services & Catégories** : CRUD complet (ajout, édition inline, suppression) pour les services et les catégories/sous-catégories, avec configuration du SLA (délai en heures) et de l'ordre d'affichage par catégorie
+- Le formulaire de signalement affiche désormais une bannière "Connecté en tant que [prénom]" quand un citoyen est authentifié, en plus de masquer les champs invité
+
 ## 0.4.0 — Comptes citoyens indépendants de WordPress
 
 ### Changement d'architecture

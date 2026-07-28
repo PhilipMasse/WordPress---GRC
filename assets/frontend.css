@@ -201,3 +201,13 @@
 	font-size: 13px;
 	padding: 0;
 }
+
+.grc-connected-banner {
+	background: #eaf1f8;
+	border: 1px solid #2D6AB0;
+	color: #1a3f66;
+	padding: 12px 16px;
+	border-radius: 8px;
+	margin-bottom: 16px;
+	font-size: 14px;
+}

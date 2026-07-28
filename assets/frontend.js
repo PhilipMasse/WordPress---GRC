@@ -109,10 +109,23 @@
 		var form = el( '#grc-signalement-form' );
 		if ( form ) {
 			var guestFields = el( '#grc-guest-fields', form );
-			if ( guestFields ) {
-				guestFields.style.display = isCitoyenLoggedIn() ? 'none' : 'block';
-				if ( isCitoyenLoggedIn() ) {
+			var banner = el( '#grc-connected-banner' );
+			var bannerName = el( '#grc-connected-name' );
+
+			if ( isCitoyenLoggedIn() ) {
+				if ( guestFields ) {
+					guestFields.style.display = 'none';
 					guestFields.querySelectorAll( 'input' ).forEach( function ( i ) { i.required = false; } );
+				}
+				if ( banner ) {
+					banner.style.display = 'block';
+					authFetch( grcConfig.restUrl + '/citoyen/me' )
+						.then( function ( res ) { return res.ok ? res.json() : null; } )
+						.then( function ( me ) {
+							if ( me && bannerName ) {
+								bannerName.textContent = ( me.prenom || me.email || 'vous' ) + ( me.nom ? ' ' + me.nom : '' );
+							}
+						} );
 				}
 			}
 

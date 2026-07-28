@@ -9,6 +9,7 @@ class GRC_Admin {
 		add_action( 'admin_menu', [ __CLASS__, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
 		GRC_Admin_Demandes::init();
+		GRC_Admin_Services::init();
 	}
 
 	public static function register_menu() {
@@ -73,7 +74,7 @@ class GRC_Admin {
 	}
 
 	public static function render_services() {
-		echo '<div class="wrap"><h1>Services & Catégories</h1><p><em>CRUD des services et catégories/sous-catégories — à implémenter.</em></p></div>';
+		GRC_Admin_Services::render();
 	}
 
 	public static function render_stats() {

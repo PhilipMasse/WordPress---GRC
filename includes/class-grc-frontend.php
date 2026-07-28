@@ -50,6 +50,9 @@ class GRC_Frontend {
 		ob_start();
 		?>
 		<div class="grc-form-wrapper">
+			<div id="grc-connected-banner" class="grc-connected-banner" style="display:none;">
+				Connecté en tant que <strong id="grc-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce signalement.
+			</div>
 			<form id="grc-signalement-form" class="grc-form">
 				<div class="grc-field">
 					<label for="grc-titre">Objet du signalement <span class="required">*</span></label>
