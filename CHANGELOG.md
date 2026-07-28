@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.5 — Fiche citoyen : motif et créneau horaire des rendez-vous
+
+- Le tableau Rendez-vous de la fiche citoyen affiche désormais le **motif** et le **créneau horaire complet** (ex : 09:00 - 09:30), en plus de la date.
+
 ## 0.18.4 — Correctif largeur : la classe .card de WordPress limitait à 520px
 
 - La classe `card` native de WordPress impose un `max-width` d'environ 520px, qui écrasait le `flex:1` appliqué à la colonne de droite — les tableaux restaient donc étroits malgré le conteneur élargi. Ajout de `max-width:none` en style inline sur les trois cartes concernées (Demandes, Démarches, Rendez-vous) pour neutraliser cette limite.

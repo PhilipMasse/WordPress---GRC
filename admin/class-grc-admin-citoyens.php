@@ -169,7 +169,7 @@ class GRC_Admin_Citoyens {
 		) );
 
 		$rdv_list = $wpdb->get_results( $wpdb->prepare(
-			"SELECT r.*, c.debut, s.nom AS service_nom FROM {$rdv_table} r
+			"SELECT r.*, c.debut, c.fin, s.nom AS service_nom FROM {$rdv_table} r
 			 LEFT JOIN {$creneaux_table} c ON c.id = r.creneau_id
 			 LEFT JOIN {$services_table} s ON s.id = r.service_id
 			 WHERE r.citoyen_id = %d ORDER BY c.debut DESC",
@@ -271,13 +271,15 @@ class GRC_Admin_Citoyens {
 							<p><em>Aucun rendez-vous.</em></p>
 						<?php else : ?>
 							<table class="wp-list-table widefat fixed striped">
-								<thead><tr><th>N° RDV</th><th>Service</th><th>Date</th><th>Statut</th></tr></thead>
+								<thead><tr><th>N° RDV</th><th>Service</th><th>Date</th><th>Créneau horaire</th><th>Motif</th><th>Statut</th></tr></thead>
 								<tbody>
 									<?php foreach ( $rdv_list as $r ) : ?>
 										<tr>
 											<td><code><?php echo esc_html( $r->numero_rdv ?: '#' . $r->id ); ?></code></td>
 											<td><?php echo esc_html( $r->service_nom ?: '—' ); ?></td>
-											<td><?php echo $r->debut ? esc_html( mysql2date( 'd/m/Y H:i', $r->debut ) ) : '—'; ?></td>
+											<td><?php echo $r->debut ? esc_html( mysql2date( 'd/m/Y', $r->debut ) ) : '—'; ?></td>
+											<td><?php echo ( $r->debut && $r->fin ) ? esc_html( mysql2date( 'H:i', $r->debut ) . ' - ' . mysql2date( 'H:i', $r->fin ) ) : '—'; ?></td>
+											<td><?php echo esc_html( $r->motif ?: '—' ); ?></td>
 											<td><?php echo esc_html( $statut_rdv_labels[ $r->statut ] ?? $r->statut ); ?></td>
 										</tr>
 									<?php endforeach; ?>
