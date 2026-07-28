@@ -58,7 +58,11 @@ class GRC_File_Scanner {
 
 		$finfo     = finfo_open( FILEINFO_MIME_TYPE );
 		$real_mime = finfo_file( $finfo, $tmp_path );
-		finfo_close( $finfo );
+		// Pas de finfo_close() ici : déprécié depuis PHP 8.5 (les objets finfo sont
+		// désormais libérés automatiquement), et son appel émettrait un warning
+		// affiché en clair par PHP, ce qui casserait le JSON de la réponse REST.
+		// La ressource est de toute façon libérée par le ramasse-miettes PHP dès
+		// que $finfo sort de portée, quelle que soit la version de PHP.
 
 		if ( ! isset( $allowed_mimes[ $real_mime ] ) ) {
 			return new WP_Error( 'grc_invalid_type', 'Type de fichier non autorisé (détecté : ' . $real_mime . ').' );

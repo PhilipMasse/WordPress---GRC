@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.1 — Correctif compatibilité PHP 8.5 (finfo_close déprécié)
+
+- `finfo_close()` est dépréciée depuis PHP 8.5 (les objets `finfo` sont désormais libérés automatiquement). Sur un serveur avec l'affichage des erreurs actif, cet appel produisait un warning affiché en clair **avant** la réponse JSON de l'API, cassant son parsing côté client (`Unexpected token '<'... is not valid JSON`) — alors même que l'opération (upload de fichier) réussissait réellement en arrière-plan.
+- L'appel a été retiré (sans danger sur les versions antérieures de PHP : la ressource est de toute façon libérée par le ramasse-miettes).
+
 ## 0.10.0 — Documents multiples + pièces jointes dans les échanges
 
 - Les champs de type `"file"` d'une démarche acceptent désormais **plusieurs fichiers** à la fois (attribut `multiple`), chacun validé et scanné individuellement — un fichier refusé n'empêche pas les autres d'être acceptés
