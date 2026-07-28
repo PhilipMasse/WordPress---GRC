@@ -149,3 +149,55 @@
 .grc-badge--resolu { background: #587526; }
 .grc-badge--cloture { background: #777; }
 .grc-badge--reouvert { background: #b32d2e; }
+
+.grc-mes-demandes-wrapper {
+	max-width: 640px;
+	margin: 0 auto;
+}
+
+.grc-auth-tabs {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 20px;
+	border-bottom: 2px solid #eee;
+}
+
+.grc-auth-tab {
+	background: none;
+	border: none;
+	padding: 10px 16px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #666;
+	cursor: pointer;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+}
+
+.grc-auth-tab--active {
+	color: #2D6AB0;
+	border-bottom-color: #2D6AB0;
+}
+
+.grc-citoyen-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #eee;
+}
+
+.grc-citoyen-header span {
+	font-weight: 600;
+}
+
+.grc-btn-link {
+	background: none;
+	border: none;
+	color: #2D6AB0;
+	text-decoration: underline;
+	cursor: pointer;
+	font-size: 13px;
+	padding: 0;
+}

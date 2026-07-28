@@ -1,24 +1,81 @@
 (function () {
 	'use strict';
 
+	var STORAGE_ACCESS = 'grc_access_token';
+	var STORAGE_REFRESH = 'grc_refresh_token';
+	var STORAGE_CITOYEN = 'grc_citoyen_info';
+
 	function el( selector, root ) {
 		return ( root || document ).querySelector( selector );
 	}
 
 	function showMessage( container, text, type ) {
+		if ( ! container ) {
+			return;
+		}
 		container.textContent = text;
 		container.className = 'grc-form-message grc-form-message--' + ( type || 'info' );
 		container.style.display = 'block';
 	}
 
+	function getAccessToken() {
+		return localStorage.getItem( STORAGE_ACCESS );
+	}
+
+	function isCitoyenLoggedIn() {
+		return !! getAccessToken();
+	}
+
+	function storeSession( data ) {
+		localStorage.setItem( STORAGE_ACCESS, data.access_token );
+		if ( data.refresh_token ) {
+			localStorage.setItem( STORAGE_REFRESH, data.refresh_token );
+		}
+	}
+
+	function clearSession() {
+		localStorage.removeItem( STORAGE_ACCESS );
+		localStorage.removeItem( STORAGE_REFRESH );
+		localStorage.removeItem( STORAGE_CITOYEN );
+	}
+
+	/**
+	 * Requête authentifiée avec le token citoyen. Tente un refresh silencieux une
+	 * fois en cas de 401, avant d'abandonner (déconnexion).
+	 */
+	function authFetch( url, options, retry ) {
+		options = options || {};
+		options.headers = options.headers || {};
+		var token = getAccessToken();
+		if ( token ) {
+			options.headers['Authorization'] = 'Bearer ' + token;
+		}
+
+		return fetch( url, options ).then( function ( res ) {
+			if ( 401 === res.status && ! retry && localStorage.getItem( STORAGE_REFRESH ) ) {
+				return fetch( grcConfig.restUrl + '/citoyen/refresh', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( { refresh_token: localStorage.getItem( STORAGE_REFRESH ) } )
+				} )
+					.then( function ( r ) { return r.ok ? r.json() : Promise.reject(); } )
+					.then( function ( refreshed ) {
+						localStorage.setItem( STORAGE_ACCESS, refreshed.access_token );
+						return authFetch( url, options, true );
+					} )
+					.catch( function () {
+						clearSession();
+						return res;
+					} );
+			}
+			return res;
+		} );
+	}
+
 	function statutLabel( statut ) {
 		var labels = {
-			nouveau: 'Nouveau',
-			en_cours: 'En cours',
-			assigne: 'Assigné',
-			resolu: 'Résolu',
-			cloture: 'Clôturé',
-			reouvert: 'Réouvert'
+			nouveau: 'Nouveau', en_cours: 'En cours', assigne: 'Assigné',
+			resolu: 'Résolu', cloture: 'Clôturé', reouvert: 'Réouvert'
 		};
 		return labels[ statut ] || statut;
 	}
@@ -46,13 +103,22 @@
 		container.innerHTML = html;
 	}
 
-	// ---- Formulaire de signalement ----
 	document.addEventListener( 'DOMContentLoaded', function () {
+
+		// ================= Formulaire de signalement =================
 		var form = el( '#grc-signalement-form' );
 		if ( form ) {
+			var guestFields = el( '#grc-guest-fields', form );
+			if ( guestFields ) {
+				guestFields.style.display = isCitoyenLoggedIn() ? 'none' : 'block';
+				if ( isCitoyenLoggedIn() ) {
+					guestFields.querySelectorAll( 'input' ).forEach( function ( i ) { i.required = false; } );
+				}
+			}
+
 			form.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
-				var msgBox = el( '#grc-form-message', form );
+				var msgBox = el( '.grc-form-message', form ) || el( '#grc-form-message', form );
 				var submitBtn = form.querySelector( '.grc-btn-submit' );
 				submitBtn.disabled = true;
 				submitBtn.textContent = 'Envoi en cours...';
@@ -64,17 +130,16 @@
 					adresse_lieu: el( '#grc-adresse', form ).value
 				};
 
-				if ( ! grcConfig.isLoggedIn ) {
+				if ( ! isCitoyenLoggedIn() ) {
 					payload.prenom = el( '#grc-prenom', form ).value;
 					payload.nom = el( '#grc-nom', form ).value;
 					payload.email = el( '#grc-email', form ).value;
 					payload.telephone = el( '#grc-telephone', form ).value;
 				}
 
-				fetch( grcConfig.restUrl + '/demandes/public-submit', {
+				authFetch( grcConfig.restUrl + '/demandes/public-submit', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': grcConfig.nonce },
-					credentials: 'same-origin',
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify( payload )
 				} )
 					.then( function ( res ) { return res.json().then( function ( data ) { return { ok: res.ok, data: data }; } ); } )
@@ -85,16 +150,14 @@
 						var demande = result.data;
 						var photoInput = el( '#grc-photo', form );
 
-						if ( photoInput.files && photoInput.files[ 0 ] ) {
+						if ( photoInput && photoInput.files && photoInput.files[ 0 ] ) {
 							var fd = new FormData();
 							fd.append( 'file', photoInput.files[ 0 ] );
 							if ( payload.email ) {
 								fd.append( 'email', payload.email );
 							}
-							return fetch( grcConfig.restUrl + '/demandes/' + demande.id + '/pieces-jointes', {
+							return authFetch( grcConfig.restUrl + '/demandes/' + demande.id + '/pieces-jointes', {
 								method: 'POST',
-								headers: { 'X-WP-Nonce': grcConfig.nonce },
-								credentials: 'same-origin',
 								body: fd
 							} ).then( function () { return demande; } );
 						}
@@ -114,30 +177,142 @@
 			} );
 		}
 
-		// ---- Suivi connecté ----
-		var wrapperConnecte = document.querySelector( '.grc-mes-demandes-wrapper[data-mode="connecte"]' );
-		if ( wrapperConnecte ) {
-			var listContainer = el( '#grc-demandes-liste', wrapperConnecte );
-			fetch( grcConfig.restUrl + '/mes-demandes', {
-				headers: { 'X-WP-Nonce': grcConfig.nonce },
-				credentials: 'same-origin'
-			} )
-				.then( function ( res ) { return res.json(); } )
-				.then( function ( demandes ) { renderDemandesList( listContainer, demandes ); } )
-				.catch( function () { listContainer.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
+		// ================= Suivi des demandes =================
+		var wrapper = el( '.grc-mes-demandes-wrapper' );
+		if ( ! wrapper ) {
+			return;
+		}
+
+		var authForms = el( '#grc-auth-forms', wrapper );
+		var connecteView = el( '#grc-citoyen-connecte', wrapper );
+		var demandesListe = el( '#grc-demandes-liste', wrapper );
+		var citoyenNomSpan = el( '#grc-citoyen-nom', wrapper );
+
+		function loadMesDemandes() {
+			demandesListe.innerHTML = '<p>Chargement de vos demandes...</p>';
+			authFetch( grcConfig.restUrl + '/citoyen/me' )
+				.then( function ( res ) { return res.ok ? res.json() : null; } )
+				.then( function ( me ) {
+					if ( me ) {
+						citoyenNomSpan.textContent = ( me.prenom || '' ) + ' ' + ( me.nom || me.email || '' );
+					}
+				} );
+			authFetch( grcConfig.restUrl + '/mes-demandes' )
+				.then( function ( res ) { return res.ok ? res.json() : []; } )
+				.then( function ( demandes ) { renderDemandesList( demandesListe, demandes ); } )
+				.catch( function () { demandesListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
+		}
+
+		function showConnecteView() {
+			authForms.style.display = 'none';
+			connecteView.style.display = 'block';
+			loadMesDemandes();
+		}
+
+		function showAuthForms() {
+			authForms.style.display = 'block';
+			connecteView.style.display = 'none';
+		}
+
+		if ( isCitoyenLoggedIn() ) {
+			showConnecteView();
+		} else {
+			showAuthForms();
+		}
+
+		// ---- Onglets (connexion / inscription / invité) ----
+		var tabs = wrapper.querySelectorAll( '.grc-auth-tab' );
+		var panels = {
+			login: el( '#grc-citoyen-login-form', wrapper ),
+			register: el( '#grc-citoyen-register-form', wrapper ),
+			guest: el( '#grc-guest-lookup-form', wrapper )
+		};
+		tabs.forEach( function ( tab ) {
+			tab.addEventListener( 'click', function () {
+				tabs.forEach( function ( t ) { t.classList.remove( 'grc-auth-tab--active' ); } );
+				tab.classList.add( 'grc-auth-tab--active' );
+				Object.keys( panels ).forEach( function ( key ) {
+					if ( panels[ key ] ) {
+						panels[ key ].style.display = key === tab.dataset.tab ? 'block' : 'none';
+					}
+				} );
+			} );
+		} );
+
+		// ---- Connexion ----
+		var loginForm = panels.login;
+		if ( loginForm ) {
+			loginForm.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var msgBox = el( '.grc-form-message', loginForm );
+				fetch( grcConfig.restUrl + '/citoyen/login', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( {
+						email: el( '#grc-login-email', loginForm ).value,
+						password: el( '#grc-login-password', loginForm ).value
+					} )
+				} )
+					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+					.then( function ( result ) {
+						if ( ! result.ok ) {
+							throw new Error( result.data.message || 'Identifiants invalides.' );
+						}
+						storeSession( result.data );
+						showConnecteView();
+					} )
+					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+			} );
+		}
+
+		// ---- Inscription ----
+		var registerForm = panels.register;
+		if ( registerForm ) {
+			registerForm.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var msgBox = el( '.grc-form-message', registerForm );
+				fetch( grcConfig.restUrl + '/citoyen/register', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( {
+						prenom: el( '#grc-reg-prenom', registerForm ).value,
+						nom: el( '#grc-reg-nom', registerForm ).value,
+						email: el( '#grc-reg-email', registerForm ).value,
+						password: el( '#grc-reg-password', registerForm ).value
+					} )
+				} )
+					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+					.then( function ( result ) {
+						if ( ! result.ok ) {
+							throw new Error( result.data.message || 'Erreur lors de l\'inscription.' );
+						}
+						storeSession( result.data );
+						showConnecteView();
+					} )
+					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+			} );
+		}
+
+		// ---- Déconnexion ----
+		var logoutBtn = el( '#grc-citoyen-logout', wrapper );
+		if ( logoutBtn ) {
+			logoutBtn.addEventListener( 'click', function () {
+				clearSession();
+				showAuthForms();
+			} );
 		}
 
 		// ---- Suivi invité ----
-		var guestForm = el( '#grc-guest-lookup-form' );
+		var guestForm = panels.guest;
 		if ( guestForm ) {
 			guestForm.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
-				var listContainer = el( '#grc-demandes-liste', guestForm.parentElement );
+				var resultsContainer = el( '#grc-guest-results', wrapper );
 				var payload = {
 					numero_suivi: el( '#grc-lookup-numero', guestForm ).value,
 					email: el( '#grc-lookup-email', guestForm ).value
 				};
-				listContainer.innerHTML = '<p>Recherche en cours...</p>';
+				resultsContainer.innerHTML = '<p>Recherche en cours...</p>';
 
 				fetch( grcConfig.restUrl + '/demandes/guest-lookup', {
 					method: 'POST',
@@ -147,13 +322,13 @@
 					.then( function ( res ) { return res.json().then( function ( data ) { return { ok: res.ok, data: data }; } ); } )
 					.then( function ( result ) {
 						if ( ! result.ok ) {
-							listContainer.innerHTML = '<p>Aucune demande trouvée pour ces informations.</p>';
+							resultsContainer.innerHTML = '<p>Aucune demande trouvée pour ces informations.</p>';
 							return;
 						}
-						renderDemandesList( listContainer, [ result.data ] );
+						renderDemandesList( resultsContainer, [ result.data ] );
 					} )
 					.catch( function () {
-						listContainer.innerHTML = '<p>Erreur lors de la recherche.</p>';
+						resultsContainer.innerHTML = '<p>Erreur lors de la recherche.</p>';
 					} );
 			} );
 		}

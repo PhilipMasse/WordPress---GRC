@@ -51,7 +51,7 @@ class GRC_REST_Auth {
 			return new WP_Error( 'grc_login_failed', 'Identifiants invalides.', [ 'status' => 401 ] );
 		}
 
-		$access_token  = GRC_JWT::issue( $user->ID, 3600 ); // 1h
+		$access_token  = GRC_JWT::issue( $user->ID, 3600, [ 'type' => 'agent' ] ); // 1h
 		$refresh_token = self::issue_refresh_token( $user->ID, $request->get_param( 'device_label' ) ?: '' );
 
 		GRC_Audit_Log::log( 'login_success', 'user', $user->ID );
@@ -75,7 +75,7 @@ class GRC_REST_Auth {
 
 		$token_hash = hash( 'sha256', $request->get_param( 'refresh_token' ) );
 		$row = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$table} WHERE refresh_token_hash = %s AND revoked = 0 AND expires_at > %s",
+			"SELECT * FROM {$table} WHERE refresh_token_hash = %s AND revoked = 0 AND expires_at > %s AND ( device_label IS NULL OR device_label != 'citoyen' )",
 			$token_hash,
 			current_time( 'mysql' )
 		) );
@@ -84,7 +84,7 @@ class GRC_REST_Auth {
 			return new WP_Error( 'grc_invalid_refresh', 'Refresh token invalide ou expiré.', [ 'status' => 401 ] );
 		}
 
-		$access_token = GRC_JWT::issue( (int) $row->wp_user_id, 3600 );
+		$access_token = GRC_JWT::issue( (int) $row->wp_user_id, 3600, [ 'type' => 'agent' ] );
 
 		return [
 			'access_token' => $access_token,

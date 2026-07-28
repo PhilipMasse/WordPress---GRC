@@ -57,8 +57,8 @@ class GRC_REST_Demandes {
 		register_rest_route( $ns, '/mes-demandes', [
 			'methods'             => 'GET',
 			'callback'            => [ __CLASS__, 'my_demandes' ],
-			'permission_callback' => function () {
-				return is_user_logged_in();
+			'permission_callback' => function ( WP_REST_Request $request ) {
+				return null !== GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
 			},
 		] );
 	}
@@ -81,24 +81,24 @@ class GRC_REST_Demandes {
 		$prenom      = sanitize_text_field( $params['prenom'] ?? '' );
 		$telephone   = sanitize_text_field( $params['telephone'] ?? '' );
 
+		$citoyen_id_authentifie = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
+
 		if ( empty( $titre ) ) {
 			return new WP_Error( 'grc_missing_titre', 'Le titre est obligatoire.', [ 'status' => 400 ] );
 		}
-		if ( ! is_user_logged_in() && empty( $email ) ) {
+		if ( ! $citoyen_id_authentifie && empty( $email ) ) {
 			return new WP_Error( 'grc_missing_email', 'Email obligatoire pour un signalement en mode invité.', [ 'status' => 400 ] );
 		}
 
 		global $wpdb;
-		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
 		$demandes_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
 
-		$citoyen_id = self::find_or_create_citoyen( [
-			'wp_user_id' => get_current_user_id() ?: null,
-			'nom'        => $nom,
-			'prenom'     => $prenom,
-			'email'      => $email,
-			'telephone'  => $telephone,
-			'is_guest'   => is_user_logged_in() ? 0 : 1,
+		$citoyen_id = $citoyen_id_authentifie ?: self::find_or_create_citoyen( [
+			'nom'       => $nom,
+			'prenom'    => $prenom,
+			'email'     => $email,
+			'telephone' => $telephone,
+			'is_guest'  => 1,
 		] );
 
 		$numero_suivi = self::generate_numero_suivi();
@@ -175,10 +175,9 @@ class GRC_REST_Demandes {
 
 	public static function my_demandes( WP_REST_Request $request ) {
 		global $wpdb;
-		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
 		$demandes_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
 
-		$citoyen_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$citoyens_table} WHERE wp_user_id = %d", get_current_user_id() ) );
+		$citoyen_id = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
 		if ( ! $citoyen_id ) {
 			return [];
 		}
@@ -255,12 +254,7 @@ class GRC_REST_Demandes {
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
 
-		if ( ! empty( $data['wp_user_id'] ) ) {
-			$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE wp_user_id = %d", $data['wp_user_id'] ) );
-			if ( $existing ) {
-				return (int) $existing;
-			}
-		} elseif ( ! empty( $data['email'] ) ) {
+		if ( ! empty( $data['email'] ) ) {
 			$hash = GRC_Encryption::search_hash( $data['email'] );
 			$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE email_hash = %s", $hash ) );
 			if ( $existing ) {
@@ -269,7 +263,6 @@ class GRC_REST_Demandes {
 		}
 
 		$wpdb->insert( $table, [
-			'wp_user_id'      => $data['wp_user_id'],
 			'nom'             => GRC_Encryption::encrypt( $data['nom'] ),
 			'prenom'          => GRC_Encryption::encrypt( $data['prenom'] ),
 			'email'           => GRC_Encryption::encrypt( $data['email'] ),

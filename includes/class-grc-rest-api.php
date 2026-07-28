@@ -4,6 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-auth.php';
+require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-citoyen.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-demandes.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-rdv.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-attachments.php';
@@ -19,6 +20,7 @@ class GRC_REST_API {
 
 	public static function register_routes() {
 		GRC_REST_Auth::register_routes();
+		GRC_REST_Citoyen::register_routes();
 		GRC_REST_Demandes::register_routes();
 		GRC_REST_RDV::register_routes();
 		GRC_REST_Attachments::register_routes();
@@ -40,6 +42,9 @@ class GRC_REST_API {
 		$public_route_patterns = [
 			'#^/grc/v1/auth/login$#',
 			'#^/grc/v1/auth/refresh$#',
+			'#^/grc/v1/citoyen/register$#',
+			'#^/grc/v1/citoyen/login$#',
+			'#^/grc/v1/citoyen/refresh$#',
 			'#^/grc/v1/demandes/guest-lookup$#',
 			'#^/grc/v1/demandes/public-submit$#',
 			'#^/grc/v1/demandes/\d+/pieces-jointes$#',
@@ -78,8 +83,16 @@ class GRC_REST_API {
 				return $payload;
 			}
 
-			wp_set_current_user( (int) $payload['sub'] );
 			$request->set_param( '_grc_jwt_payload', $payload );
+
+			// IMPORTANT : le "sub" d'un token citoyen est un ID de la table wp_grc_citoyens,
+			// PAS un ID wp_users. On n'appelle wp_set_current_user() QUE pour les tokens
+			// agents (staff), afin d'éviter qu'un citoyen ne s'authentifie par coïncidence
+			// comme un utilisateur WordPress partageant le même ID numérique.
+			$token_type = $payload['type'] ?? 'agent'; // Rétrocompatibilité : anciens tokens sans "type" = agent.
+			if ( 'agent' === $token_type ) {
+				wp_set_current_user( (int) $payload['sub'] );
+			}
 		}
 
 		return $result;

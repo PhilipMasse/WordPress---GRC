@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — Comptes citoyens indépendants de WordPress
+
+### Changement d'architecture
+- Les comptes citoyens ne sont plus liés aux comptes WordPress (`wp_users`) : nouveau système d'authentification propre à la table `wp_grc_citoyens`, avec mot de passe hashé (`wp_hash_password`, indépendant de wp_users)
+- Les comptes **agents/élus/admin** (staff municipal) restent sur les comptes WordPress natifs — aucun changement pour eux
+- Nouveaux endpoints : `POST /citoyen/register`, `POST /citoyen/login`, `POST /citoyen/refresh`, `GET /citoyen/me`
+- Les JWT portent désormais un claim `type` (`agent` ou `citoyen`) : un token citoyen ne peut jamais authentifier un utilisateur WordPress, même en cas de collision d'ID numérique (correctif de sécurité important sur le middleware)
+- `/mes-demandes` et `/demandes/public-submit` utilisent l'identité citoyenne du JWT plutôt que la session WordPress
+- Le front-office (`[grc_mes_demandes]`) gère désormais lui-même la session citoyenne côté navigateur (token stocké localement), avec onglets Connexion / Inscription / Suivi invité
+- Le formulaire de signalement masque automatiquement les champs invité si un citoyen est connecté
+
 ## 0.3.2 — Correctif chargement des scripts front-office
 
 - Les fichiers `frontend.js`/`frontend.css` ne se chargeaient pas de façon fiable sur les pages contenant `[grc_signalement_form]` ou `[grc_mes_demandes]` : la détection reposait sur `has_shortcode()` appliqué à `post_content`, qui peut échouer selon la façon dont le contenu est stocké ou construit.

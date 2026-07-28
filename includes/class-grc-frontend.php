@@ -123,18 +123,51 @@ class GRC_Frontend {
 
 	public static function render_mes_demandes( $atts ): string {
 		ob_start();
-		if ( is_user_logged_in() ) {
-			?>
-			<div class="grc-mes-demandes-wrapper" data-mode="connecte">
-				<div id="grc-demandes-liste" class="grc-demandes-liste">
-					<p>Chargement de vos demandes...</p>
+		?>
+		<div class="grc-mes-demandes-wrapper">
+
+			<div id="grc-auth-forms" class="grc-auth-forms">
+				<div class="grc-auth-tabs">
+					<button type="button" class="grc-auth-tab grc-auth-tab--active" data-tab="login">Se connecter</button>
+					<button type="button" class="grc-auth-tab" data-tab="register">Créer un compte</button>
+					<button type="button" class="grc-auth-tab" data-tab="guest">Suivi invité</button>
 				</div>
-			</div>
-			<?php
-		} else {
-			?>
-			<div class="grc-mes-demandes-wrapper" data-mode="invite">
-				<form id="grc-guest-lookup-form" class="grc-form">
+
+				<form id="grc-citoyen-login-form" class="grc-form grc-auth-panel">
+					<div class="grc-field">
+						<label for="grc-login-email">Email</label>
+						<input type="email" id="grc-login-email" name="email" required>
+					</div>
+					<div class="grc-field">
+						<label for="grc-login-password">Mot de passe</label>
+						<input type="password" id="grc-login-password" name="password" required>
+					</div>
+					<button type="submit" class="grc-btn-submit">Se connecter</button>
+					<div class="grc-form-message" style="display:none;"></div>
+				</form>
+
+				<form id="grc-citoyen-register-form" class="grc-form grc-auth-panel" style="display:none;">
+					<div class="grc-field">
+						<label for="grc-reg-prenom">Prénom</label>
+						<input type="text" id="grc-reg-prenom" name="prenom">
+					</div>
+					<div class="grc-field">
+						<label for="grc-reg-nom">Nom</label>
+						<input type="text" id="grc-reg-nom" name="nom">
+					</div>
+					<div class="grc-field">
+						<label for="grc-reg-email">Email</label>
+						<input type="email" id="grc-reg-email" name="email" required>
+					</div>
+					<div class="grc-field">
+						<label for="grc-reg-password">Mot de passe (8 caractères minimum)</label>
+						<input type="password" id="grc-reg-password" name="password" minlength="8" required>
+					</div>
+					<button type="submit" class="grc-btn-submit">Créer mon compte</button>
+					<div class="grc-form-message" style="display:none;"></div>
+				</form>
+
+				<form id="grc-guest-lookup-form" class="grc-form grc-auth-panel" style="display:none;">
 					<p class="grc-hint">Retrouvez votre demande avec son numéro de suivi et votre email.</p>
 					<div class="grc-field">
 						<label for="grc-lookup-numero">Numéro de suivi</label>
@@ -146,10 +179,19 @@ class GRC_Frontend {
 					</div>
 					<button type="submit" class="grc-btn-submit">Rechercher</button>
 				</form>
-				<div id="grc-demandes-liste" class="grc-demandes-liste"></div>
 			</div>
-			<?php
-		}
+
+			<div id="grc-citoyen-connecte" class="grc-citoyen-connecte" style="display:none;">
+				<div class="grc-citoyen-header">
+					<span id="grc-citoyen-nom"></span>
+					<button type="button" id="grc-citoyen-logout" class="grc-btn-link">Se déconnecter</button>
+				</div>
+				<div id="grc-demandes-liste" class="grc-demandes-liste"><p>Chargement de vos demandes...</p></div>
+			</div>
+
+			<div id="grc-guest-results" class="grc-demandes-liste"></div>
+		</div>
+		<?php
 		return ob_get_clean();
 	}
 }

@@ -48,6 +48,7 @@ class GRC_Activator {
 			telephone TEXT NULL,
 			telephone_hash CHAR(64) NULL,
 			adresse TEXT NULL,
+			password_hash VARCHAR(255) NULL,
 			consentement_rgpd TINYINT(1) NOT NULL DEFAULT 0,
 			consentement_date DATETIME NULL,
 			is_guest TINYINT(1) NOT NULL DEFAULT 0,

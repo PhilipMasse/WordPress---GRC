@@ -44,19 +44,25 @@ Namespace : `/wp-json/grc/v1/`
 
 | Endpoint | Méthode | Auth | Description |
 |---|---|---|---|
-| `/auth/login` | POST | Non | Connexion, retourne access_token (JWT) + refresh_token |
-| `/auth/refresh` | POST | Non | Renouvelle l'access_token |
-| `/auth/logout` | POST | JWT | Révoque le refresh token |
-| `/demandes/public-submit` | POST | Non | Créer un signalement (compte ou invité) |
+| `/auth/login` | POST | Non | Connexion **agent/élu/admin** (comptes WordPress), retourne access_token (JWT type=agent) + refresh_token |
+| `/auth/refresh` | POST | Non | Renouvelle l'access_token agent |
+| `/auth/logout` | POST | JWT agent | Révoque le refresh token agent |
+| `/citoyen/register` | POST | Non | Crée un compte citoyen (indépendant de wp_users) |
+| `/citoyen/login` | POST | Non | Connexion citoyen, retourne access_token (JWT type=citoyen) + refresh_token |
+| `/citoyen/refresh` | POST | Non | Renouvelle l'access_token citoyen |
+| `/citoyen/me` | GET | JWT citoyen | Infos du citoyen connecté |
+| `/demandes/public-submit` | POST | Non (JWT citoyen optionnel) | Créer un signalement (compte citoyen ou invité) |
 | `/demandes/guest-lookup` | POST | Non | Suivre une demande en mode invité (numéro + email) |
-| `/demandes` | GET | JWT | Liste des demandes (agents/élus) |
+| `/demandes` | GET | JWT agent | Liste des demandes (agents/élus) |
 | `/demandes/{id}` | GET | JWT | Détail d'une demande |
-| `/demandes/{id}/statut` | POST | JWT | Changer le statut d'une demande |
-| `/mes-demandes` | GET | JWT | Demandes du citoyen connecté |
+| `/demandes/{id}/statut` | POST | JWT agent | Changer le statut d'une demande |
+| `/mes-demandes` | GET | JWT citoyen | Demandes du citoyen connecté |
 | `/rdv/creneaux` | GET | Non | Liste des créneaux disponibles |
 | `/rdv` | POST | JWT | Réserver un rendez-vous |
 | `/demandes/{id}/pieces-jointes` | POST | Selon contexte | Uploader une pièce jointe (agent, citoyen connecté ou invité avec email) |
 | `/pieces-jointes/{id}` | GET | Selon contexte | Télécharger une pièce jointe (autorisation vérifiée) |
+
+**Important** : les comptes **agents/élus/admin** (staff municipal) utilisent les comptes WordPress natifs (`wp_users`) via `/auth/*`. Les comptes **citoyens** sont entièrement indépendants (table `wp_grc_citoyens`, mot de passe hashé séparément) via `/citoyen/*`. Les deux émettent des JWT mais avec un claim `type` différent (`agent` vs `citoyen`), qui détermine comment chaque token est traité par le middleware d'authentification — un token citoyen ne peut jamais s'authentifier comme un utilisateur WordPress.
 
 ## Portail citoyen front-office
 

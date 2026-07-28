@@ -175,20 +175,18 @@ class GRC_REST_Attachments {
 	 * - le mode invité fournit numero_suivi + email correspondant au citoyen de la demande.
 	 */
 	private static function authorize_demande_access( WP_REST_Request $request, $demande ) {
-		// Agent/élu ou citoyen authentifié via JWT (middleware rest_pre_dispatch a déjà tenté wp_set_current_user).
-		if ( is_user_logged_in() ) {
-			if ( current_user_can( 'grc_view_all' ) || current_user_can( 'grc_manage_demandes' ) ) {
-				return true;
-			}
-			global $wpdb;
-			$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
-			$mon_citoyen_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$citoyens_table} WHERE wp_user_id = %d", get_current_user_id() ) );
-			if ( $mon_citoyen_id && (int) $mon_citoyen_id === (int) $demande->citoyen_id ) {
-				return true;
-			}
+		// Agent/élu connecté via WordPress (cookie+nonce, ou JWT type=agent déjà résolu par le middleware).
+		if ( is_user_logged_in() && ( current_user_can( 'grc_view_all' ) || current_user_can( 'grc_manage_demandes' ) ) ) {
+			return true;
 		}
 
-		// Mode invité : numero_suivi (implicite car on connaît déjà la demande) + email fourni.
+		// Citoyen authentifié via JWT (type=citoyen), propriétaire de la demande.
+		$citoyen_id = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
+		if ( $citoyen_id && (int) $citoyen_id === (int) $demande->citoyen_id ) {
+			return true;
+		}
+
+		// Mode invité : email fourni correspondant au citoyen de la demande.
 		$email = sanitize_email( $request->get_param( 'email' ) ?? '' );
 		if ( $email && $demande->citoyen_id ) {
 			global $wpdb;
