@@ -12,12 +12,14 @@ Plugin WordPress de gestion de la relation citoyenne : signalements, demandes, r
 ## Installation
 
 1. Copier le dossier `gestion-relation-citoyenne` dans `wp-content/plugins/`.
-2. **Avant d'activer**, ajouter dans `wp-config.php` :
+2. **Avant d'activer**, ajouter dans `wp-config.php` — **impérativement avant** la ligne `require_once(ABSPATH . 'wp-settings.php');` (donc avant le commentaire "That's all, stop editing!") :
 
 ```php
 define( 'GRC_ENCRYPTION_KEY', 'CLE_GENEREE_EN_BASE64' );
 define( 'GRC_JWT_SECRET', 'CHAINE_ALEATOIRE_LONGUE' );
 ```
+
+⚠️ **Si ces lignes sont placées après `require_once wp-settings.php`, le plugin échoue silencieusement** (aucun shortcode, aucun menu admin, aucune erreur PHP) car les plugins se chargent avant cette ligne. Le plugin détecte ce cas précis et affiche un message d'erreur explicite en haut de l'administration.
 
 Pour générer une clé de chiffrement valide :
 

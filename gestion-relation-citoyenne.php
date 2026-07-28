@@ -3,7 +3,7 @@
  * Plugin Name: Gestion de la Relation Citoyenne (GRC)
  * Plugin URI: https://github.com/PhilipMasse/WordPress---GRC
  * Description: Module de Gestion de la Relation Citoyenne pour la Mairie de Berre-les-Alpes : signalements, demandes, rendez-vous, démarches administratives, API REST pour application mobile.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author: Mairie de Berre-les-Alpes
  * Text Domain: grc-citoyenne
  * Requires PHP: 8.1
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Accès direct interdit.
 }
 
-define( 'GRC_VERSION', '0.3.0' );
+define( 'GRC_VERSION', '0.3.1' );
 define( 'GRC_PLUGIN_FILE', __FILE__ );
 define( 'GRC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GRC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -22,17 +22,30 @@ define( 'GRC_TABLE_PREFIX', 'grc_' );
 
 /**
  * Vérification de la clé de chiffrement obligatoire.
- * La clé DOIT être définie dans wp-config.php, jamais versionnée sur GitHub.
- * Exemple à ajouter dans wp-config.php :
+ * La clé DOIT être définie dans wp-config.php, jamais versionnée sur GitHub,
+ * et surtout AVANT la ligne require_once(ABSPATH . 'wp-settings.php'); qui
+ * charge les plugins. Sinon les constantes n'existent pas encore au moment
+ * où le plugin s'initialise (hook plugins_loaded), même si elles apparaissent
+ * définies plus tard dans la même requête (ex. sur les hooks admin_init/
+ * admin_notices, qui s'exécutent après que wp-config.php ait fini de tourner).
+ * C'est ce piège précis qui masquait silencieusement l'échec de chargement.
+ *
+ * Exemple à ajouter dans wp-config.php (avant "That's all, stop editing!") :
  * define( 'GRC_ENCRYPTION_KEY', 'clé-générée-en-base64-32-octets' );
  * define( 'GRC_JWT_SECRET', 'autre-clé-longue-aléatoire' );
  */
-add_action( 'admin_init', function () {
-	if ( ! defined( 'GRC_ENCRYPTION_KEY' ) || ! defined( 'GRC_JWT_SECRET' ) ) {
-		add_action( 'admin_notices', function () {
-			echo '<div class="notice notice-error"><p><strong>GRC :</strong> Les constantes <code>GRC_ENCRYPTION_KEY</code> et <code>GRC_JWT_SECRET</code> doivent être définies dans <code>wp-config.php</code> avant utilisation. Le plugin est désactivé tant que ces clés ne sont pas configurées.</p></div>';
-		} );
+add_action( 'admin_notices', function () {
+	$status = get_option( 'grc_init_status' );
+	if ( 'ok' === $status || false === $status ) {
+		return;
 	}
+
+	if ( 'missing_keys_but_defined_later' === $status ) {
+		echo '<div class="notice notice-error"><p><strong>GRC :</strong> Les constantes <code>GRC_ENCRYPTION_KEY</code> et/ou <code>GRC_JWT_SECRET</code> sont bien définies dans <code>wp-config.php</code>, mais <u>trop tard</u> : elles apparaissent après la ligne <code>require_once(ABSPATH . \'wp-settings.php\');</code> qui charge les plugins. Déplacez ces deux lignes <strong>avant</strong> cette ligne (avant le commentaire "That\'s all, stop editing!"), puis rechargez cette page. Le plugin ne fonctionne pas tant que ce n\'est pas corrigé.</p></div>';
+		return;
+	}
+
+	echo '<div class="notice notice-error"><p><strong>GRC :</strong> Les constantes <code>GRC_ENCRYPTION_KEY</code> et <code>GRC_JWT_SECRET</code> doivent être définies dans <code>wp-config.php</code> (avant la ligne <code>require_once wp-settings.php</code>) avant utilisation. Le plugin ne fonctionne pas tant que ces clés ne sont pas configurées.</p></div>';
 } );
 
 require_once GRC_PLUGIN_DIR . 'includes/class-grc-encryption.php';
@@ -55,8 +68,21 @@ register_deactivation_hook( __FILE__, [ 'GRC_Activator', 'deactivate' ] );
  */
 function grc_init_plugin() {
 	if ( ! defined( 'GRC_ENCRYPTION_KEY' ) || ! defined( 'GRC_JWT_SECRET' ) ) {
-		return; // On ne charge rien tant que les clés ne sont pas en place.
+		// On enregistre l'échec MAINTENANT (au moment réel du chargement des plugins).
+		// On planifie aussi une vérification tardive (admin_init, qui s'exécute après
+		// que wp-config.php ait fini de tourner) pour distinguer :
+		// - clés réellement absentes de wp-config.php
+		// - clés présentes mais définies après require_once wp-settings.php (piège d'ordre)
+		update_option( 'grc_init_status', 'missing_keys' );
+		add_action( 'admin_init', function () {
+			if ( defined( 'GRC_ENCRYPTION_KEY' ) && defined( 'GRC_JWT_SECRET' ) ) {
+				update_option( 'grc_init_status', 'missing_keys_but_defined_later' );
+			}
+		}, 20 );
+		return; // On ne charge rien tant que les clés ne sont pas en place à temps.
 	}
+
+	update_option( 'grc_init_status', 'ok' );
 
 	// Filet de sécurité : si les tables n'existent pas ou si le schéma a changé
 	// (ex. après une mise à jour automatique via GitHub, qui ne déclenche PAS

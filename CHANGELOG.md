@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 — Correctif détection des clés mal configurées
+
+- Correction d'un piège de détection : si `GRC_ENCRYPTION_KEY`/`GRC_JWT_SECRET` sont définies dans `wp-config.php` **après** `require_once wp-settings.php`, le plugin échouait silencieusement à se charger (shortcodes, menu admin, API absents) sans jamais afficher d'alerte. La vérification se faisait sur le hook `admin_init`, qui s'exécute après que `wp-config.php` ait fini de tourner — donc les constantes y apparaissaient définies, masquant le vrai problème survenu plus tôt sur `plugins_loaded`.
+- Le statut réel d'initialisation est désormais enregistré au moment exact où il se produit (`plugins_loaded`), avec un message d'erreur spécifique si les clés sont définies mais dans le mauvais ordre.
+
 ## 0.3.0 — Pièces jointes + portail citoyen front-office
 
 ### Pièces jointes

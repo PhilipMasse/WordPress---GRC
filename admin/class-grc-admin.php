@@ -81,13 +81,18 @@ class GRC_Admin {
 	}
 
 	public static function render_settings() {
+		$status = get_option( 'grc_init_status' );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
-			<?php if ( ! defined( 'GRC_ENCRYPTION_KEY' ) || ! defined( 'GRC_JWT_SECRET' ) ) : ?>
-				<div class="notice notice-error"><p>Les clés de chiffrement/JWT ne sont pas configurées dans <code>wp-config.php</code>.</p></div>
+			<?php if ( 'ok' !== $status ) : ?>
+				<?php if ( 'missing_keys_but_defined_later' === $status ) : ?>
+					<div class="notice notice-error"><p>Les clés sont définies dans <code>wp-config.php</code> mais après la ligne <code>require_once wp-settings.php</code> — déplacez-les avant. Voir le message en haut de l'administration pour le détail.</p></div>
+				<?php else : ?>
+					<div class="notice notice-error"><p>Les clés de chiffrement/JWT ne sont pas configurées dans <code>wp-config.php</code>.</p></div>
+				<?php endif; ?>
 			<?php else : ?>
-				<div class="notice notice-success"><p>Clés de sécurité correctement configurées.</p></div>
+				<div class="notice notice-success"><p>Clés de sécurité correctement configurées et chargées.</p></div>
 			<?php endif; ?>
 			<p><em>Durée de rétention RGPD, modèles d'emails, catégories par défaut — à implémenter.</em></p>
 		</div>
