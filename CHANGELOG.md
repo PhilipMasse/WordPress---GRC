@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0 — Correctif expiration de token + gestion du profil citoyen
+
+### Correctif important
+- Le token d'accès citoyen (JWT) expire après 1h. Sur les routes "publiques" (ex: `/demarches`, `/demandes/public-submit`), un token expiré ne renvoyait pas d'erreur 401 et la requête retombait silencieusement en mode invité — donnant l'impression trompeuse que le citoyen n'était plus reconnu (ex: email redemandé alors que le compte existait). Le token est désormais vérifié et rafraîchi de façon proactive avant chaque requête authentifiée.
+- Correction défensive : les champs invité masqués (email) restaient marqués "obligatoire" au niveau HTML.
+
+### Gestion du profil citoyen
+- Nouveaux endpoints `PUT /citoyen/me` (mise à jour nom/prénom/email/téléphone, avec vérification d'unicité de l'email) et `POST /citoyen/password` (changement de mot de passe avec vérification de l'ancien)
+- Section "Mon profil" ajoutée dans `[grc_mes_demandes]` : formulaire d'informations personnelles + formulaire de changement de mot de passe
+
+### Rappel
+- Les dossiers de démarches soumis sont visibles dans **GRC Citoyenne → Démarches → Dossiers soumis** (déjà disponible depuis la v0.6.0) ; ils n'apparaissaient pas car les soumissions échouaient à cause du bug d'expiration de token ci-dessus.
+
 ## 0.6.1 — Shortcode formulaire de démarche dynamique
 
 - Nouveau shortcode `[grc_demarche_form]` : génère automatiquement le formulaire à partir des champs JSON définis pour chaque type de démarche (texte, zone de texte, email, nombre ; obligatoire ou non)

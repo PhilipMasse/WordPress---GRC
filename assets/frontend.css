@@ -192,6 +192,18 @@
 	font-weight: 600;
 }
 
+.grc-citoyen-header .grc-btn-link {
+	font-weight: 400;
+	margin-left: 12px;
+}
+
+.grc-citoyen-profil {
+	background: #f9f9f9;
+	border-radius: 8px;
+	padding: 16px;
+	margin-bottom: 20px;
+}
+
 .grc-btn-link {
 	background: none;
 	border: none;

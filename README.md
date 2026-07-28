@@ -51,6 +51,8 @@ Namespace : `/wp-json/grc/v1/`
 | `/citoyen/login` | POST | Non | Connexion citoyen, retourne access_token (JWT type=citoyen) + refresh_token |
 | `/citoyen/refresh` | POST | Non | Renouvelle l'access_token citoyen |
 | `/citoyen/me` | GET | JWT citoyen | Infos du citoyen connecté |
+| `/citoyen/me` | PUT | JWT citoyen | Mettre à jour ses informations personnelles |
+| `/citoyen/password` | POST | JWT citoyen | Changer son mot de passe |
 | `/demandes/public-submit` | POST | Non (JWT citoyen optionnel) | Créer un signalement (compte citoyen ou invité) |
 | `/demandes/guest-lookup` | POST | Non | Suivre une demande en mode invité (numéro + email) |
 | `/demandes` | GET | JWT agent | Liste des demandes (agents/élus) |

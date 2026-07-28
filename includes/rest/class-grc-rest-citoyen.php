@@ -39,6 +39,22 @@ class GRC_REST_Citoyen {
 				return null !== self::get_authenticated_citoyen_id( $request );
 			},
 		] );
+
+		register_rest_route( $ns, '/citoyen/me', [
+			'methods'             => 'PUT',
+			'callback'            => [ __CLASS__, 'update_me' ],
+			'permission_callback' => function ( WP_REST_Request $request ) {
+				return null !== self::get_authenticated_citoyen_id( $request );
+			},
+		] );
+
+		register_rest_route( $ns, '/citoyen/password', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'change_password' ],
+			'permission_callback' => function ( WP_REST_Request $request ) {
+				return null !== self::get_authenticated_citoyen_id( $request );
+			},
+		] );
 	}
 
 	/**
@@ -170,6 +186,91 @@ class GRC_REST_Citoyen {
 			'email'   => $citoyen->email ? GRC_Encryption::decrypt( $citoyen->email ) : null,
 			'telephone' => $citoyen->telephone ? GRC_Encryption::decrypt( $citoyen->telephone ) : null,
 		];
+	}
+
+	/**
+	 * Met à jour les informations personnelles du citoyen (nom, prénom, téléphone, email).
+	 * Le changement d'email met aussi à jour le hash de recherche.
+	 */
+	public static function update_me( WP_REST_Request $request ) {
+		$citoyen_id = self::get_authenticated_citoyen_id( $request );
+
+		$nom       = $request->get_param( 'nom' );
+		$prenom    = $request->get_param( 'prenom' );
+		$telephone = $request->get_param( 'telephone' );
+		$email     = $request->get_param( 'email' );
+
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+		$data  = [];
+
+		if ( null !== $nom ) {
+			$data['nom'] = GRC_Encryption::encrypt( sanitize_text_field( $nom ) );
+		}
+		if ( null !== $prenom ) {
+			$data['prenom'] = GRC_Encryption::encrypt( sanitize_text_field( $prenom ) );
+		}
+		if ( null !== $telephone ) {
+			$telephone = sanitize_text_field( $telephone );
+			$data['telephone']      = $telephone ? GRC_Encryption::encrypt( $telephone ) : null;
+			$data['telephone_hash'] = $telephone ? GRC_Encryption::search_hash( $telephone ) : null;
+		}
+		if ( null !== $email && is_email( $email ) ) {
+			$email = sanitize_email( $email );
+			$hash  = GRC_Encryption::search_hash( $email );
+
+			// Vérifie qu'aucun autre citoyen n'utilise déjà cet email.
+			$conflict = $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$table} WHERE email_hash = %s AND id != %d",
+				$hash,
+				$citoyen_id
+			) );
+			if ( $conflict ) {
+				return new WP_Error( 'grc_email_taken', 'Cet email est déjà utilisé par un autre compte.', [ 'status' => 409 ] );
+			}
+
+			$data['email']      = GRC_Encryption::encrypt( $email );
+			$data['email_hash'] = $hash;
+		}
+
+		if ( empty( $data ) ) {
+			return new WP_Error( 'grc_no_data', 'Aucune donnée à mettre à jour.', [ 'status' => 400 ] );
+		}
+
+		$wpdb->update( $table, $data, [ 'id' => $citoyen_id ] );
+		GRC_Audit_Log::log( 'citoyen_profile_updated', 'citoyen', $citoyen_id );
+
+		return self::me( $request );
+	}
+
+	/**
+	 * Change le mot de passe du citoyen, après vérification de l'ancien mot de passe.
+	 */
+	public static function change_password( WP_REST_Request $request ) {
+		if ( ! GRC_REST_API::check_rate_limit( 'citoyen_password', 5, 3600 ) ) {
+			return new WP_Error( 'grc_rate_limited', 'Trop de tentatives, réessayez plus tard.', [ 'status' => 429 ] );
+		}
+
+		$citoyen_id = self::get_authenticated_citoyen_id( $request );
+		$current    = (string) $request->get_param( 'current_password' );
+		$new        = (string) $request->get_param( 'new_password' );
+
+		if ( strlen( $new ) < 8 ) {
+			return new WP_Error( 'grc_weak_password', 'Le nouveau mot de passe doit contenir au moins 8 caractères.', [ 'status' => 400 ] );
+		}
+
+		global $wpdb;
+		$table   = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+		$citoyen = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $citoyen_id ) );
+
+		if ( ! $citoyen || empty( $citoyen->password_hash ) || ! wp_check_password( $current, $citoyen->password_hash ) ) {
+			return new WP_Error( 'grc_wrong_password', 'Mot de passe actuel incorrect.', [ 'status' => 401 ] );
+		}
+
+		$wpdb->update( $table, [ 'password_hash' => wp_hash_password( $new ) ], [ 'id' => $citoyen_id ] );
+		GRC_Audit_Log::log( 'citoyen_password_changed', 'citoyen', $citoyen_id );
+
+		return [ 'success' => true ];
 	}
 
 	/**

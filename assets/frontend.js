@@ -39,36 +39,86 @@
 		localStorage.removeItem( STORAGE_CITOYEN );
 	}
 
+	function decodeJwtPayload( token ) {
+		try {
+			var base64 = token.split( '.' )[ 1 ].replace( /-/g, '+' ).replace( /_/g, '/' );
+			return JSON.parse( atob( base64 ) );
+		} catch ( e ) {
+			return null;
+		}
+	}
+
 	/**
-	 * Requête authentifiée avec le token citoyen. Tente un refresh silencieux une
-	 * fois en cas de 401, avant d'abandonner (déconnexion).
+	 * S'assure que le token en localStorage est encore valide (avec 10s de marge).
+	 * S'il est expiré, tente un rafraîchissement silencieux via le refresh token.
+	 * C'est nécessaire car les routes "publiques" (ex: /demarches) n'émettent pas
+	 * d'erreur 401 sur un token expiré — elles retombent silencieusement en mode
+	 * invité, ce qui donnait l'impression trompeuse que le citoyen n'était plus reconnu.
+	 */
+	function ensureFreshToken() {
+		var token = getAccessToken();
+		if ( ! token ) {
+			return Promise.resolve( null );
+		}
+		var payload = decodeJwtPayload( token );
+		if ( payload && payload.exp && ( payload.exp * 1000 ) > ( Date.now() + 10000 ) ) {
+			return Promise.resolve( token );
+		}
+
+		var refreshToken = localStorage.getItem( STORAGE_REFRESH );
+		if ( ! refreshToken ) {
+			clearSession();
+			return Promise.resolve( null );
+		}
+
+		return fetch( grcConfig.restUrl + '/citoyen/refresh', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify( { refresh_token: refreshToken } )
+		} )
+			.then( function ( r ) { return r.ok ? r.json() : Promise.reject(); } )
+			.then( function ( d ) {
+				localStorage.setItem( STORAGE_ACCESS, d.access_token );
+				return d.access_token;
+			} )
+			.catch( function () {
+				clearSession();
+				return null;
+			} );
+	}
+
+	/**
+	 * Requête authentifiée avec le token citoyen. Rafraîchit le token en amont s'il
+	 * est expiré, et tente un refresh de secours une fois en cas de 401 imprévu.
 	 */
 	function authFetch( url, options, retry ) {
 		options = options || {};
 		options.headers = options.headers || {};
-		var token = getAccessToken();
-		if ( token ) {
-			options.headers['Authorization'] = 'Bearer ' + token;
-		}
 
-		return fetch( url, options ).then( function ( res ) {
-			if ( 401 === res.status && ! retry && localStorage.getItem( STORAGE_REFRESH ) ) {
-				return fetch( grcConfig.restUrl + '/citoyen/refresh', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify( { refresh_token: localStorage.getItem( STORAGE_REFRESH ) } )
-				} )
-					.then( function ( r ) { return r.ok ? r.json() : Promise.reject(); } )
-					.then( function ( refreshed ) {
-						localStorage.setItem( STORAGE_ACCESS, refreshed.access_token );
-						return authFetch( url, options, true );
-					} )
-					.catch( function () {
-						clearSession();
-						return res;
-					} );
+		return ensureFreshToken().then( function ( token ) {
+			if ( token ) {
+				options.headers['Authorization'] = 'Bearer ' + token;
 			}
-			return res;
+
+			return fetch( url, options ).then( function ( res ) {
+				if ( 401 === res.status && ! retry && localStorage.getItem( STORAGE_REFRESH ) ) {
+					return fetch( grcConfig.restUrl + '/citoyen/refresh', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify( { refresh_token: localStorage.getItem( STORAGE_REFRESH ) } )
+					} )
+						.then( function ( r ) { return r.ok ? r.json() : Promise.reject(); } )
+						.then( function ( refreshed ) {
+							localStorage.setItem( STORAGE_ACCESS, refreshed.access_token );
+							return authFetch( url, options, true );
+						} )
+						.catch( function () {
+							clearSession();
+							return res;
+						} );
+				}
+				return res;
+			} );
 		} );
 	}
 
@@ -195,6 +245,7 @@
 		if ( isCitoyenLoggedIn() ) {
 			if ( guestFields ) {
 				guestFields.style.display = 'none';
+				guestFields.querySelectorAll( 'input' ).forEach( function ( i ) { i.required = false; } );
 			}
 			if ( banner ) {
 				banner.style.display = 'block';
@@ -396,16 +447,86 @@
 		var connecteView = el( '#grc-citoyen-connecte', wrapper );
 		var demandesListe = el( '#grc-demandes-liste', wrapper );
 		var citoyenNomSpan = el( '#grc-citoyen-nom', wrapper );
+		var profilSection = el( '#grc-citoyen-profil', wrapper );
+		var profilToggle = el( '#grc-citoyen-profil-toggle', wrapper );
 
-		function loadMesDemandes() {
-			demandesListe.innerHTML = '<p>Chargement de vos demandes...</p>';
+		function loadProfil() {
 			authFetch( grcConfig.restUrl + '/citoyen/me' )
 				.then( function ( res ) { return res.ok ? res.json() : null; } )
 				.then( function ( me ) {
-					if ( me ) {
-						citoyenNomSpan.textContent = ( me.prenom || '' ) + ' ' + ( me.nom || me.email || '' );
+					if ( ! me ) {
+						return;
 					}
+					citoyenNomSpan.textContent = ( me.prenom || '' ) + ' ' + ( me.nom || me.email || '' );
+					el( '#grc-profil-prenom', wrapper ).value = me.prenom || '';
+					el( '#grc-profil-nom', wrapper ).value = me.nom || '';
+					el( '#grc-profil-email', wrapper ).value = me.email || '';
+					el( '#grc-profil-telephone', wrapper ).value = me.telephone || '';
 				} );
+		}
+
+		if ( profilToggle ) {
+			profilToggle.addEventListener( 'click', function () {
+				var visible = profilSection.style.display === 'block';
+				profilSection.style.display = visible ? 'none' : 'block';
+			} );
+		}
+
+		var profilForm = el( '#grc-profil-form', wrapper );
+		if ( profilForm ) {
+			profilForm.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var msgBox = el( '.grc-form-message', profilForm );
+				authFetch( grcConfig.restUrl + '/citoyen/me', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( {
+						prenom: el( '#grc-profil-prenom', wrapper ).value,
+						nom: el( '#grc-profil-nom', wrapper ).value,
+						email: el( '#grc-profil-email', wrapper ).value,
+						telephone: el( '#grc-profil-telephone', wrapper ).value
+					} )
+				} )
+					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+					.then( function ( result ) {
+						if ( ! result.ok ) {
+							throw new Error( result.data.message || 'Erreur lors de la mise à jour.' );
+						}
+						citoyenNomSpan.textContent = ( result.data.prenom || '' ) + ' ' + ( result.data.nom || result.data.email || '' );
+						showMessage( msgBox, 'Profil mis à jour.', 'success' );
+					} )
+					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+			} );
+		}
+
+		var passwordForm = el( '#grc-password-form', wrapper );
+		if ( passwordForm ) {
+			passwordForm.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var msgBox = el( '.grc-form-message', passwordForm );
+				authFetch( grcConfig.restUrl + '/citoyen/password', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( {
+						current_password: el( '#grc-current-password', wrapper ).value,
+						new_password: el( '#grc-new-password', wrapper ).value
+					} )
+				} )
+					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+					.then( function ( result ) {
+						if ( ! result.ok ) {
+							throw new Error( result.data.message || 'Erreur lors du changement de mot de passe.' );
+						}
+						showMessage( msgBox, 'Mot de passe modifié.', 'success' );
+						passwordForm.reset();
+					} )
+					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+			} );
+		}
+
+		function loadMesDemandes() {
+			demandesListe.innerHTML = '<p>Chargement de vos demandes...</p>';
+			loadProfil();
 			authFetch( grcConfig.restUrl + '/mes-demandes' )
 				.then( function ( res ) { return res.ok ? res.json() : []; } )
 				.then( function ( demandes ) { renderDemandesList( demandesListe, demandes ); } )
