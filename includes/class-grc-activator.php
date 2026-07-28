@@ -162,6 +162,7 @@ class GRC_Activator {
 		// --- Rendez-vous --------------------------------------------------
 		$sql[] = "CREATE TABLE {$p}rdv (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			numero_rdv VARCHAR(20) NULL,
 			citoyen_id BIGINT UNSIGNED NULL,
 			service_id BIGINT UNSIGNED NULL,
 			creneau_id BIGINT UNSIGNED NULL,
@@ -169,6 +170,7 @@ class GRC_Activator {
 			statut VARCHAR(30) NOT NULL DEFAULT 'confirme',
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
+			UNIQUE KEY numero_rdv (numero_rdv),
 			KEY citoyen_id (citoyen_id),
 			KEY service_id (service_id),
 			KEY creneau_id (creneau_id)
@@ -232,6 +234,7 @@ class GRC_Activator {
 		// --- Démarches administratives --------------------------------------
 		$sql[] = "CREATE TABLE {$p}demarches (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			numero_dossier VARCHAR(20) NULL,
 			citoyen_id BIGINT UNSIGNED NULL,
 			type_demarche VARCHAR(100) NOT NULL,
 			statut VARCHAR(30) NOT NULL DEFAULT 'en_attente',
@@ -239,6 +242,7 @@ class GRC_Activator {
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
+			UNIQUE KEY numero_dossier (numero_dossier),
 			KEY citoyen_id (citoyen_id)
 		) $charset_collate;";
 

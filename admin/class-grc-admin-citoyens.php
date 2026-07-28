@@ -249,10 +249,11 @@ class GRC_Admin_Citoyens {
 							<p><em>Aucune démarche.</em></p>
 						<?php else : ?>
 							<table class="wp-list-table widefat fixed striped">
-								<thead><tr><th>Type</th><th>Statut</th><th>Soumise le</th><th></th></tr></thead>
+								<thead><tr><th>N° dossier</th><th>Type</th><th>Statut</th><th>Soumise le</th><th></th></tr></thead>
 								<tbody>
 									<?php foreach ( $demarches as $d ) : ?>
 										<tr>
+											<td><code><?php echo esc_html( $d->numero_dossier ?: '#' . $d->id ); ?></code></td>
 											<td><?php echo esc_html( $d->type_nom ?: $d->type_demarche ); ?></td>
 											<td><?php echo esc_html( $statut_demarche_labels[ $d->statut ] ?? $d->statut ); ?></td>
 											<td><?php echo esc_html( mysql2date( 'd/m/Y', $d->created_at ) ); ?></td>
@@ -270,10 +271,11 @@ class GRC_Admin_Citoyens {
 							<p><em>Aucun rendez-vous.</em></p>
 						<?php else : ?>
 							<table class="wp-list-table widefat fixed striped">
-								<thead><tr><th>Service</th><th>Date</th><th>Statut</th></tr></thead>
+								<thead><tr><th>N° RDV</th><th>Service</th><th>Date</th><th>Statut</th></tr></thead>
 								<tbody>
 									<?php foreach ( $rdv_list as $r ) : ?>
 										<tr>
+											<td><code><?php echo esc_html( $r->numero_rdv ?: '#' . $r->id ); ?></code></td>
 											<td><?php echo esc_html( $r->service_nom ?: '—' ); ?></td>
 											<td><?php echo $r->debut ? esc_html( mysql2date( 'd/m/Y H:i', $r->debut ) ) : '—'; ?></td>
 											<td><?php echo esc_html( $statut_rdv_labels[ $r->statut ] ?? $r->statut ); ?></td>

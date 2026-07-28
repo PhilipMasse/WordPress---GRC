@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.18.0 — Numéros de dossier (démarches/RDV) + citoyen visible partout
+
+- **Démarches** et **rendez-vous** disposent désormais chacun d'un numéro unique lisible (`DEM-2026-XXXXXX`, `RDV-2026-XXXXXX`), à l'image du `numero_suivi` des signalements — visible côté admin (listes, détail) et côté citoyen (`[grc_mes_demandes]`)
+- La liste des dossiers de démarches en admin affiche désormais le nom et le numéro citoyen (lien direct vers la fiche), en plus du numéro de dossier
+- La liste des rendez-vous en admin affiche le numéro de RDV
+- La fiche citoyen (**GRC Citoyenne → Citoyens**) affiche désormais le numéro de dossier/RDV dans ses tableaux Démarches et Rendez-vous
+
 ## 0.17.0 — Numéro citoyen unique + tableau de bord citoyen
 
 ### Numéro citoyen unique

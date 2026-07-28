@@ -241,7 +241,10 @@ class GRC_REST_RDV {
 
 		$creneau = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$creneaux_table} WHERE id = %d", $creneau_id ) );
 
+		$numero_rdv = self::generate_numero( 'RDV' );
+
 		$wpdb->insert( $rdv_table, [
+			'numero_rdv' => $numero_rdv,
 			'citoyen_id' => $citoyen_id,
 			'service_id' => $creneau->service_id,
 			'creneau_id' => $creneau_id,
@@ -262,7 +265,11 @@ class GRC_REST_RDV {
 			GRC_Notifications::send_rdv_pending( $email, $creneau->debut );
 		}
 
-		return [ 'success' => true, 'id' => $rdv_id, 'statut' => 'en_attente' ];
+		return [ 'success' => true, 'id' => $rdv_id, 'numero_rdv' => $numero_rdv, 'statut' => 'en_attente' ];
+	}
+
+	private static function generate_numero( string $prefixe ): string {
+		return $prefixe . '-' . gmdate( 'Y' ) . '-' . strtoupper( substr( bin2hex( random_bytes( 4 ) ), 0, 6 ) );
 	}
 
 	public static function my_rdv( WP_REST_Request $request ) {
@@ -284,6 +291,7 @@ class GRC_REST_RDV {
 		return array_map( function ( $r ) {
 			return [
 				'id'          => (int) $r->id,
+				'numero_rdv'  => $r->numero_rdv,
 				'service_nom' => $r->service_nom,
 				'motif'       => $r->motif,
 				'statut'      => $r->statut,

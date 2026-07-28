@@ -158,18 +158,24 @@ class GRC_REST_Demarches {
 		}
 
 		$demarches_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+		$numero_dossier  = self::generate_numero( 'DEM' );
 		$wpdb->insert( $demarches_table, [
-			'citoyen_id'    => $citoyen_id,
-			'type_demarche' => $slug,
-			'statut'        => 'en_attente',
-			'donnees_json'  => wp_json_encode( $validated ),
-			'created_at'    => current_time( 'mysql' ),
+			'numero_dossier' => $numero_dossier,
+			'citoyen_id'     => $citoyen_id,
+			'type_demarche'  => $slug,
+			'statut'         => 'en_attente',
+			'donnees_json'   => wp_json_encode( $validated ),
+			'created_at'     => current_time( 'mysql' ),
 		] );
 		$demarche_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'demarche_created', 'demarche', $demarche_id, [ 'type' => $slug ] );
 
-		return [ 'id' => $demarche_id, 'statut' => 'en_attente' ];
+		return [ 'id' => $demarche_id, 'numero_dossier' => $numero_dossier, 'statut' => 'en_attente' ];
+	}
+
+	private static function generate_numero( string $prefixe ): string {
+		return $prefixe . '-' . gmdate( 'Y' ) . '-' . strtoupper( substr( bin2hex( random_bytes( 4 ) ), 0, 6 ) );
 	}
 
 	public static function my_demarches( WP_REST_Request $request ) {
@@ -187,12 +193,13 @@ class GRC_REST_Demarches {
 
 		return array_map( function ( $d ) {
 			return [
-				'id'            => (int) $d->id,
-				'type_demarche' => $d->type_demarche,
-				'type_nom'      => $d->type_nom,
-				'statut'        => $d->statut,
-				'created_at'    => $d->created_at,
-				'updated_at'    => $d->updated_at,
+				'id'             => (int) $d->id,
+				'numero_dossier' => $d->numero_dossier,
+				'type_demarche'  => $d->type_demarche,
+				'type_nom'       => $d->type_nom,
+				'statut'         => $d->statut,
+				'created_at'     => $d->created_at,
+				'updated_at'     => $d->updated_at,
 			];
 		}, $rows );
 	}
@@ -222,8 +229,9 @@ class GRC_REST_Demarches {
 		) );
 
 		return [
-			'id'            => (int) $dossier->id,
-			'type_demarche' => $dossier->type_demarche,
+			'id'             => (int) $dossier->id,
+			'numero_dossier' => $dossier->numero_dossier,
+			'type_demarche'  => $dossier->type_demarche,
 			'type_nom'      => $type->nom ?? $dossier->type_demarche,
 			'statut'        => $dossier->statut,
 			'donnees'       => json_decode( $dossier->donnees_json, true ) ?: [],

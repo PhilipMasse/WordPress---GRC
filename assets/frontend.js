@@ -935,7 +935,7 @@
 				var needsAction = 'rejete' === d.statut || 'complement_requis' === d.statut;
 				html += '<div class="grc-demande-card">';
 				html += '<div class="grc-demande-card-header">';
-				html += '<code>#' + d.id + '</code>';
+				html += '<code>' + ( d.numero_dossier || ( '#' + d.id ) ) + '</code>';
 				html += '<span class="grc-badge grc-badge--' + d.statut + '">' + demarcheStatutLabel( d.statut ) + '</span>';
 				html += '</div>';
 				html += '<h3>' + ( d.type_nom || d.type_demarche ) + '</h3>';
@@ -1065,6 +1065,9 @@
 				var badgeClasses = { en_attente: 'assigne', confirme: 'resolu', refuse: 'rejete', annule: 'cloture' };
 			html += '<span class="grc-badge grc-badge--' + ( badgeClasses[ r.statut ] || 'cloture' ) + '">' + rdvStatutLabel( r.statut ) + '</span>';
 				html += '</div>';
+				if ( r.numero_rdv ) {
+					html += '<p class="grc-demande-date"><code>' + r.numero_rdv + '</code></p>';
+				}
 				if ( r.debut ) {
 					html += '<p class="grc-demande-date">' + new Date( r.debut ).toLocaleString( 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' } ) + '</p>';
 				}

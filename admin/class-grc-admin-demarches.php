@@ -227,8 +227,9 @@ class GRC_Admin_Demarches {
 
 		// --- Liste paginée ---
 		$offset   = ( $paged - 1 ) * $per_page;
-		$list_sql = "SELECT d.*, t.nom AS type_nom FROM {$demarches_table} d
+		$list_sql = "SELECT d.*, t.nom AS type_nom, ci.nom AS c_nom, ci.prenom AS c_prenom FROM {$demarches_table} d
 			LEFT JOIN {$types_table} t ON t.slug = d.type_demarche
+			LEFT JOIN {$wpdb->prefix}" . GRC_TABLE_PREFIX . "citoyens ci ON ci.id = d.citoyen_id
 			WHERE {$where_sql}
 			ORDER BY d.created_at DESC
 			LIMIT %d OFFSET %d";
@@ -295,13 +296,28 @@ class GRC_Admin_Demarches {
 			</form>
 
 			<table class="wp-list-table widefat fixed striped">
-				<thead><tr><th>Type</th><th>Statut</th><th>Soumis le</th><th>Action</th></tr></thead>
+				<thead><tr><th>N° dossier</th><th>Citoyen</th><th>Type</th><th>Statut</th><th>Soumis le</th><th>Action</th></tr></thead>
 				<tbody>
 					<?php if ( empty( $rows ) ) : ?>
-						<tr><td colspan="4">Aucun dossier trouvé.</td></tr>
+						<tr><td colspan="6">Aucun dossier trouvé.</td></tr>
 					<?php endif; ?>
 					<?php foreach ( $rows as $d ) : ?>
+					<?php
+						$nom_complet = trim(
+							( $d->c_prenom ? GRC_Encryption::decrypt( $d->c_prenom ) : '' ) . ' ' .
+							( $d->c_nom ? GRC_Encryption::decrypt( $d->c_nom ) : '' )
+						);
+					?>
 					<tr>
+						<td><code><?php echo esc_html( $d->numero_dossier ?: '#' . $d->id ); ?></code></td>
+						<td>
+							<?php if ( $d->citoyen_id ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $d->citoyen_id ) ); ?>"><?php echo esc_html( $nom_complet ?: '—' ); ?></a>
+								<br><code style="font-size:11px;color:#888;"><?php echo esc_html( GRC_Citoyen_Helper::numero( (int) $d->citoyen_id ) ); ?></code>
+							<?php else : ?>
+								—
+							<?php endif; ?>
+						</td>
 						<td><?php echo esc_html( $d->type_nom ?: $d->type_demarche ); ?></td>
 						<td><?php echo esc_html( $statut_labels[ $d->statut ] ?? $d->statut ); ?></td>
 						<td><?php echo esc_html( mysql2date( 'd/m/Y H:i', $d->created_at ) ); ?></td>
@@ -360,7 +376,10 @@ class GRC_Admin_Demarches {
 		?>
 		<div class="wrap">
 			<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarches' ) ); ?>">&larr; Retour</a></p>
-			<h1><?php echo esc_html( $type->nom ?? $dossier->type_demarche ); ?></h1>
+			<h1>
+				<?php echo esc_html( $type->nom ?? $dossier->type_demarche ); ?>
+				<code style="font-size:14px;font-weight:400;color:#888;"><?php echo esc_html( $dossier->numero_dossier ?: '#' . $dossier->id ); ?></code>
+			</h1>
 
 			<div class="card" style="padding:16px;max-width:600px;margin-bottom:16px;">
 				<h2>Citoyen</h2>

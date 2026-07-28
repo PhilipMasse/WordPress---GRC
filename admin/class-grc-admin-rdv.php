@@ -138,10 +138,10 @@ class GRC_Admin_RDV {
 		</form>
 
 		<table class="wp-list-table widefat fixed striped">
-			<thead><tr><th>Citoyen</th><th>Service</th><th>Date</th><th>Motif</th><th>Statut</th><th>Action</th></tr></thead>
+			<thead><tr><th>N° RDV</th><th>Citoyen</th><th>Service</th><th>Date</th><th>Motif</th><th>Statut</th><th>Action</th></tr></thead>
 			<tbody>
 				<?php if ( empty( $rows ) ) : ?>
-					<tr><td colspan="6">Aucun rendez-vous trouvé.</td></tr>
+					<tr><td colspan="7">Aucun rendez-vous trouvé.</td></tr>
 				<?php endif; ?>
 				<?php foreach ( $rows as $r ) : ?>
 					<?php
@@ -157,6 +157,7 @@ class GRC_Admin_RDV {
 					];
 					?>
 					<tr>
+						<td><code><?php echo esc_html( $r->numero_rdv ?: '#' . $r->id ); ?></code></td>
 						<td>
 							<?php if ( $r->citoyen_id ) : ?>
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $r->citoyen_id ) ); ?>"><?php echo esc_html( $nom_complet ?: '—' ); ?></a>
