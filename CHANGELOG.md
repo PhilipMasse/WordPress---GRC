@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.2 — Fiche citoyen : retour à la mise en page en deux colonnes
+
+- Retour à la disposition précédente : Coordonnées et Résumé à gauche (colonne étroite), Demandes/Signalements, Démarches et Rendez-vous à droite (colonne large), le tout aligné côte à côte.
+
 ## 0.18.1 — Fiche citoyen : sections en pleine largeur
 
 - Réorganisation de la fiche citoyen : les cartes Coordonnées et Résumé passent en haut de page en format compact côte à côte, tandis que Demandes/Signalements, Démarches et Rendez-vous s'affichent désormais en **pleine largeur**, empilées verticalement — plus de place pour lire les tableaux confortablement.
