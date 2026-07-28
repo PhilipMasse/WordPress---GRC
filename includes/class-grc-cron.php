@@ -12,9 +12,45 @@ class GRC_Cron {
 	public static function init() {
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'check_sla_escalation' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'purge_rgpd_expired' ] );
+		add_action( 'grc_daily_maintenance', [ __CLASS__, 'send_rdv_reminders' ] );
 
 		if ( ! wp_next_scheduled( 'grc_daily_maintenance' ) ) {
 			wp_schedule_event( time(), 'daily', 'grc_daily_maintenance' );
+		}
+	}
+
+	/**
+	 * Envoie un rappel par email pour les rendez-vous confirmés ayant lieu le lendemain.
+	 */
+	public static function send_rdv_reminders() {
+		global $wpdb;
+		$rdv_table      = $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv';
+		$creneaux_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
+		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+
+		$demain_debut = gmdate( 'Y-m-d 00:00:00', strtotime( '+1 day' ) );
+		$demain_fin   = gmdate( 'Y-m-d 23:59:59', strtotime( '+1 day' ) );
+
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			"SELECT r.id, r.citoyen_id, c.debut FROM {$rdv_table} r
+			 INNER JOIN {$creneaux_table} c ON c.id = r.creneau_id
+			 WHERE r.statut = 'confirme' AND c.debut BETWEEN %s AND %s",
+			$demain_debut,
+			$demain_fin
+		) );
+
+		foreach ( $rows as $rdv ) {
+			if ( ! $rdv->citoyen_id ) {
+				continue;
+			}
+			$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $rdv->citoyen_id ) );
+			if ( ! $email_encrypted ) {
+				continue;
+			}
+			$email = GRC_Encryption::decrypt( $email_encrypted );
+			if ( $email ) {
+				GRC_Notifications::send_rdv_reminder( $email, $rdv->debut );
+			}
 		}
 	}
 

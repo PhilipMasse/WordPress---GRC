@@ -21,6 +21,25 @@ class GRC_Notifications {
 		wp_mail( $email, $subject, $body );
 	}
 
+	public static function send_rdv_confirmation( string $email, string $debut ) {
+		$subject = '[Mairie de Berre-les-Alpes] Confirmation de votre rendez-vous';
+		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
+		$body = sprintf(
+			"Bonjour,\n\nVotre rendez-vous est confirmé pour le %s.\n\nSi vous ne pouvez pas vous présenter, merci de l'annuler depuis votre espace citoyen afin de libérer le créneau pour un autre usager.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			$date_formatee
+		);
+		wp_mail( $email, $subject, $body );
+	}
+
+	public static function send_rdv_reminder( string $email, string $debut ) {
+		$subject = '[Mairie de Berre-les-Alpes] Rappel : rendez-vous demain';
+		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
+		$body = sprintf(
+			"Bonjour,\n\nPetit rappel : vous avez rendez-vous demain, %s.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			$date_formatee
+		);
+		wp_mail( $email, $subject, $body );
+	}
 	public static function send_statut_change( int $demande_id, string $email, string $nouveau_statut ) {
 		$labels = [
 			'en_cours' => 'est en cours de traitement',

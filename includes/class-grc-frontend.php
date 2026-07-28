@@ -14,6 +14,7 @@ class GRC_Frontend {
 		add_shortcode( 'grc_signalement_form', [ __CLASS__, 'render_signalement_form' ] );
 		add_shortcode( 'grc_mes_demandes', [ __CLASS__, 'render_mes_demandes' ] );
 		add_shortcode( 'grc_demarche_form', [ __CLASS__, 'render_demarche_form' ] );
+		add_shortcode( 'grc_rdv_form', [ __CLASS__, 'render_rdv_form' ] );
 		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'maybe_enqueue_assets' ] );
 	}
 
@@ -191,6 +192,9 @@ class GRC_Frontend {
 
 				<h3 style="margin-top:24px;">Mes démarches</h3>
 				<div id="grc-demarches-liste" class="grc-demandes-liste"><p>Chargement de vos démarches...</p></div>
+
+				<h3 style="margin-top:24px;">Mes rendez-vous</h3>
+				<div id="grc-rdv-liste" class="grc-demandes-liste"><p>Chargement de vos rendez-vous...</p></div>
 			</div>
 
 			<div id="grc-guest-results" class="grc-demandes-liste"></div>
@@ -239,6 +243,67 @@ class GRC_Frontend {
 				</div>
 
 				<button type="submit" class="grc-btn-submit" disabled>Envoyer le dossier</button>
+				<div class="grc-form-message" style="display:none;"></div>
+			</form>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	// ------------------------------------------------------------------
+	// Formulaire de prise de rendez-vous
+	// ------------------------------------------------------------------
+
+	public static function render_rdv_form( $atts ): string {
+		global $wpdb;
+		$services_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'services';
+		$services = $wpdb->get_results( "SELECT id, nom FROM {$services_table} WHERE actif = 1 ORDER BY nom" );
+
+		ob_start();
+		?>
+		<div class="grc-form-wrapper">
+			<div id="grc-rdv-connected-banner" class="grc-connected-banner" style="display:none;">
+				Connecté en tant que <strong id="grc-rdv-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce rendez-vous.
+			</div>
+
+			<form id="grc-rdv-form" class="grc-form">
+				<div class="grc-field">
+					<label for="grc-rdv-service">Service concerné <span class="required">*</span></label>
+					<select id="grc-rdv-service" required>
+						<option value="">— Sélectionner —</option>
+						<?php foreach ( $services as $s ) : ?>
+							<option value="<?php echo esc_attr( $s->id ); ?>"><?php echo esc_html( $s->nom ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+
+				<div class="grc-field">
+					<label>Créneau disponible <span class="required">*</span></label>
+					<div id="grc-rdv-creneaux" class="grc-hint">Sélectionnez d'abord un service.</div>
+				</div>
+
+				<div class="grc-field">
+					<label for="grc-rdv-motif">Motif du rendez-vous</label>
+					<input type="text" id="grc-rdv-motif" placeholder="Ex : renouvellement de carte d'identité">
+				</div>
+
+				<div id="grc-rdv-guest-fields" class="grc-guest-fields">
+					<p class="grc-hint">Vous n'êtes pas connecté(e) : renseignez vos coordonnées pour confirmer le rendez-vous.</p>
+					<div class="grc-field">
+						<label for="grc-rdv-prenom">Prénom</label>
+						<input type="text" id="grc-rdv-prenom">
+					</div>
+					<div class="grc-field">
+						<label for="grc-rdv-nom">Nom</label>
+						<input type="text" id="grc-rdv-nom">
+					</div>
+					<div class="grc-field">
+						<label for="grc-rdv-email">Email <span class="required">*</span></label>
+						<input type="email" id="grc-rdv-email">
+					</div>
+				</div>
+
+				<button type="submit" class="grc-btn-submit" disabled>Confirmer le rendez-vous</button>
 				<div class="grc-form-message" style="display:none;"></div>
 			</form>
 		</div>

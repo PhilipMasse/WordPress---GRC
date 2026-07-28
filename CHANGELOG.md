@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.13.0 — Module Rendez-vous complet
+
+### Correctif
+- L'endpoint de réservation utilisait `is_user_logged_in()` (WordPress), incompatible avec les comptes citoyens indépendants introduits en v0.4.0 — corrigé pour utiliser l'authentification citoyenne JWT, avec support du mode invité comme les autres modules.
+
+### API REST
+- `POST /rdv` : réservation par citoyen connecté ou invité (email)
+- `GET /mes-rdv` : liste des rendez-vous du citoyen connecté
+- `POST /rdv/{id}/annuler` : annulation par le citoyen propriétaire ou un agent (libère automatiquement la place sur le créneau)
+
+### Administration
+- Nouvel écran **Rendez-vous** à deux onglets :
+  - **Rendez-vous** : liste avec filtres (service, statut), annulation
+  - **Créneaux** : génération récurrente (période, jours de la semaine, plage horaire, durée, capacité) et liste des créneaux à venir par service (suppression si non réservé)
+
+### Portail citoyen
+- Nouveau shortcode `[grc_rdv_form]` : sélection du service → grille de créneaux disponibles → motif → confirmation (compte connecté ou invité)
+- Section "Mes rendez-vous" ajoutée à `[grc_mes_demandes]`, avec possibilité d'annuler un rendez-vous à venir
+
+### Notifications
+- Email de confirmation à la réservation
+- Rappel automatique par email la veille du rendez-vous (cron quotidien)
+
 ## 0.12.1 — Réordonnancement des champs
 
 - Boutons ▲/▼ sur chaque champ du constructeur pour changer leur ordre d'affichage dans le formulaire citoyen (l'ordre visuel est directement celui enregistré, aucune action supplémentaire nécessaire)

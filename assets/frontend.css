@@ -340,6 +340,32 @@ input[type="file"].grc-thread-reply-files {
 	font-size: 14px;
 }
 
+.grc-creneaux-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.grc-creneau-btn {
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	padding: 8px 14px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.grc-creneau-btn:hover {
+	border-color: #2D6AB0;
+}
+
+.grc-creneau-btn--selected {
+	background: #2D6AB0;
+	color: #fff;
+	border-color: #2D6AB0;
+}
+
 .grc-satisfaction-form {
 	margin-top: 12px;
 	padding-top: 12px;

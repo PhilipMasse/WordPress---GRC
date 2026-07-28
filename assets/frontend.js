@@ -628,6 +628,116 @@
 			initDemarcheForm( demarcheWrapper );
 		}
 
+		// ================= Formulaire de prise de rendez-vous =================
+		var rdvForm = el( '#grc-rdv-form' );
+		if ( rdvForm ) {
+			var rdvGuestFields = el( '#grc-rdv-guest-fields', rdvForm );
+			var rdvBanner = el( '#grc-rdv-connected-banner' );
+			var rdvBannerName = el( '#grc-rdv-connected-name' );
+			var rdvServiceSelect = el( '#grc-rdv-service', rdvForm );
+			var rdvCreneauxContainer = el( '#grc-rdv-creneaux', rdvForm );
+			var rdvSubmitBtn = rdvForm.querySelector( '.grc-btn-submit' );
+			var selectedCreneauId = null;
+
+			if ( isCitoyenLoggedIn() ) {
+				if ( rdvGuestFields ) {
+					rdvGuestFields.style.display = 'none';
+					rdvGuestFields.querySelectorAll( 'input' ).forEach( function ( i ) { i.required = false; } );
+				}
+				if ( rdvBanner ) {
+					rdvBanner.style.display = 'block';
+					authFetch( grcConfig.restUrl + '/citoyen/me' )
+						.then( function ( res ) { return res.ok ? res.json() : null; } )
+						.then( function ( me ) {
+							if ( me && rdvBannerName ) {
+								rdvBannerName.textContent = ( me.prenom || me.email || 'vous' ) + ( me.nom ? ' ' + me.nom : '' );
+							}
+						} );
+				}
+			}
+
+			rdvServiceSelect.addEventListener( 'change', function () {
+				selectedCreneauId = null;
+				rdvSubmitBtn.disabled = true;
+				var serviceId = rdvServiceSelect.value;
+				if ( ! serviceId ) {
+					rdvCreneauxContainer.innerHTML = 'Sélectionnez d\'abord un service.';
+					return;
+				}
+				rdvCreneauxContainer.innerHTML = 'Chargement des créneaux...';
+
+				fetch( grcConfig.restUrl + '/rdv/creneaux?service_id=' + serviceId )
+					.then( function ( res ) { return res.json(); } )
+					.then( function ( creneaux ) {
+						if ( ! creneaux.length ) {
+							rdvCreneauxContainer.innerHTML = 'Aucun créneau disponible pour ce service actuellement.';
+							return;
+						}
+						var html = '<div class="grc-creneaux-grid">';
+						creneaux.forEach( function ( c ) {
+							var d = new Date( c.debut );
+							var label = d.toLocaleDateString( 'fr-FR', { weekday: 'short', day: 'numeric', month: 'short' } ) + ' à ' + d.toLocaleTimeString( 'fr-FR', { hour: '2-digit', minute: '2-digit' } );
+							html += '<button type="button" class="grc-creneau-btn" data-id="' + c.id + '">' + label + '</button>';
+						} );
+						html += '</div>';
+						rdvCreneauxContainer.innerHTML = html;
+
+						rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( btn ) {
+							btn.addEventListener( 'click', function () {
+								rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-creneau-btn--selected' ); } );
+								btn.classList.add( 'grc-creneau-btn--selected' );
+								selectedCreneauId = btn.dataset.id;
+								rdvSubmitBtn.disabled = false;
+							} );
+						} );
+					} )
+					.catch( function () { rdvCreneauxContainer.innerHTML = 'Erreur lors du chargement des créneaux.'; } );
+			} );
+
+			rdvForm.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				if ( ! selectedCreneauId ) {
+					return;
+				}
+				var msgBox = el( '.grc-form-message', rdvForm );
+				rdvSubmitBtn.disabled = true;
+				rdvSubmitBtn.textContent = 'Envoi en cours...';
+
+				var payload = {
+					creneau_id: selectedCreneauId,
+					motif: el( '#grc-rdv-motif', rdvForm ).value
+				};
+				if ( ! isCitoyenLoggedIn() ) {
+					payload.prenom = el( '#grc-rdv-prenom', rdvForm ).value;
+					payload.nom = el( '#grc-rdv-nom', rdvForm ).value;
+					payload.email = el( '#grc-rdv-email', rdvForm ).value;
+				}
+
+				authFetch( grcConfig.restUrl + '/rdv', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( payload )
+				} )
+					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+					.then( function ( result ) {
+						if ( ! result.ok ) {
+							throw new Error( result.data.message || 'Erreur lors de la prise de rendez-vous.' );
+						}
+						showMessage( msgBox, 'Votre rendez-vous est confirmé ! Un email de confirmation vous a été envoyé.', 'success' );
+						rdvForm.reset();
+						rdvCreneauxContainer.innerHTML = 'Sélectionnez d\'abord un service.';
+						selectedCreneauId = null;
+					} )
+					.catch( function ( err ) {
+						showMessage( msgBox, err.message, 'error' );
+					} )
+					.finally( function () {
+						rdvSubmitBtn.disabled = ! selectedCreneauId;
+						rdvSubmitBtn.textContent = 'Confirmer le rendez-vous';
+					} );
+			} );
+		}
+
 		// ================= Suivi des demandes =================
 		var wrapper = el( '.grc-mes-demandes-wrapper' );
 		if ( ! wrapper ) {
@@ -638,6 +748,7 @@
 		var connecteView = el( '#grc-citoyen-connecte', wrapper );
 		var demandesListe = el( '#grc-demandes-liste', wrapper );
 		var demarchesListe = el( '#grc-demarches-liste', wrapper );
+		var rdvListe = el( '#grc-rdv-liste', wrapper );
 
 		function demarcheStatutLabel( statut ) {
 			var labels = {
@@ -763,6 +874,50 @@
 				.catch( function () { threadEl.innerHTML = '<p>Erreur lors du chargement de l\'échange.</p>'; } );
 		}
 
+		function rdvStatutLabel( statut ) {
+			return 'confirme' === statut ? 'Confirmé' : 'Annulé';
+		}
+
+		function renderRdvList( container, rdvList ) {
+			if ( ! rdvList || ! rdvList.length ) {
+				container.innerHTML = '<p>Aucun rendez-vous trouvé.</p>';
+				return;
+			}
+			var html = '<div class="grc-demandes-cards">';
+			rdvList.forEach( function ( r ) {
+				var isPast = r.debut && new Date( r.debut ) < new Date();
+				html += '<div class="grc-demande-card">';
+				html += '<div class="grc-demande-card-header">';
+				html += '<strong>' + ( r.service_nom || '' ) + '</strong>';
+				html += '<span class="grc-badge grc-badge--' + ( 'confirme' === r.statut ? 'resolu' : 'reouvert' ) + '">' + rdvStatutLabel( r.statut ) + '</span>';
+				html += '</div>';
+				if ( r.debut ) {
+					html += '<p class="grc-demande-date">' + new Date( r.debut ).toLocaleString( 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' } ) + '</p>';
+				}
+				if ( r.motif ) {
+					html += '<p>' + r.motif + '</p>';
+				}
+				if ( 'confirme' === r.statut && ! isPast ) {
+					html += '<button type="button" class="grc-btn-link grc-rdv-cancel" data-id="' + r.id + '">Annuler ce rendez-vous</button>';
+				}
+				html += '</div>';
+			} );
+			html += '</div>';
+			container.innerHTML = html;
+
+			container.querySelectorAll( '.grc-rdv-cancel' ).forEach( function ( btn ) {
+				btn.addEventListener( 'click', function () {
+					if ( ! window.confirm( 'Annuler ce rendez-vous ?' ) ) {
+						return;
+					}
+					authFetch( grcConfig.restUrl + '/rdv/' + btn.dataset.id + '/annuler', { method: 'POST' } )
+						.then( function ( res ) { return res.ok ? res.json() : Promise.reject(); } )
+						.then( function () { loadMesDemandes(); } )
+						.catch( function () { window.alert( 'Erreur lors de l\'annulation.' ); } );
+				} );
+			} );
+		}
+
 		function loadMesDemandes() {
 			demandesListe.innerHTML = '<p>Chargement de vos demandes...</p>';
 			authFetch( grcConfig.restUrl + '/mes-demandes' )
@@ -775,6 +930,14 @@
 				.then( function ( res ) { return res.ok ? res.json() : []; } )
 				.then( function ( demarches ) { renderDemarchesList( demarchesListe, demarches ); } )
 				.catch( function () { demarchesListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
+
+			if ( rdvListe ) {
+				rdvListe.innerHTML = '<p>Chargement de vos rendez-vous...</p>';
+				authFetch( grcConfig.restUrl + '/mes-rdv' )
+					.then( function ( res ) { return res.ok ? res.json() : []; } )
+					.then( function ( rdvList ) { renderRdvList( rdvListe, rdvList ); } )
+					.catch( function () { rdvListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
+			}
 		}
 
 		function showConnecteView() {

@@ -12,6 +12,7 @@ class GRC_Admin {
 		GRC_Admin_Demandes::init();
 		GRC_Admin_Services::init();
 		GRC_Admin_Demarches::init();
+		GRC_Admin_RDV::init();
 	}
 
 	/**
@@ -123,7 +124,7 @@ class GRC_Admin {
 	}
 
 	public static function render_rdv() {
-		echo '<div class="wrap"><h1>Rendez-vous</h1><p><em>Gestion des créneaux et rendez-vous — à implémenter (V2).</em></p></div>';
+		GRC_Admin_RDV::render();
 	}
 
 	public static function render_services() {

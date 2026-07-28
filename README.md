@@ -60,7 +60,9 @@ Namespace : `/wp-json/grc/v1/`
 | `/demandes/{id}/statut` | POST | JWT agent | Changer le statut d'une demande |
 | `/mes-demandes` | GET | JWT citoyen | Demandes du citoyen connecté |
 | `/rdv/creneaux` | GET | Non | Liste des créneaux disponibles |
-| `/rdv` | POST | JWT | Réserver un rendez-vous |
+| `/rdv` | POST | Non (JWT citoyen optionnel) | Réserver un rendez-vous (citoyen ou invité) |
+| `/mes-rdv` | GET | JWT citoyen | Rendez-vous du citoyen connecté |
+| `/rdv/{id}/annuler` | POST | Agent ou citoyen propriétaire | Annuler un rendez-vous |
 | `/demandes/{id}/pieces-jointes` | POST | Selon contexte | Uploader une pièce jointe (agent, citoyen connecté ou invité avec email) |
 | `/pieces-jointes/{id}` | GET | Selon contexte | Télécharger une pièce jointe (autorisation vérifiée) |
 | `/demarches/types` | GET | Non | Liste des types de démarches actifs et leurs champs |
@@ -82,6 +84,7 @@ Deux shortcodes disponibles pour les pages du site :
 - `[grc_signalement_form]` — formulaire public de signalement (compte connecté ou invité)
 - `[grc_mes_demandes]` — suivi des demandes (liste automatique si connecté, recherche par numéro + email sinon)
 - `[grc_demarche_form]` ou `[grc_demarche_form type="slug-du-type"]` — formulaire dynamique de démarche administrative, généré depuis les champs définis en administration
+- `[grc_rdv_form]` — prise de rendez-vous (sélection du service, créneau, motif)
 
 ## Déploiement / Versioning
 
