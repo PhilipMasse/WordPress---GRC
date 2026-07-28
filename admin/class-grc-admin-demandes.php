@@ -279,6 +279,9 @@ class GRC_Admin_Demandes {
 		) ) : [];
 		$messages = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$messages_table} WHERE demande_id = %d ORDER BY created_at ASC", $demande_id ) );
 
+		$pj_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'pieces_jointes';
+		$pieces   = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$pj_table} WHERE demande_id = %d ORDER BY created_at ASC", $demande_id ) );
+
 		$nom      = $citoyen && $citoyen->nom ? GRC_Encryption::decrypt( $citoyen->nom ) : '';
 		$prenom   = $citoyen && $citoyen->prenom ? GRC_Encryption::decrypt( $citoyen->prenom ) : '';
 		$email    = $citoyen && $citoyen->email ? GRC_Encryption::decrypt( $citoyen->email ) : '';
@@ -301,6 +304,25 @@ class GRC_Admin_Demandes {
 							<p><strong>Lieu :</strong> <?php echo esc_html( $demande->adresse_lieu ); ?></p>
 						<?php endif; ?>
 					</div>
+
+					<?php if ( ! empty( $pieces ) ) : ?>
+					<div class="card" style="padding:16px;margin-bottom:16px;">
+						<h2>Pièces jointes (<?php echo count( $pieces ); ?>)</h2>
+						<div style="display:flex;gap:12px;flex-wrap:wrap;">
+							<?php foreach ( $pieces as $piece ) : ?>
+								<?php $url = rest_url( 'grc/v1/pieces-jointes/' . $piece->id ); ?>
+								<a href="<?php echo esc_url( $url ); ?>" target="_blank" style="display:block;width:120px;text-align:center;font-size:12px;">
+									<?php if ( 0 === strpos( $piece->mime_type, 'image/' ) ) : ?>
+										<span class="dashicons dashicons-format-image" style="font-size:48px;width:48px;height:48px;color:#2D6AB0;"></span>
+									<?php else : ?>
+										<span class="dashicons dashicons-media-document" style="font-size:48px;width:48px;height:48px;color:#587526;"></span>
+									<?php endif; ?>
+									<span style="word-break:break-all;"><?php echo esc_html( $piece->nom_original ); ?></span>
+								</a>
+							<?php endforeach; ?>
+						</div>
+					</div>
+					<?php endif; ?>
 
 					<div class="card" style="padding:16px;margin-bottom:16px;">
 						<h2>Échanges</h2>

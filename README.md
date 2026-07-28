@@ -53,6 +53,15 @@ Namespace : `/wp-json/grc/v1/`
 | `/mes-demandes` | GET | JWT | Demandes du citoyen connecté |
 | `/rdv/creneaux` | GET | Non | Liste des créneaux disponibles |
 | `/rdv` | POST | JWT | Réserver un rendez-vous |
+| `/demandes/{id}/pieces-jointes` | POST | Selon contexte | Uploader une pièce jointe (agent, citoyen connecté ou invité avec email) |
+| `/pieces-jointes/{id}` | GET | Selon contexte | Télécharger une pièce jointe (autorisation vérifiée) |
+
+## Portail citoyen front-office
+
+Deux shortcodes disponibles pour les pages du site :
+
+- `[grc_signalement_form]` — formulaire public de signalement (compte connecté ou invité)
+- `[grc_mes_demandes]` — suivi des demandes (liste automatique si connecté, recherche par numéro + email sinon)
 
 ## Déploiement / Versioning
 

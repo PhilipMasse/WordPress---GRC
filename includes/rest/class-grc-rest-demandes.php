@@ -288,18 +288,33 @@ class GRC_REST_Demandes {
 	}
 
 	private static function format_demande_public( $demande ): array {
+		global $wpdb;
+		$pj_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'pieces_jointes';
+		$pieces = $wpdb->get_results( $wpdb->prepare(
+			"SELECT id, nom_original, mime_type FROM {$pj_table} WHERE demande_id = %d ORDER BY created_at ASC",
+			$demande->id
+		) );
+
 		return [
-			'id'           => (int) $demande->id,
-			'numero_suivi' => $demande->numero_suivi,
-			'titre'        => $demande->titre,
-			'description'  => $demande->description,
-			'statut'       => $demande->statut,
-			'priorite'     => $demande->priorite,
-			'categorie_id' => $demande->categorie_id ? (int) $demande->categorie_id : null,
-			'service_id'   => $demande->service_id ? (int) $demande->service_id : null,
-			'created_at'   => $demande->created_at,
-			'updated_at'   => $demande->updated_at,
-			'resolved_at'  => $demande->resolved_at,
+			'id'            => (int) $demande->id,
+			'numero_suivi'  => $demande->numero_suivi,
+			'titre'         => $demande->titre,
+			'description'   => $demande->description,
+			'statut'        => $demande->statut,
+			'priorite'      => $demande->priorite,
+			'categorie_id'  => $demande->categorie_id ? (int) $demande->categorie_id : null,
+			'service_id'    => $demande->service_id ? (int) $demande->service_id : null,
+			'created_at'    => $demande->created_at,
+			'updated_at'    => $demande->updated_at,
+			'resolved_at'   => $demande->resolved_at,
+			'pieces_jointes'=> array_map( function ( $p ) {
+				return [
+					'id'           => (int) $p->id,
+					'nom_original' => $p->nom_original,
+					'mime_type'    => $p->mime_type,
+					'download_url' => rest_url( GRC_REST_API::NAMESPACE_V1 . '/pieces-jointes/' . $p->id ),
+				];
+			}, $pieces ),
 		];
 	}
 }

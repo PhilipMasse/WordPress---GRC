@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.0 — Pièces jointes + portail citoyen front-office
+
+### Pièces jointes
+- Endpoint REST d'upload (`POST /demandes/{id}/pieces-jointes`) : validation MIME réelle (finfo, pas juste l'extension), taille max 8 Mo, noms de fichiers randomisés
+- Stockage protégé (`wp-content/uploads/grc-attachments/`) avec `.htaccess` interdisant l'accès direct — les fichiers ne sont servables que via l'endpoint authentifié
+- Endpoint de téléchargement (`GET /pieces-jointes/{id}`) : autorisation vérifiée (agent, citoyen propriétaire connecté, ou invité via email correspondant)
+- Affichage des pièces jointes dans la vue détail admin (miniatures/icônes selon le type)
+- Liste des pièces jointes incluse dans les réponses API `/demandes/{id}`, `/mes-demandes`, `/demandes/guest-lookup`
+
+### Portail citoyen front-office
+- Shortcode `[grc_signalement_form]` : formulaire public (compte connecté ou invité), upload photo intégré, catégories dynamiques
+- Shortcode `[grc_mes_demandes]` : suivi des demandes (liste automatique si connecté, recherche par numéro + email en mode invité)
+- CSS aux couleurs municipales (#2D6AB0 / #587526 / #DEA128)
+- Le middleware d'authentification REST accepte désormais aussi bien le JWT (app mobile) que l'authentification cookie+nonce native de WordPress (front-office web)
+
 ## 0.2.0 — Interface admin des demandes
 
 - Liste des demandes avec filtres (numéro de suivi, statut, service, catégorie) et pagination

@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-auth.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-demandes.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-rdv.php';
+require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-attachments.php';
 
 class GRC_REST_API {
 
@@ -20,11 +21,15 @@ class GRC_REST_API {
 		GRC_REST_Auth::register_routes();
 		GRC_REST_Demandes::register_routes();
 		GRC_REST_RDV::register_routes();
+		GRC_REST_Attachments::register_routes();
 	}
 
 	/**
-	 * Middleware d'authentification JWT pour toutes les routes grc/v1
-	 * (sauf login/register/guest-lookup qui sont publiques).
+	 * Middleware d'authentification JWT pour toutes les routes grc/v1.
+	 * Certaines routes sont publiques par nature (login, soumission invité, pièces jointes
+	 * dont l'autorisation est vérifiée dans le callback lui-même) : pour celles-ci, le JWT
+	 * reste optionnel — s'il est présent et valide, l'utilisateur est authentifié quand même
+	 * (utile pour qu'un citoyen connecté accède à ses propres pièces jointes).
 	 */
 	public static function authenticate_request( $result, $server, $request ) {
 		$route = $request->get_route();
@@ -32,30 +37,50 @@ class GRC_REST_API {
 			return $result; // Pas une route GRC, on ne touche à rien.
 		}
 
-		$public_routes = [
-			'/grc/v1/auth/login',
-			'/grc/v1/auth/refresh',
-			'/grc/v1/demandes/guest-lookup',
-			'/grc/v1/demandes/public-submit',
+		$public_route_patterns = [
+			'#^/grc/v1/auth/login$#',
+			'#^/grc/v1/auth/refresh$#',
+			'#^/grc/v1/demandes/guest-lookup$#',
+			'#^/grc/v1/demandes/public-submit$#',
+			'#^/grc/v1/demandes/\d+/pieces-jointes$#',
+			'#^/grc/v1/pieces-jointes/\d+$#',
+			'#^/grc/v1/rdv/creneaux$#',
 		];
-		if ( in_array( $route, $public_routes, true ) ) {
-			return $result;
+
+		$is_public_route = false;
+		foreach ( $public_route_patterns as $pattern ) {
+			if ( preg_match( $pattern, $route ) ) {
+				$is_public_route = true;
+				break;
+			}
 		}
 
 		$auth_header = $request->get_header( 'authorization' );
-		if ( ! $auth_header || 0 !== stripos( $auth_header, 'Bearer ' ) ) {
-			return new WP_Error( 'grc_no_token', 'Token d\'authentification manquant.', [ 'status' => 401 ] );
+		$has_token   = $auth_header && 0 === stripos( $auth_header, 'Bearer ' );
+
+		// L'authentification cookie+nonce native de WordPress (utilisée par le front-office
+		// web via X-WP-Nonce) authentifie déjà l'utilisateur avant ce filtre. Dans ce cas,
+		// is_user_logged_in() est déjà vrai et on n'exige pas de JWT en plus.
+		if ( ! $is_public_route && ! $has_token && ! is_user_logged_in() ) {
+			return new WP_Error( 'grc_no_token', 'Authentification requise.', [ 'status' => 401 ] );
 		}
 
-		$token   = trim( substr( $auth_header, 7 ) );
-		$payload = GRC_JWT::verify( $token );
-		if ( is_wp_error( $payload ) ) {
-			return $payload;
-		}
+		if ( $has_token ) {
+			$token   = trim( substr( $auth_header, 7 ) );
+			$payload = GRC_JWT::verify( $token );
 
-		// Injecte l'utilisateur authentifié dans le contexte WP pour current_user_can(), etc.
-		wp_set_current_user( (int) $payload['sub'] );
-		$request->set_param( '_grc_jwt_payload', $payload );
+			if ( is_wp_error( $payload ) ) {
+				// Sur une route publique, un token invalide ne bloque pas la requête :
+				// elle continue simplement sans utilisateur authentifié.
+				if ( $is_public_route ) {
+					return $result;
+				}
+				return $payload;
+			}
+
+			wp_set_current_user( (int) $payload['sub'] );
+			$request->set_param( '_grc_jwt_payload', $payload );
+		}
 
 		return $result;
 	}
