@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 — Documents multiples + pièces jointes dans les échanges
+
+- Les champs de type `"file"` d'une démarche acceptent désormais **plusieurs fichiers** à la fois (attribut `multiple`), chacun validé et scanné individuellement — un fichier refusé n'empêche pas les autres d'être acceptés
+- Nouvelle colonne `demarche_message_id` sur `wp_grc_pieces_jointes` : les pièces jointes peuvent maintenant être liées à un **message précis** du fil d'échange, pas seulement au dossier global
+- Le citoyen peut désormais **joindre un ou plusieurs documents à sa réponse** dans le fil d'échange (en plus du texte)
+- L'agent peut également joindre des documents à ses messages depuis l'administration (formulaire enrichi avec upload multiple)
+- Les pièces jointes de chaque message s'affichent sous forme de puces cliquables, aussi bien côté citoyen que côté admin
+- Toujours les mêmes contrôles de sécurité (`GRC_File_Scanner`) appliqués à chaque fichier individuellement : signature binaire, détection de macros VBA (.docx), détection de JavaScript embarqué (PDF), ClamAV si disponible
+
 ## 0.9.0 — Correctif cache fil d'échange + upload de documents sécurisé
 
 ### Correctif fil d'échange

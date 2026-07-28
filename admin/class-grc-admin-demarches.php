@@ -223,14 +223,21 @@ class GRC_Admin_Demarches {
 						<strong><?php echo 'agent' === $m->auteur_type ? 'Mairie' : 'Citoyen'; ?></strong>
 						<span style="color:#666;font-size:12px;"> — <?php echo esc_html( mysql2date( 'd/m/Y H:i', $m->created_at ) ); ?></span>
 						<p style="margin:6px 0 0;"><?php echo esc_html( $m->contenu ); ?></p>
+						<?php
+						$msg_pieces = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$pj_table} WHERE demarche_message_id = %d", $m->id ) );
+						foreach ( $msg_pieces as $mp ) :
+							?>
+							<p style="margin:4px 0 0;"><a href="<?php echo esc_url( rest_url( 'grc/v1/pieces-jointes/' . $mp->id ) ); ?>" target="_blank">📄 <?php echo esc_html( $mp->nom_original ); ?></a></p>
+						<?php endforeach; ?>
 					</div>
 				<?php endforeach; ?>
 
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:12px;">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" style="margin-top:12px;">
 					<input type="hidden" name="action" value="grc_demarche_message">
 					<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>">
 					<?php wp_nonce_field( 'grc_demarche_message_' . $id ); ?>
 					<textarea name="contenu" rows="3" style="width:100%;" placeholder="Écrire un message au citoyen..."></textarea>
+					<p><label>Joindre un ou plusieurs documents (PDF/.docx) : <input type="file" name="files[]" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label></p>
 					<button type="submit" class="button button-primary" style="margin-top:8px;">Envoyer</button>
 				</form>
 			</div>
@@ -348,17 +355,37 @@ class GRC_Admin_Demarches {
 			wp_die( 'Permission refusée.' );
 		}
 
-		$contenu = sanitize_textarea_field( wp_unslash( $_POST['contenu'] ?? '' ) );
-		if ( '' !== trim( $contenu ) ) {
-			global $wpdb;
-			$wpdb->insert( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages', [
-				'demarche_id' => $id,
-				'auteur_type' => 'agent',
-				'auteur_id'   => get_current_user_id(),
-				'contenu'     => $contenu,
-				'created_at'  => current_time( 'mysql' ),
-			] );
-			GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => 'agent' ] );
+		$contenu   = sanitize_textarea_field( wp_unslash( $_POST['contenu'] ?? '' ) );
+		$has_files = ! empty( $_FILES['files']['name'][0] ?? '' );
+
+		if ( '' === trim( $contenu ) && ! $has_files ) {
+			wp_safe_redirect( admin_url( "admin.php?page=grc-demarches&dossier_id={$id}&grc_notice=error" ) );
+			exit;
+		}
+		if ( '' === trim( $contenu ) ) {
+			$contenu = '[Document joint]';
+		}
+
+		global $wpdb;
+		$wpdb->insert( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages', [
+			'demarche_id' => $id,
+			'auteur_type' => 'agent',
+			'auteur_id'   => get_current_user_id(),
+			'contenu'     => $contenu,
+			'created_at'  => current_time( 'mysql' ),
+		] );
+		$message_id = (int) $wpdb->insert_id;
+		GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => 'agent' ] );
+
+		if ( $has_files ) {
+			GRC_REST_Attachments::process_multi_upload_raw(
+				$_FILES,
+				GRC_File_Scanner::ALLOWED_DOCUMENT_MIME,
+				[ 'demarche_id' => $id ],
+				'demarche',
+				$id,
+				$message_id
+			);
 		}
 
 		wp_safe_redirect( admin_url( "admin.php?page=grc-demarches&dossier_id={$id}&grc_notice=statut_updated" ) );

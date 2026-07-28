@@ -18,6 +18,34 @@ class GRC_REST_Attachments {
 
 	const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8 Mo
 
+	/**
+	 * Normalise une entrée $_FILES potentiellement multiple (ex: name="files[]")
+	 * en une liste plate de fichiers individuels au format standard PHP.
+	 */
+	public static function normalize_multi_files( $files_entry ): array {
+		if ( empty( $files_entry ) ) {
+			return [];
+		}
+		// Fichier unique (pas de tableau imbriqué).
+		if ( ! is_array( $files_entry['name'] ) ) {
+			return [ $files_entry ];
+		}
+		$normalized = [];
+		foreach ( $files_entry['name'] as $i => $name ) {
+			if ( '' === $name ) {
+				continue;
+			}
+			$normalized[] = [
+				'name'     => $files_entry['name'][ $i ],
+				'type'     => $files_entry['type'][ $i ],
+				'tmp_name' => $files_entry['tmp_name'][ $i ],
+				'error'    => $files_entry['error'][ $i ],
+				'size'     => $files_entry['size'][ $i ],
+			];
+		}
+		return $normalized;
+	}
+
 	public static function register_routes() {
 		$ns = GRC_REST_API::NAMESPACE_V1;
 
@@ -82,12 +110,16 @@ class GRC_REST_Attachments {
 
 		$allowed_mimes = GRC_File_Scanner::ALLOWED_IMAGE_MIME + GRC_File_Scanner::ALLOWED_DOCUMENT_MIME;
 
-		return self::process_upload( $request, $allowed_mimes, [ 'demande_id' => $demande_id ], 'demande', $demande_id );
+		$results = self::process_multi_upload( $request, $allowed_mimes, [ 'demande_id' => $demande_id ], 'demande', $demande_id );
+		if ( empty( $results ) ) {
+			return new WP_Error( 'grc_no_file', 'Aucun fichier reçu (champ "file" ou "files" attendu).', [ 'status' => 400 ] );
+		}
+		return $results;
 	}
 
 	/**
-	 * Upload de pièce jointe pour un dossier de démarche (documents uniquement :
-	 * PDF ou Word .docx — voir GRC_File_Scanner pour le détail des contrôles).
+	 * Upload d'une ou plusieurs pièces jointes pour un dossier de démarche
+	 * (documents uniquement : PDF ou Word .docx — voir GRC_File_Scanner).
 	 */
 	public static function upload_for_demarche( WP_REST_Request $request ) {
 		if ( ! GRC_REST_API::check_rate_limit( 'upload', 20, 3600 ) ) {
@@ -97,38 +129,72 @@ class GRC_REST_Attachments {
 		$demarche_id = absint( $request['id'] );
 
 		global $wpdb;
-		$table   = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
-		$exists  = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $demarche_id ) );
+		$table  = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+		$exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $demarche_id ) );
 		if ( ! $exists ) {
 			return new WP_Error( 'grc_not_found', 'Dossier introuvable.', [ 'status' => 404 ] );
 		}
 
-		return self::process_upload( $request, GRC_File_Scanner::ALLOWED_DOCUMENT_MIME, [ 'demarche_id' => $demarche_id ], 'demarche', $demarche_id );
+		$results = self::process_multi_upload( $request, GRC_File_Scanner::ALLOWED_DOCUMENT_MIME, [ 'demarche_id' => $demarche_id ], 'demarche', $demarche_id );
+		if ( empty( $results ) ) {
+			return new WP_Error( 'grc_no_file', 'Aucun fichier reçu (champ "file" ou "files" attendu).', [ 'status' => 400 ] );
+		}
+		return $results;
 	}
 
 	/**
-	 * Logique commune d'upload : validation, scan de sécurité, stockage, enregistrement en base.
+	 * Traite un ou plusieurs fichiers envoyés dans la même requête. Accepte le
+	 * champ "file" (fichier unique, rétrocompatibilité) ou "files"/"files[]"
+	 * (plusieurs fichiers). Retourne un tableau de résultats (un par fichier),
+	 * chacun étant soit les infos du fichier stocké, soit une erreur associée
+	 * à son nom d'origine — un fichier refusé n'empêche pas les autres d'être traités.
 	 */
-	private static function process_upload( WP_REST_Request $request, array $allowed_mimes, array $link_columns, string $log_type, int $log_id ) {
-		$files = $request->get_file_params();
-		if ( empty( $files['file'] ) ) {
-			return new WP_Error( 'grc_no_file', 'Aucun fichier reçu (champ "file" attendu).', [ 'status' => 400 ] );
+	private static function process_multi_upload( WP_REST_Request $request, array $allowed_mimes, array $link_columns, string $log_type, int $log_id, ?int $message_id = null ) {
+		$files_params = $request->get_file_params();
+		return self::process_multi_upload_raw( $files_params, $allowed_mimes, $link_columns, $log_type, $log_id, $message_id );
+	}
+
+	/**
+	 * Version réutilisable acceptant directement un tableau au format $_FILES,
+	 * sans dépendre d'un WP_REST_Request. Utilisée par l'API REST comme par les
+	 * formulaires admin classiques (admin-post.php, qui ne passe pas par la REST API).
+	 */
+	public static function process_multi_upload_raw( array $files_params, array $allowed_mimes, array $link_columns, string $log_type, int $log_id, ?int $message_id = null ) {
+		$files = [];
+
+		if ( ! empty( $files_params['files'] ) ) {
+			$files = self::normalize_multi_files( $files_params['files'] );
+		} elseif ( ! empty( $files_params['file'] ) ) {
+			$files = self::normalize_multi_files( $files_params['file'] );
 		}
 
-		$file = $files['file'];
+		if ( empty( $files ) ) {
+			return [];
+		}
 
+		$results = [];
+		foreach ( $files as $file ) {
+			$results[] = self::process_single_file( $file, $allowed_mimes, $link_columns, $log_type, $log_id, $message_id );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Valide, scanne et stocke un fichier individuel déjà extrait de $_FILES.
+	 */
+	private static function process_single_file( array $file, array $allowed_mimes, array $link_columns, string $log_type, int $log_id, ?int $message_id ) {
 		if ( UPLOAD_ERR_OK !== $file['error'] ) {
-			return new WP_Error( 'grc_upload_error', 'Erreur lors de l\'envoi du fichier.', [ 'status' => 400 ] );
+			return [ 'nom_original' => $file['name'], 'error' => true, 'message' => 'Erreur lors de l\'envoi du fichier.' ];
 		}
 		if ( $file['size'] > self::MAX_SIZE_BYTES ) {
-			return new WP_Error( 'grc_file_too_large', 'Fichier trop volumineux (8 Mo maximum).', [ 'status' => 400 ] );
+			return [ 'nom_original' => $file['name'], 'error' => true, 'message' => 'Fichier trop volumineux (8 Mo maximum).' ];
 		}
 
 		$validation = GRC_File_Scanner::validate( $file['tmp_name'], $allowed_mimes );
 		if ( is_wp_error( $validation ) ) {
-			GRC_Audit_Log::log( 'piece_jointe_rejected', $log_type, $log_id, [ 'reason' => $validation->get_error_code() ] );
-			$validation->add_data( [ 'status' => 400 ] );
-			return $validation;
+			GRC_Audit_Log::log( 'piece_jointe_rejected', $log_type, $log_id, [ 'reason' => $validation->get_error_code(), 'fichier' => $file['name'] ] );
+			return [ 'nom_original' => $file['name'], 'error' => true, 'message' => $validation->get_error_message() ];
 		}
 		$extension = $validation;
 
@@ -138,18 +204,22 @@ class GRC_REST_Attachments {
 		$dest_path   = trailingslashit( $dir ) . $random_name;
 
 		if ( ! move_uploaded_file( $file['tmp_name'], $dest_path ) ) {
-			return new WP_Error( 'grc_move_failed', 'Impossible d\'enregistrer le fichier.', [ 'status' => 500 ] );
+			return [ 'nom_original' => $file['name'], 'error' => true, 'message' => 'Impossible d\'enregistrer le fichier.' ];
 		}
 
 		global $wpdb;
 		$pj_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'pieces_jointes';
-		$wpdb->insert( $pj_table, array_merge( $link_columns, [
+		$data = array_merge( $link_columns, [
 			'chemin_fichier' => 'grc-attachments/' . $random_name,
 			'nom_original'   => sanitize_file_name( $file['name'] ),
 			'mime_type'      => $real_mime,
 			'taille_octets'  => (int) $file['size'],
 			'created_at'     => current_time( 'mysql' ),
-		] ) );
+		] );
+		if ( $message_id ) {
+			$data['demarche_message_id'] = $message_id;
+		}
+		$wpdb->insert( $pj_table, $data );
 		$attachment_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'piece_jointe_uploaded', $log_type, $log_id, [ 'attachment_id' => $attachment_id ] );
@@ -159,7 +229,23 @@ class GRC_REST_Attachments {
 			'nom_original' => sanitize_file_name( $file['name'] ),
 			'mime_type'    => $real_mime,
 			'download_url' => rest_url( GRC_REST_API::NAMESPACE_V1 . '/pieces-jointes/' . $attachment_id ),
+			'error'        => false,
 		];
+	}
+
+	/**
+	 * Point d'entrée public réutilisé par GRC_REST_Demarches::add_message() pour
+	 * attacher des fichiers à un message précis du fil d'échange.
+	 */
+	public static function upload_files_for_demarche_message( WP_REST_Request $request, int $demarche_id, int $message_id ): array {
+		return self::process_multi_upload(
+			$request,
+			GRC_File_Scanner::ALLOWED_DOCUMENT_MIME,
+			[ 'demarche_id' => $demarche_id ],
+			'demarche',
+			$demarche_id,
+			$message_id
+		);
 	}
 
 	public static function download( WP_REST_Request $request ) {

@@ -219,8 +219,8 @@
 		var html = '<div class="grc-field"><label for="grc-champ-' + key + '">' + label + star + '</label>';
 
 		if ( 'file' === champ.type ) {
-			html += '<input type="file" id="grc-champ-' + key + '" data-key="' + key + '" data-filetype="1" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ' + requis + '>';
-			html += '<p class="grc-hint">Formats acceptés : PDF ou Word (.docx), 8 Mo maximum.</p>';
+			html += '<input type="file" id="grc-champ-' + key + '" data-key="' + key + '" data-filetype="1" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ' + requis + '>';
+			html += '<p class="grc-hint">Formats acceptés : PDF ou Word (.docx), 8 Mo maximum par fichier. Plusieurs fichiers peuvent être sélectionnés.</p>';
 		} else if ( 'textarea' === champ.type ) {
 			html += '<textarea id="grc-champ-' + key + '" data-key="' + key + '" rows="4" ' + requis + '></textarea>';
 		} else {
@@ -316,10 +316,9 @@
 					return;
 				}
 				if ( 'file' === champ.type ) {
-					if ( fieldEl.files && fieldEl.files[ 0 ] ) {
-						fichiers.push( fieldEl.files[ 0 ] );
-					}
-					donnees[ champ.key ] = fieldEl.files && fieldEl.files[ 0 ] ? fieldEl.files[ 0 ].name : '';
+					var selectedFiles = fieldEl.files ? Array.prototype.slice.call( fieldEl.files ) : [];
+					fichiers = fichiers.concat( selectedFiles );
+					donnees[ champ.key ] = selectedFiles.map( function ( f ) { return f.name; } ).join( ', ' );
 				} else {
 					donnees[ champ.key ] = fieldEl.value;
 				}
@@ -350,23 +349,29 @@
 						return { uploadsOk: true };
 					}
 
-					return Promise.all( fichiers.map( function ( file ) {
-						var fd = new FormData();
-						fd.append( 'file', file );
-						if ( payload.email ) {
-							fd.append( 'email', payload.email );
-						}
-						return authFetch( grcConfig.restUrl + '/demarches/' + dossierId + '/pieces-jointes', {
-							method: 'POST',
-							body: fd
-						} ).then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } );
-					} ) ).then( function ( results ) {
-						var failed = results.filter( function ( r ) { return ! r.ok; } );
-						if ( failed.length ) {
-							throw new Error( 'Dossier envoyé, mais un ou plusieurs fichiers ont été refusés : ' + failed.map( function ( f ) { return f.data.message; } ).join( ' / ' ) );
-						}
-						return { uploadsOk: true };
+					var fd = new FormData();
+					fichiers.forEach( function ( file ) {
+						fd.append( 'files[]', file );
 					} );
+					if ( payload.email ) {
+						fd.append( 'email', payload.email );
+					}
+
+					return authFetch( grcConfig.restUrl + '/demarches/' + dossierId + '/pieces-jointes', {
+						method: 'POST',
+						body: fd
+					} )
+						.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+						.then( function ( result ) {
+							if ( ! result.ok ) {
+								throw new Error( result.data.message || 'Erreur lors de l\'envoi des fichiers.' );
+							}
+							var failed = result.data.filter( function ( r ) { return r.error; } );
+							if ( failed.length ) {
+								throw new Error( 'Dossier envoyé, mais certains fichiers ont été refusés : ' + failed.map( function ( f ) { return f.nom_original + ' (' + f.message + ')'; } ).join( ' / ' ) );
+							}
+							return { uploadsOk: true };
+						} );
 				} )
 				.then( function () {
 					showMessage( msgBox, 'Votre dossier a bien été transmis. Vous serez notifié(e) de son traitement.', 'success' );
@@ -639,37 +644,66 @@
 			} );
 		}
 
+		function renderMessageAttachments( pieces ) {
+			if ( ! pieces || ! pieces.length ) {
+				return '';
+			}
+			var html = '<div class="grc-message-attachments">';
+			pieces.forEach( function ( p ) {
+				html += '<a href="' + p.download_url + '" target="_blank" class="grc-attachment-chip">📄 ' + p.nom_original + '</a>';
+			} );
+			html += '</div>';
+			return html;
+		}
+
 		function loadDemarcheThread( id, threadEl ) {
 			threadEl.innerHTML = '<p>Chargement...</p>';
 			authFetch( grcConfig.restUrl + '/demarches/' + id + '?_=' + Date.now() )
 				.then( function ( res ) { return res.ok ? res.json() : Promise.reject(); } )
 				.then( function ( dossier ) {
 					var html = '';
+
+					if ( dossier.pieces_jointes && dossier.pieces_jointes.length ) {
+						html += '<div class="grc-hint">Documents du dossier :</div>';
+						html += renderMessageAttachments( dossier.pieces_jointes );
+					}
+
 					( dossier.messages || [] ).forEach( function ( m ) {
 						html += '<div class="grc-thread-message grc-thread-message--' + m.auteur_type + '">';
 						html += '<strong>' + ( 'agent' === m.auteur_type ? 'Mairie' : 'Vous' ) + '</strong>';
 						html += '<span class="grc-demande-date"> — ' + new Date( m.created_at ).toLocaleDateString( 'fr-FR' ) + '</span>';
-						html += '<p>' + m.contenu + '</p></div>';
+						html += '<p>' + m.contenu + '</p>';
+						html += renderMessageAttachments( m.pieces_jointes );
+						html += '</div>';
 					} );
 					if ( ! dossier.messages || ! dossier.messages.length ) {
 						html += '<p class="grc-hint">Aucun message pour le moment.</p>';
 					}
 					html += '<textarea class="grc-thread-reply" rows="2" placeholder="Votre réponse..."></textarea>';
+					html += '<input type="file" class="grc-thread-reply-files" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">';
+					html += '<p class="grc-hint">Vous pouvez joindre un ou plusieurs documents (PDF/.docx) à votre réponse.</p>';
 					html += '<div class="grc-form-message grc-thread-error" style="display:none;"></div>';
 					html += '<button type="button" class="grc-btn-submit grc-thread-send" data-demarche-id="' + id + '">Envoyer</button>';
 					threadEl.innerHTML = html;
 
 					threadEl.querySelector( '.grc-thread-send' ).addEventListener( 'click', function () {
 						var textarea = threadEl.querySelector( '.grc-thread-reply' );
+						var fileInput = threadEl.querySelector( '.grc-thread-reply-files' );
 						var errorBox = threadEl.querySelector( '.grc-thread-error' );
 						var contenu = textarea.value.trim();
-						if ( ! contenu ) {
+						var files = fileInput.files ? Array.prototype.slice.call( fileInput.files ) : [];
+
+						if ( ! contenu && ! files.length ) {
 							return;
 						}
+
+						var fd = new FormData();
+						fd.append( 'contenu', contenu );
+						files.forEach( function ( f ) { fd.append( 'files[]', f ); } );
+
 						authFetch( grcConfig.restUrl + '/demarches/' + id + '/messages', {
 							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify( { contenu: contenu } )
+							body: fd
 						} )
 							.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
 							.then( function ( result ) {

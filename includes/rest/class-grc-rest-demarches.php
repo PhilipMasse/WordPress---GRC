@@ -203,6 +203,12 @@ class GRC_REST_Demarches {
 		$type     = $wpdb->get_row( $wpdb->prepare( "SELECT nom, champs_json FROM {$types_table} WHERE slug = %s", $dossier->type_demarche ) );
 		$messages = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$msg_table} WHERE demarche_id = %d ORDER BY created_at ASC", $id ) );
 
+		$pj_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'pieces_jointes';
+		$pieces_dossier = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$pj_table} WHERE demarche_id = %d AND demarche_message_id IS NULL ORDER BY created_at ASC",
+			$id
+		) );
+
 		return [
 			'id'            => (int) $dossier->id,
 			'type_demarche' => $dossier->type_demarche,
@@ -211,25 +217,48 @@ class GRC_REST_Demarches {
 			'donnees'       => json_decode( $dossier->donnees_json, true ) ?: [],
 			'champs'        => $type ? ( json_decode( $type->champs_json, true ) ?: [] ) : [],
 			'created_at'    => $dossier->created_at,
-			'messages'      => array_map( function ( $m ) {
+			'pieces_jointes'=> array_map( [ __CLASS__, 'format_piece' ], $pieces_dossier ),
+			'messages'      => array_map( function ( $m ) use ( $wpdb, $pj_table ) {
+				$pieces = $wpdb->get_results( $wpdb->prepare(
+					"SELECT * FROM {$pj_table} WHERE demarche_message_id = %d ORDER BY created_at ASC",
+					$m->id
+				) );
 				return [
-					'id'          => (int) $m->id,
-					'auteur_type' => $m->auteur_type,
-					'contenu'     => $m->contenu,
-					'created_at'  => $m->created_at,
+					'id'             => (int) $m->id,
+					'auteur_type'    => $m->auteur_type,
+					'contenu'        => $m->contenu,
+					'created_at'     => $m->created_at,
+					'pieces_jointes' => array_map( [ __CLASS__, 'format_piece' ], $pieces ),
 				];
 			}, $messages ),
 		];
 	}
 
+	private static function format_piece( $p ): array {
+		return [
+			'id'           => (int) $p->id,
+			'nom_original' => $p->nom_original,
+			'mime_type'    => $p->mime_type,
+			'download_url' => rest_url( GRC_REST_API::NAMESPACE_V1 . '/pieces-jointes/' . $p->id ),
+		];
+	}
+
 	/**
-	 * Ajoute un message au fil d'échange d'un dossier (agent ou citoyen propriétaire).
+	 * Ajoute un message au fil d'échange d'un dossier (agent ou citoyen propriétaire),
+	 * avec possibilité de joindre un ou plusieurs documents (PDF/.docx).
 	 */
 	public static function add_message( WP_REST_Request $request ) {
 		$id      = absint( $request['id'] );
 		$contenu = sanitize_textarea_field( $request->get_param( 'contenu' ) ?? '' );
-		if ( '' === trim( $contenu ) ) {
+
+		$files_params = $request->get_file_params();
+		$has_files    = ! empty( $files_params['files'] ) || ! empty( $files_params['file'] );
+
+		if ( '' === trim( $contenu ) && ! $has_files ) {
 			return new WP_Error( 'grc_empty_message', 'Le message ne peut pas être vide.', [ 'status' => 400 ] );
+		}
+		if ( '' === trim( $contenu ) ) {
+			$contenu = '[Document joint]';
 		}
 
 		$auteur_type = current_user_can( 'grc_manage_demandes' ) ? 'agent' : 'citoyen';
@@ -244,10 +273,16 @@ class GRC_REST_Demarches {
 			'contenu'     => $contenu,
 			'created_at'  => current_time( 'mysql' ),
 		] );
+		$message_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => $auteur_type ] );
 
-		return [ 'success' => true, 'id' => (int) $wpdb->insert_id ];
+		$pieces_resultats = [];
+		if ( $has_files ) {
+			$pieces_resultats = GRC_REST_Attachments::upload_files_for_demarche_message( $request, $id, $message_id );
+		}
+
+		return [ 'success' => true, 'id' => $message_id, 'pieces_jointes' => $pieces_resultats ];
 	}
 
 	/**

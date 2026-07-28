@@ -275,6 +275,29 @@
 	margin-bottom: 8px;
 }
 
+.grc-message-attachments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 6px 0;
+}
+
+.grc-attachment-chip {
+	display: inline-block;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 14px;
+	padding: 3px 10px;
+	font-size: 12px;
+	text-decoration: none;
+	color: #2D6AB0;
+}
+
+input[type="file"].grc-thread-reply-files {
+	margin-bottom: 6px;
+	font-size: 12px;
+}
+
 .grc-btn-link {
 	background: none;
 	border: none;
