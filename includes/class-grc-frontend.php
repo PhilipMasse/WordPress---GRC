@@ -261,7 +261,7 @@ class GRC_Frontend {
 
 		ob_start();
 		?>
-		<div class="grc-form-wrapper">
+		<div class="grc-form-wrapper grc-rdv-wrapper">
 			<div id="grc-rdv-connected-banner" class="grc-connected-banner" style="display:none;">
 				Connecté en tant que <strong id="grc-rdv-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce rendez-vous.
 			</div>
@@ -277,9 +277,32 @@ class GRC_Frontend {
 					</select>
 				</div>
 
-				<div class="grc-field">
+				<div class="grc-field" id="grc-rdv-duree-field" style="display:none;">
+					<label>Durée du rendez-vous</label>
+					<div class="grc-duree-toggle">
+						<button type="button" class="grc-duree-btn grc-duree-btn--active" data-duree="30">30 min</button>
+						<button type="button" class="grc-duree-btn" data-duree="60">1 heure</button>
+					</div>
+				</div>
+
+				<div class="grc-field" id="grc-rdv-calendar-field" style="display:none;">
+					<label>Choisissez une date</label>
+					<div class="grc-calendar-legend">
+						<span><i class="grc-legend-dot grc-legend-dot--available"></i> Places disponibles</span>
+						<span><i class="grc-legend-dot grc-legend-dot--few"></i> Dernières places</span>
+						<span><i class="grc-legend-dot grc-legend-dot--full"></i> Complet</span>
+					</div>
+					<div class="grc-calendar-nav">
+						<button type="button" id="grc-cal-prev" class="button">‹</button>
+						<span id="grc-cal-month-label"></span>
+						<button type="button" id="grc-cal-next" class="button">›</button>
+					</div>
+					<div id="grc-calendar-grid" class="grc-calendar-grid"></div>
+				</div>
+
+				<div class="grc-field" id="grc-rdv-creneaux-field" style="display:none;">
 					<label>Créneau disponible <span class="required">*</span></label>
-					<div id="grc-rdv-creneaux" class="grc-hint">Sélectionnez d'abord un service.</div>
+					<div id="grc-rdv-creneaux" class="grc-creneaux-grid"></div>
 				</div>
 
 				<div class="grc-field">

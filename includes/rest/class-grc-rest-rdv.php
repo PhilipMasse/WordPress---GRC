@@ -47,20 +47,43 @@ class GRC_REST_RDV {
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
 
+		$service_id    = absint( $request->get_param( 'service_id' ) );
+		$mois          = sanitize_text_field( $request->get_param( 'mois' ) ?? '' ); // format "YYYY-MM"
+		$duree_filtre  = absint( $request->get_param( 'duree' ) ?? 0 ); // 30 ou 60, 0 = toutes durées
+
+		if ( ! preg_match( '/^\d{4}-\d{2}$/', $mois ) ) {
+			$mois = current_time( 'Y-m' );
+		}
+
+		$debut_mois = $mois . '-01 00:00:00';
+		$fin_mois   = gmdate( 'Y-m-t 23:59:59', strtotime( $debut_mois ) );
+		// Ne propose jamais un créneau déjà passé, même s'il est dans le mois affiché.
+		$borne_min  = max( strtotime( $debut_mois ), time() );
+
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$table} WHERE service_id = %d AND debut > %s AND reserve < capacite ORDER BY debut ASC LIMIT 50",
-			absint( $request->get_param( 'service_id' ) ),
-			current_time( 'mysql' )
+			"SELECT * FROM {$table} WHERE service_id = %d AND debut >= %s AND debut <= %s ORDER BY debut ASC",
+			$service_id,
+			gmdate( 'Y-m-d H:i:s', $borne_min ),
+			$fin_mois
 		) );
 
-		return array_map( function ( $c ) {
-			return [
+		$results = [];
+		foreach ( $rows as $c ) {
+			$duree_minutes = round( ( strtotime( $c->fin ) - strtotime( $c->debut ) ) / 60 );
+			if ( $duree_filtre && $duree_minutes !== $duree_filtre ) {
+				continue;
+			}
+			$results[] = [
 				'id'               => (int) $c->id,
 				'debut'            => $c->debut,
 				'fin'              => $c->fin,
-				'places_restantes' => (int) $c->capacite - (int) $c->reserve,
+				'duree_minutes'    => $duree_minutes,
+				'capacite'         => (int) $c->capacite,
+				'places_restantes' => max( 0, (int) $c->capacite - (int) $c->reserve ),
 			];
-		}, $rows );
+		}
+
+		return $results;
 	}
 
 	public static function book( WP_REST_Request $request ) {

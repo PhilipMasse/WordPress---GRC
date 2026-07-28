@@ -214,6 +214,7 @@ class GRC_Admin_RDV {
 						</div>
 
 						<p class="description">Les pauses méridiennes ne sont pas gérées automatiquement : générez deux plages (ex : 9h-12h puis 14h-17h) si besoin.</p>
+						<p class="description" style="color:#b32d2e;">⚠️ Si vous proposez des rendez-vous de 30 min <strong>et</strong> 1h pour ce service, générez les deux durées sur des <strong>plages horaires distinctes</strong> (ex : 30 min le matin, 1h l'après-midi). Générer les deux durées sur le même créneau horaire créerait un risque de double réservation.</p>
 
 						<button type="submit" class="button button-primary">Générer les créneaux</button>
 					</form>

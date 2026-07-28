@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.0 — Prise de rendez-vous : calendrier coloré + choix de durée
+
+- `[grc_rdv_form]` remplace la liste de créneaux plate par un **vrai calendrier mensuel** avec code couleur par jour :
+  - 🟢 vert : places disponibles
+  - 🟠 orange : dernières places (≤2 ou ≤20% de la capacité du jour)
+  - ⬜ gris : complet ou aucun créneau
+  - Navigation mois précédent/suivant
+- Sélecteur de **durée** (30 min / 1h) au-dessus du calendrier : ne montre que les créneaux correspondants
+- `GET /rdv/creneaux` retourne désormais tout le mois demandé (paramètres `mois` et `duree`), y compris les créneaux complets, nécessaire pour colorer le calendrier — les créneaux passés restent exclus
+- Note ajoutée dans l'admin : générer des créneaux de 30 min et 1h sur les **mêmes plages horaires** créerait un risque de double réservation (les créneaux ne sont pas liés entre eux) ; à générer sur des plages distinctes
+
 ## 0.13.0 — Module Rendez-vous complet
 
 ### Correctif

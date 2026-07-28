@@ -628,16 +628,27 @@
 			initDemarcheForm( demarcheWrapper );
 		}
 
-		// ================= Formulaire de prise de rendez-vous =================
+		// ================= Formulaire de prise de rendez-vous (calendrier) =================
 		var rdvForm = el( '#grc-rdv-form' );
 		if ( rdvForm ) {
 			var rdvGuestFields = el( '#grc-rdv-guest-fields', rdvForm );
 			var rdvBanner = el( '#grc-rdv-connected-banner' );
 			var rdvBannerName = el( '#grc-rdv-connected-name' );
 			var rdvServiceSelect = el( '#grc-rdv-service', rdvForm );
+			var rdvDureeField = el( '#grc-rdv-duree-field', rdvForm );
+			var rdvCalendarField = el( '#grc-rdv-calendar-field', rdvForm );
+			var rdvCreneauxField = el( '#grc-rdv-creneaux-field', rdvForm );
 			var rdvCreneauxContainer = el( '#grc-rdv-creneaux', rdvForm );
+			var calendarGrid = el( '#grc-calendar-grid', rdvForm );
+			var calMonthLabel = el( '#grc-cal-month-label', rdvForm );
 			var rdvSubmitBtn = rdvForm.querySelector( '.grc-btn-submit' );
+
 			var selectedCreneauId = null;
+			var selectedDuree = 30;
+			var currentMonthDate = new Date();
+			currentMonthDate.setDate( 1 );
+			var monthCreneauxCache = [];
+			var selectedDay = null;
 
 			if ( isCitoyenLoggedIn() ) {
 				if ( rdvGuestFields ) {
@@ -656,42 +667,165 @@
 				}
 			}
 
-			rdvServiceSelect.addEventListener( 'change', function () {
-				selectedCreneauId = null;
-				rdvSubmitBtn.disabled = true;
+			function dateKey( d ) {
+				return d.getFullYear() + '-' + String( d.getMonth() + 1 ).padStart( 2, '0' ) + '-' + String( d.getDate() ).padStart( 2, '0' );
+			}
+
+			function loadMonthCreneaux() {
 				var serviceId = rdvServiceSelect.value;
 				if ( ! serviceId ) {
-					rdvCreneauxContainer.innerHTML = 'Sélectionnez d\'abord un service.';
 					return;
 				}
-				rdvCreneauxContainer.innerHTML = 'Chargement des créneaux...';
+				var moisStr = currentMonthDate.getFullYear() + '-' + String( currentMonthDate.getMonth() + 1 ).padStart( 2, '0' );
+				calendarGrid.innerHTML = '<p class="grc-hint">Chargement...</p>';
 
-				fetch( grcConfig.restUrl + '/rdv/creneaux?service_id=' + serviceId )
+				fetch( grcConfig.restUrl + '/rdv/creneaux?service_id=' + serviceId + '&mois=' + moisStr + '&duree=' + selectedDuree )
 					.then( function ( res ) { return res.json(); } )
 					.then( function ( creneaux ) {
-						if ( ! creneaux.length ) {
-							rdvCreneauxContainer.innerHTML = 'Aucun créneau disponible pour ce service actuellement.';
-							return;
-						}
-						var html = '<div class="grc-creneaux-grid">';
-						creneaux.forEach( function ( c ) {
-							var d = new Date( c.debut );
-							var label = d.toLocaleDateString( 'fr-FR', { weekday: 'short', day: 'numeric', month: 'short' } ) + ' à ' + d.toLocaleTimeString( 'fr-FR', { hour: '2-digit', minute: '2-digit' } );
-							html += '<button type="button" class="grc-creneau-btn" data-id="' + c.id + '">' + label + '</button>';
-						} );
-						html += '</div>';
-						rdvCreneauxContainer.innerHTML = html;
-
-						rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( btn ) {
-							btn.addEventListener( 'click', function () {
-								rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-creneau-btn--selected' ); } );
-								btn.classList.add( 'grc-creneau-btn--selected' );
-								selectedCreneauId = btn.dataset.id;
-								rdvSubmitBtn.disabled = false;
-							} );
-						} );
+						monthCreneauxCache = creneaux || [];
+						renderCalendar();
 					} )
-					.catch( function () { rdvCreneauxContainer.innerHTML = 'Erreur lors du chargement des créneaux.'; } );
+					.catch( function () { calendarGrid.innerHTML = '<p class="grc-hint">Erreur lors du chargement.</p>'; } );
+			}
+
+			function renderCalendar() {
+				var year = currentMonthDate.getFullYear();
+				var month = currentMonthDate.getMonth();
+				var monthNames = [ 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre' ];
+				calMonthLabel.textContent = monthNames[ month ] + ' ' + year;
+
+				// Regroupe les places restantes par jour.
+				var parJour = {};
+				monthCreneauxCache.forEach( function ( c ) {
+					var d = new Date( c.debut );
+					var key = dateKey( d );
+					if ( ! parJour[ key ] ) {
+						parJour[ key ] = { total: 0, restantes: 0 };
+					}
+					parJour[ key ].total += c.capacite;
+					parJour[ key ].restantes += c.places_restantes;
+				} );
+
+				var firstDay = new Date( year, month, 1 );
+				var startOffset = ( firstDay.getDay() + 6 ) % 7; // Lundi = 0
+				var daysInMonth = new Date( year, month + 1, 0 ).getDate();
+				var today = new Date();
+				today.setHours( 0, 0, 0, 0 );
+
+				var html = '<div class="grc-calendar-weekdays">';
+				[ 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim' ].forEach( function ( d ) { html += '<span>' + d + '</span>'; } );
+				html += '</div><div class="grc-calendar-days">';
+
+				for ( var i = 0; i < startOffset; i++ ) {
+					html += '<span class="grc-cal-day grc-cal-day--empty"></span>';
+				}
+
+				for ( var day = 1; day <= daysInMonth; day++ ) {
+					var thisDate = new Date( year, month, day );
+					var key = dateKey( thisDate );
+					var info = parJour[ key ];
+					var isPast = thisDate < today;
+					var cssClass = 'grc-cal-day';
+
+					if ( isPast || ! info ) {
+						cssClass += ' grc-cal-day--none';
+					} else if ( 0 === info.restantes ) {
+						cssClass += ' grc-cal-day--full';
+					} else if ( info.restantes <= 2 || info.restantes <= info.total * 0.2 ) {
+						cssClass += ' grc-cal-day--few';
+					} else {
+						cssClass += ' grc-cal-day--available';
+					}
+
+					if ( selectedDay === key ) {
+						cssClass += ' grc-cal-day--selected';
+					}
+
+					var clickable = ! isPast && info && info.restantes > 0;
+					html += '<span class="' + cssClass + '" ' + ( clickable ? 'data-day="' + key + '"' : '' ) + '>' + day + '</span>';
+				}
+
+				html += '</div>';
+				calendarGrid.innerHTML = html;
+
+				calendarGrid.querySelectorAll( '[data-day]' ).forEach( function ( el2 ) {
+					el2.addEventListener( 'click', function () {
+						selectedDay = el2.dataset.day;
+						renderCalendar();
+						renderCreneauxForDay( selectedDay );
+					} );
+				} );
+			}
+
+			function renderCreneauxForDay( key ) {
+				var creneauxDuJour = monthCreneauxCache.filter( function ( c ) {
+					return dateKey( new Date( c.debut ) ) === key && c.places_restantes > 0;
+				} );
+
+				rdvCreneauxField.style.display = 'block';
+				selectedCreneauId = null;
+				rdvSubmitBtn.disabled = true;
+
+				if ( ! creneauxDuJour.length ) {
+					rdvCreneauxContainer.innerHTML = '<p class="grc-hint">Aucun créneau disponible ce jour.</p>';
+					return;
+				}
+
+				var html = '';
+				creneauxDuJour.forEach( function ( c ) {
+					var d = new Date( c.debut );
+					var heure = d.toLocaleTimeString( 'fr-FR', { hour: '2-digit', minute: '2-digit' } );
+					html += '<button type="button" class="grc-creneau-btn" data-id="' + c.id + '">' + heure + '</button>';
+				} );
+				rdvCreneauxContainer.innerHTML = html;
+
+				rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( btn ) {
+					btn.addEventListener( 'click', function () {
+						rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-creneau-btn--selected' ); } );
+						btn.classList.add( 'grc-creneau-btn--selected' );
+						selectedCreneauId = btn.dataset.id;
+						rdvSubmitBtn.disabled = false;
+					} );
+				} );
+			}
+
+			rdvServiceSelect.addEventListener( 'change', function () {
+				selectedDay = null;
+				rdvCreneauxField.style.display = 'none';
+				if ( rdvServiceSelect.value ) {
+					rdvDureeField.style.display = 'block';
+					rdvCalendarField.style.display = 'block';
+					currentMonthDate = new Date();
+					currentMonthDate.setDate( 1 );
+					loadMonthCreneaux();
+				} else {
+					rdvDureeField.style.display = 'none';
+					rdvCalendarField.style.display = 'none';
+				}
+			} );
+
+			rdvForm.querySelectorAll( '.grc-duree-btn' ).forEach( function ( btn ) {
+				btn.addEventListener( 'click', function () {
+					rdvForm.querySelectorAll( '.grc-duree-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-duree-btn--active' ); } );
+					btn.classList.add( 'grc-duree-btn--active' );
+					selectedDuree = parseInt( btn.dataset.duree, 10 );
+					selectedDay = null;
+					rdvCreneauxField.style.display = 'none';
+					loadMonthCreneaux();
+				} );
+			} );
+
+			el( '#grc-cal-prev', rdvForm ).addEventListener( 'click', function () {
+				currentMonthDate.setMonth( currentMonthDate.getMonth() - 1 );
+				selectedDay = null;
+				rdvCreneauxField.style.display = 'none';
+				loadMonthCreneaux();
+			} );
+			el( '#grc-cal-next', rdvForm ).addEventListener( 'click', function () {
+				currentMonthDate.setMonth( currentMonthDate.getMonth() + 1 );
+				selectedDay = null;
+				rdvCreneauxField.style.display = 'none';
+				loadMonthCreneaux();
 			} );
 
 			rdvForm.addEventListener( 'submit', function ( e ) {
@@ -725,8 +859,10 @@
 						}
 						showMessage( msgBox, 'Votre rendez-vous est confirmé ! Un email de confirmation vous a été envoyé.', 'success' );
 						rdvForm.reset();
-						rdvCreneauxContainer.innerHTML = 'Sélectionnez d\'abord un service.';
 						selectedCreneauId = null;
+						selectedDay = null;
+						rdvCreneauxField.style.display = 'none';
+						loadMonthCreneaux();
 					} )
 					.catch( function ( err ) {
 						showMessage( msgBox, err.message, 'error' );
