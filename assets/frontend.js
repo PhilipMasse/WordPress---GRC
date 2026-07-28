@@ -679,7 +679,7 @@
 				var moisStr = currentMonthDate.getFullYear() + '-' + String( currentMonthDate.getMonth() + 1 ).padStart( 2, '0' );
 				calendarGrid.innerHTML = '<p class="grc-hint">Chargement...</p>';
 
-				fetch( grcConfig.restUrl + '/rdv/creneaux?service_id=' + serviceId + '&mois=' + moisStr + '&duree=' + selectedDuree )
+				fetch( grcConfig.restUrl + '/rdv/creneaux?service_id=' + serviceId + '&mois=' + moisStr + '&duree=' + selectedDuree + '&_=' + Date.now() )
 					.then( function ( res ) { return res.json(); } )
 					.then( function ( creneaux ) {
 						monthCreneauxCache = creneaux || [];

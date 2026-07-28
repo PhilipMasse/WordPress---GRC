@@ -192,6 +192,16 @@ class GRC_Admin_RDV {
 			$filtre_service
 		) );
 
+		// Déclenche la génération immédiatement (au lieu d'attendre la première
+		// visite citoyenne) et affiche un compteur de confirmation directe.
+		GRC_Creneaux_Generator::generate_range( $filtre_service, current_time( 'Y-m-d' ), gmdate( 'Y-m-d', strtotime( '+90 days' ) ) );
+		$creneaux_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
+		$nb_creneaux = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$creneaux_table} WHERE service_id = %d AND debut > %s",
+			$filtre_service,
+			current_time( 'mysql' )
+		) );
+
 		?>
 		<form method="get" style="margin:16px 0;">
 			<input type="hidden" name="page" value="grc-rdv">
@@ -203,6 +213,14 @@ class GRC_Admin_RDV {
 				<?php endforeach; ?>
 			</select>
 		</form>
+
+		<div class="notice notice-<?php echo $nb_creneaux > 0 ? 'success' : 'warning'; ?> inline" style="margin:0 0 16px;padding:10px 14px;">
+			<?php if ( $nb_creneaux > 0 ) : ?>
+				<p><strong><?php echo $nb_creneaux; ?></strong> créneaux disponibles générés pour ce service sur les 90 prochains jours.</p>
+			<?php else : ?>
+				<p><strong>Aucun créneau généré</strong> pour ce service actuellement. Vérifiez qu'au moins un jour est coché "Actif" ci-dessous, puis enregistrez.</p>
+			<?php endif; ?>
+		</div>
 
 		<div style="display:flex;gap:24px;align-items:flex-start;">
 			<div style="flex:2;">

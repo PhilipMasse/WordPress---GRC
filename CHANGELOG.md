@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.1 — Correctif cache calendrier + confirmation visuelle admin
+
+- Ajout d'un paramètre anti-cache sur la requête de chargement du calendrier citoyen (`/rdv/creneaux`), ce site ayant déjà rencontré plusieurs fois des soucis de mise en cache masquant des données à jour
+- L'onglet **Disponibilités** affiche désormais directement un compteur "X créneaux générés pour ce service" (et déclenche la génération à l'affichage de la page, sans attendre la première visite citoyenne), pour vérifier immédiatement que les horaires enregistrés produisent bien des créneaux
+
 ## 0.15.0 — Refonte de la gestion des disponibilités (horaires + absences)
 
 ### Le problème résolu
