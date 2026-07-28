@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 — Interface admin des demandes
+
+- Liste des demandes avec filtres (numéro de suivi, statut, service, catégorie) et pagination
+- Restriction automatique par service pour les agents (un agent ne voit que les demandes de son service, sauf rôle Élu/Admin avec `grc_view_all`)
+- Vue détail : informations citoyen (déchiffrées à l'affichage uniquement), description, fil d'échanges (messages + notes internes)
+- Changement de statut avec notification email automatique au citoyen si un email est disponible
+- Assignation d'un agent/service (visible seulement avec la capacité `grc_assign_demandes`)
+- Ajout de messages/notes internes (non visibles du citoyen si cochées "note interne")
+- Audit log sur la consultation, l'assignation, le changement de statut et l'ajout de message
+- Toutes les actions protégées par nonce + vérification de capacité (`check_admin_referer`, `current_user_can`)
+
 ## 0.1.1 — Filet de sécurité création des tables
 
 - Les tables sont désormais (re)créées/mises à jour automatiquement à chaque chargement du plugin si la version de schéma (`grc_db_version`) diffère de la version du plugin — pas seulement à l'activation manuelle. Couvre le cas d'une mise à jour automatique via GitHub Releases, qui ne déclenche pas `register_activation_hook`.

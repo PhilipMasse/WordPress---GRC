@@ -8,6 +8,7 @@ class GRC_Admin {
 	public static function init() {
 		add_action( 'admin_menu', [ __CLASS__, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+		GRC_Admin_Demandes::init();
 	}
 
 	public static function register_menu() {
@@ -64,7 +65,7 @@ class GRC_Admin {
 	}
 
 	public static function render_demandes() {
-		echo '<div class="wrap"><h1>Demandes</h1><p><em>Liste détaillée, filtres par service/statut, assignation — à implémenter (V1).</em></p></div>';
+		GRC_Admin_Demandes::render();
 	}
 
 	public static function render_rdv() {
