@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 — Correctif chargement des scripts front-office
+
+- Les fichiers `frontend.js`/`frontend.css` ne se chargeaient pas de façon fiable sur les pages contenant `[grc_signalement_form]` ou `[grc_mes_demandes]` : la détection reposait sur `has_shortcode()` appliqué à `post_content`, qui peut échouer selon la façon dont le contenu est stocké ou construit.
+- Ces assets sont désormais chargés systématiquement sur tout le front-office (hors administration), éliminant cette classe de bug.
+
 ## 0.3.1 — Correctif détection des clés mal configurées
 
 - Correction d'un piège de détection : si `GRC_ENCRYPTION_KEY`/`GRC_JWT_SECRET` sont définies dans `wp-config.php` **après** `require_once wp-settings.php`, le plugin échouait silencieusement à se charger (shortcodes, menu admin, API absents) sans jamais afficher d'alerte. La vérification se faisait sur le hook `admin_init`, qui s'exécute après que `wp-config.php` ait fini de tourner — donc les constantes y apparaissaient définies, masquant le vrai problème survenu plus tôt sur `plugins_loaded`.

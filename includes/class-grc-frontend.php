@@ -16,12 +16,15 @@ class GRC_Frontend {
 		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'maybe_enqueue_assets' ] );
 	}
 
+	/**
+	 * Charge les assets du portail citoyen sur tout le front-office.
+	 * On ne conditionne plus au contenu détecté via has_shortcode() : cette
+	 * détection s'est révélée peu fiable (constructeurs de page alternatifs,
+	 * contenu stocké autrement que dans post_content, timing de $post...).
+	 * Le coût de charger ces deux petits fichiers partout est négligeable.
+	 */
 	public static function maybe_enqueue_assets() {
-		global $post;
-		if ( ! is_a( $post, 'WP_Post' ) ) {
-			return;
-		}
-		if ( ! has_shortcode( $post->post_content, 'grc_signalement_form' ) && ! has_shortcode( $post->post_content, 'grc_mes_demandes' ) ) {
+		if ( is_admin() ) {
 			return;
 		}
 
