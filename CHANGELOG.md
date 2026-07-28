@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.1 — Réordonnancement des champs
+
+- Boutons ▲/▼ sur chaque champ du constructeur pour changer leur ordre d'affichage dans le formulaire citoyen (l'ordre visuel est directement celui enregistré, aucune action supplémentaire nécessaire)
+
 ## 0.12.0 — Nouveaux types de champs + réorganisation des écrans admin
 
 ### Nouveaux types de champs

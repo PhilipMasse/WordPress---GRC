@@ -25,6 +25,10 @@
 		var row = document.createElement( 'div' );
 		row.className = 'grc-champ-row';
 		row.innerHTML =
+			'<span class="grc-champ-order">' +
+				'<button type="button" class="grc-champ-up" title="Monter">▲</button>' +
+				'<button type="button" class="grc-champ-down" title="Descendre">▼</button>' +
+			'</span>' +
 			'<input type="text" class="grc-champ-label" placeholder="Libellé (ex: Adresse du terrain)" value="' + ( champ.label || '' ).replace( /"/g, '&quot;' ) + '">' +
 			'<input type="text" class="grc-champ-key" placeholder="clé (auto)" value="' + ( champ.key || '' ).replace( /"/g, '&quot;' ) + '">' +
 			'<select class="grc-champ-type">' +
@@ -53,6 +57,20 @@
 
 		row.querySelector( '.grc-champ-remove' ).addEventListener( 'click', function () {
 			row.remove();
+		} );
+
+		row.querySelector( '.grc-champ-up' ).addEventListener( 'click', function () {
+			var prev = row.previousElementSibling;
+			if ( prev ) {
+				row.parentNode.insertBefore( row, prev );
+			}
+		} );
+
+		row.querySelector( '.grc-champ-down' ).addEventListener( 'click', function () {
+			var next = row.nextElementSibling;
+			if ( next ) {
+				row.parentNode.insertBefore( next, row );
+			}
 		} );
 
 		return row;
