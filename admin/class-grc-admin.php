@@ -14,6 +14,7 @@ class GRC_Admin {
 		GRC_Admin_Services::init();
 		GRC_Admin_Demarches::init();
 		GRC_Admin_RDV::init();
+		GRC_Admin_Citoyens::init();
 	}
 
 	/**

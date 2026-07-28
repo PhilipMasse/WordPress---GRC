@@ -21,6 +21,8 @@ class GRC_Admin_RDV {
 		add_action( 'admin_post_grc_cancel_rdv', [ __CLASS__, 'handle_cancel_rdv' ] );
 		add_action( 'admin_post_grc_validate_rdv', [ __CLASS__, 'handle_validate_rdv' ] );
 		add_action( 'admin_post_grc_refuse_rdv', [ __CLASS__, 'handle_refuse_rdv' ] );
+		add_action( 'admin_post_grc_archive_rdv', [ __CLASS__, 'handle_archive_rdv' ] );
+		add_action( 'admin_post_grc_unarchive_rdv', [ __CLASS__, 'handle_unarchive_rdv' ] );
 	}
 
 	public static function render() {
@@ -94,6 +96,7 @@ class GRC_Admin_RDV {
 
 		$filtre_service = absint( $_GET['service_id'] ?? 0 );
 		$filtre_statut  = sanitize_text_field( wp_unslash( $_GET['statut'] ?? '' ) );
+		$vue_archive    = sanitize_key( $_GET['vue'] ?? 'actives' );
 
 		$where  = [ '1=1' ];
 		$params = [];
@@ -104,6 +107,11 @@ class GRC_Admin_RDV {
 		if ( $filtre_statut ) {
 			$where[]  = 'r.statut = %s';
 			$params[] = $filtre_statut;
+		}
+		if ( 'archivees' === $vue_archive ) {
+			$where[] = 'r.archive = 1';
+		} elseif ( 'toutes' !== $vue_archive ) {
+			$where[] = 'r.archive = 0';
 		}
 		$where_sql = implode( ' AND ', $where );
 
@@ -134,7 +142,15 @@ class GRC_Admin_RDV {
 				<option value="refuse" <?php selected( $filtre_statut, 'refuse' ); ?>>Refusé</option>
 				<option value="annule" <?php selected( $filtre_statut, 'annule' ); ?>>Annulé</option>
 			</select>
+			<select name="vue">
+				<option value="actives" <?php selected( $vue_archive, 'actives' ); ?>>Actifs (masquer les archives)</option>
+				<option value="archivees" <?php selected( $vue_archive, 'archivees' ); ?>>Archivés uniquement</option>
+				<option value="toutes" <?php selected( $vue_archive, 'toutes' ); ?>>Tous</option>
+			</select>
 			<button type="submit" class="button">Filtrer</button>
+			<?php if ( $filtre_service || $filtre_statut || 'actives' !== $vue_archive ) : ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-rdv' ) ); ?>" class="button">Réinitialiser</a>
+			<?php endif; ?>
 		</form>
 
 		<table class="wp-list-table widefat fixed striped">
@@ -176,6 +192,11 @@ class GRC_Admin_RDV {
 								<a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_refuse_rdv&id=' . $r->id ), 'grc_refuse_rdv_' . $r->id ) ); ?>" onclick="return confirm('Refuser ce rendez-vous ?');">Refuser</a>
 							<?php elseif ( 'confirme' === $r->statut ) : ?>
 								<a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_cancel_rdv&id=' . $r->id ), 'grc_cancel_rdv_' . $r->id ) ); ?>" onclick="return confirm('Annuler ce rendez-vous ?');">Annuler</a>
+							<?php endif; ?>
+							<?php if ( $r->archive ) : ?>
+								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_rdv&id=' . $r->id ), 'grc_archive_rdv_' . $r->id ) ); ?>">Désarchiver</a>
+							<?php else : ?>
+								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_rdv&id=' . $r->id ), 'grc_archive_rdv_' . $r->id ) ); ?>">Archiver</a>
 							<?php endif; ?>
 						</td>
 					</tr>
@@ -562,6 +583,32 @@ class GRC_Admin_RDV {
 		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&grc_notice=rdv_cancelled' ) );
+		exit;
+	}
+
+	public static function handle_archive_rdv() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_rdv_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv', [ 'archive' => 1 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'rdv_archived', 'rdv', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-rdv' ) );
+		exit;
+	}
+
+	public static function handle_unarchive_rdv() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_rdv_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv', [ 'archive' => 0 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'rdv_unarchived', 'rdv', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-rdv' ) );
 		exit;
 	}
 }

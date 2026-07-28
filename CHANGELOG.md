@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.0 — Archivage des demandes, démarches, rendez-vous et comptes citoyens
+
+- Nouvelle colonne `archive` sur les quatre tables concernées (`wp_grc_demandes`, `wp_grc_demarches`, `wp_grc_rdv`, `wp_grc_citoyens`)
+- **Par défaut, les éléments archivés sont masqués** dans toutes les listes admin (Demandes, Démarches, Rendez-vous, Citoyens)
+- Nouveau filtre **"Vue"** sur chaque liste : Actifs (défaut) / Archivés uniquement / Tous
+- Boutons **Archiver / Désarchiver** dans chaque liste, et sur la fiche citoyen (avec indicateur "(Archivé)" dans le titre)
+- L'archivage n'affecte que la visibilité par défaut : aucune donnée n'est supprimée, tout reste consultable via le filtre "Tous" ou "Archivés"
+
 ## 0.18.5 — Fiche citoyen : motif et créneau horaire des rendez-vous
 
 - Le tableau Rendez-vous de la fiche citoyen affiche désormais le **motif** et le **créneau horaire complet** (ex : 09:00 - 09:30), en plus de la date.

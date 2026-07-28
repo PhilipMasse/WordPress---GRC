@@ -10,6 +10,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class GRC_Admin_Citoyens {
 
+	public static function init() {
+		add_action( 'admin_post_grc_archive_citoyen', [ __CLASS__, 'handle_archive_citoyen' ] );
+		add_action( 'admin_post_grc_unarchive_citoyen', [ __CLASS__, 'handle_unarchive_citoyen' ] );
+	}
+
 	public static function render() {
 		if ( ! current_user_can( 'grc_manage_demandes' ) && ! current_user_can( 'grc_view_all' ) ) {
 			echo '<div class="wrap"><p>Accès non autorisé.</p></div>';
@@ -33,10 +38,11 @@ class GRC_Admin_Citoyens {
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
 
-		$recherche = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
-		$paged     = max( 1, absint( $_GET['paged'] ?? 1 ) );
-		$per_page  = 25;
-		$offset    = ( $paged - 1 ) * $per_page;
+		$recherche   = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
+		$vue_archive = sanitize_key( $_GET['vue'] ?? 'actives' );
+		$paged       = max( 1, absint( $_GET['paged'] ?? 1 ) );
+		$per_page    = 25;
+		$offset      = ( $paged - 1 ) * $per_page;
 
 		$where  = '1=1';
 		$params = [];
@@ -56,6 +62,12 @@ class GRC_Admin_Citoyens {
 			}
 		}
 
+		if ( 'archivees' === $vue_archive ) {
+			$where .= ' AND archive = 1';
+		} elseif ( 'toutes' !== $vue_archive ) {
+			$where .= ' AND archive = 0';
+		}
+
 		$total_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where}";
 		$total     = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $total_sql, $params ) ) : $wpdb->get_var( $total_sql ) );
 
@@ -70,7 +82,12 @@ class GRC_Admin_Citoyens {
 				<input type="hidden" name="page" value="grc-citoyens">
 				<input type="text" name="s" value="<?php echo esc_attr( $recherche ); ?>" placeholder="Numéro (CIT-000042) ou email exact..." style="width:280px;">
 				<button type="submit" class="button">Rechercher</button>
-				<?php if ( $recherche ) : ?>
+				<select name="vue">
+					<option value="actives" <?php selected( $vue_archive, 'actives' ); ?>>Actifs (masquer les archives)</option>
+					<option value="archivees" <?php selected( $vue_archive, 'archivees' ); ?>>Archivés uniquement</option>
+					<option value="toutes" <?php selected( $vue_archive, 'toutes' ); ?>>Tous</option>
+				</select>
+				<?php if ( $recherche || 'actives' !== $vue_archive ) : ?>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens' ) ); ?>" class="button">Réinitialiser</a>
 				<?php endif; ?>
 				<span class="description">La recherche par nom n'est pas possible : les noms sont chiffrés en base pour la protection des données personnelles. Utilisez le numéro citoyen ou l'email exact.</span>
@@ -96,7 +113,14 @@ class GRC_Admin_Citoyens {
 							<td><?php echo esc_html( $email ?: '—' ); ?></td>
 							<td><?php echo $c->is_guest ? 'Invité' : ( $c->password_hash ? 'Inscrit' : 'Invité' ); ?></td>
 							<td><?php echo esc_html( mysql2date( 'd/m/Y', $c->created_at ) ); ?></td>
-							<td><a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $c->id ) ); ?>">Voir la fiche</a></td>
+							<td style="white-space:nowrap;">
+								<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $c->id ) ); ?>">Voir la fiche</a>
+								<?php if ( $c->archive ) : ?>
+									<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_citoyen&id=' . $c->id ), 'grc_archive_citoyen_' . $c->id ) ); ?>">Désarchiver</a>
+								<?php else : ?>
+									<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_citoyen&id=' . $c->id ), 'grc_archive_citoyen_' . $c->id ) ); ?>">Archiver</a>
+								<?php endif; ?>
+							</td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
@@ -194,6 +218,12 @@ class GRC_Admin_Citoyens {
 			<h1>
 				<?php echo esc_html( trim( "$prenom $nom" ) ?: 'Citoyen' ); ?>
 				<code style="font-size:16px;font-weight:400;color:#888;"><?php echo esc_html( GRC_Citoyen_Helper::numero( $citoyen_id ) ); ?></code>
+				<?php if ( $citoyen->archive ) : ?>
+					<span style="font-size:13px;font-weight:400;color:#b32d2e;">(Archivé)</span>
+					<a class="button" style="font-size:13px;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_citoyen&id=' . $citoyen_id ), 'grc_archive_citoyen_' . $citoyen_id ) ); ?>">Désarchiver</a>
+				<?php else : ?>
+					<a class="button" style="font-size:13px;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_citoyen&id=' . $citoyen_id ), 'grc_archive_citoyen_' . $citoyen_id ) ); ?>">Archiver ce compte</a>
+				<?php endif; ?>
 			</h1>
 
 			<div style="display:flex;gap:24px;align-items:flex-start;margin-top:16px;">
@@ -291,5 +321,31 @@ class GRC_Admin_Citoyens {
 			</div>
 		</div>
 			<?php
+	}
+
+	public static function handle_archive_citoyen() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_citoyen_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens', [ 'archive' => 1 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'citoyen_archived', 'citoyen', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $id ) );
+		exit;
+	}
+
+	public static function handle_unarchive_citoyen() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_citoyen_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens', [ 'archive' => 0 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'citoyen_unarchived', 'citoyen', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $id ) );
+		exit;
 	}
 }

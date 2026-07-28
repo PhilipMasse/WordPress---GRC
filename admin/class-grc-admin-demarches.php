@@ -14,6 +14,8 @@ class GRC_Admin_Demarches {
 		add_action( 'admin_post_grc_delete_demarche_type', [ __CLASS__, 'handle_delete_type' ] );
 		add_action( 'admin_post_grc_demarche_statut', [ __CLASS__, 'handle_update_statut' ] );
 		add_action( 'admin_post_grc_demarche_message', [ __CLASS__, 'handle_add_message' ] );
+		add_action( 'admin_post_grc_archive_demarche', [ __CLASS__, 'handle_archive_demarche' ] );
+		add_action( 'admin_post_grc_unarchive_demarche', [ __CLASS__, 'handle_unarchive_demarche' ] );
 	}
 
 	public static function render() {
@@ -190,6 +192,7 @@ class GRC_Admin_Demarches {
 		$filtre_statut = sanitize_text_field( wp_unslash( $_GET['statut'] ?? '' ) );
 		$date_from     = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
 		$date_to       = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
+		$vue_archive   = sanitize_key( $_GET['vue'] ?? 'actives' );
 		$paged         = max( 1, absint( $_GET['paged'] ?? 1 ) );
 		$per_page      = 25;
 
@@ -211,6 +214,11 @@ class GRC_Admin_Demarches {
 		if ( $date_to ) {
 			$where[]  = 'd.created_at <= %s';
 			$params[] = $date_to . ' 23:59:59';
+		}
+		if ( 'archivees' === $vue_archive ) {
+			$where[] = 'd.archive = 1';
+		} elseif ( 'toutes' !== $vue_archive ) {
+			$where[] = 'd.archive = 0';
 		}
 
 		$where_sql = implode( ' AND ', $where );
@@ -289,8 +297,14 @@ class GRC_Admin_Demarches {
 				<label>Du <input type="date" name="date_from" value="<?php echo esc_attr( $date_from ); ?>"></label>
 				<label>Au <input type="date" name="date_to" value="<?php echo esc_attr( $date_to ); ?>"></label>
 
+				<select name="vue">
+					<option value="actives" <?php selected( $vue_archive, 'actives' ); ?>>Actives (masquer les archives)</option>
+					<option value="archivees" <?php selected( $vue_archive, 'archivees' ); ?>>Archivées uniquement</option>
+					<option value="toutes" <?php selected( $vue_archive, 'toutes' ); ?>>Toutes</option>
+				</select>
+
 				<button type="submit" class="button">Filtrer</button>
-				<?php if ( $filtre_type || $filtre_statut || $date_from || $date_to ) : ?>
+				<?php if ( $filtre_type || $filtre_statut || $date_from || $date_to || 'actives' !== $vue_archive ) : ?>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarches' ) ); ?>" class="button">Réinitialiser</a>
 				<?php endif; ?>
 			</form>
@@ -321,7 +335,14 @@ class GRC_Admin_Demarches {
 						<td><?php echo esc_html( $d->type_nom ?: $d->type_demarche ); ?></td>
 						<td><?php echo esc_html( $statut_labels[ $d->statut ] ?? $d->statut ); ?></td>
 						<td><?php echo esc_html( mysql2date( 'd/m/Y H:i', $d->created_at ) ); ?></td>
-						<td><a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarches&dossier_id=' . $d->id ) ); ?>">Voir</a></td>
+						<td style="white-space:nowrap;">
+							<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarches&dossier_id=' . $d->id ) ); ?>">Voir</a>
+							<?php if ( $d->archive ) : ?>
+								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_demarche&id=' . $d->id ), 'grc_archive_demarche_' . $d->id ) ); ?>">Désarchiver</a>
+							<?php else : ?>
+								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_demarche&id=' . $d->id ), 'grc_archive_demarche_' . $d->id ) ); ?>">Archiver</a>
+							<?php endif; ?>
+						</td>
 					</tr>
 					<?php endforeach; ?>
 				</tbody>
@@ -595,6 +616,32 @@ class GRC_Admin_Demarches {
 		}
 
 		wp_safe_redirect( admin_url( "admin.php?page=grc-demarches&dossier_id={$id}&grc_notice=statut_updated" ) );
+		exit;
+	}
+
+	public static function handle_archive_demarche() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_demarche_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches', [ 'archive' => 1 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'demarche_archived', 'demarche', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-demarches' ) );
+		exit;
+	}
+
+	public static function handle_unarchive_demarche() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_demarche_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches', [ 'archive' => 0 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'demarche_unarchived', 'demarche', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-demarches' ) );
 		exit;
 	}
 }

@@ -13,6 +13,8 @@ class GRC_Admin_Demandes {
 		add_action( 'admin_post_grc_assign_agent', [ __CLASS__, 'handle_assign_agent' ] );
 		add_action( 'admin_post_grc_change_statut', [ __CLASS__, 'handle_change_statut' ] );
 		add_action( 'admin_post_grc_add_message', [ __CLASS__, 'handle_add_message' ] );
+		add_action( 'admin_post_grc_archive_demande', [ __CLASS__, 'handle_archive_demande' ] );
+		add_action( 'admin_post_grc_unarchive_demande', [ __CLASS__, 'handle_unarchive_demande' ] );
 	}
 
 	public static function render() {
@@ -57,6 +59,7 @@ class GRC_Admin_Demandes {
 		$filtre_service   = absint( $_GET['service_id'] ?? 0 );
 		$filtre_categorie = absint( $_GET['categorie_id'] ?? 0 );
 		$filtre_numero    = sanitize_text_field( wp_unslash( $_GET['numero'] ?? '' ) );
+		$vue_archive      = sanitize_key( $_GET['vue'] ?? 'actives' ); // actives | archivees | toutes
 		$paged            = max( 1, absint( $_GET['paged'] ?? 1 ) );
 		$per_page         = 20;
 
@@ -86,6 +89,11 @@ class GRC_Admin_Demandes {
 		if ( $filtre_numero ) {
 			$where[]  = 'd.numero_suivi LIKE %s';
 			$params[] = '%' . $wpdb->esc_like( $filtre_numero ) . '%';
+		}
+		if ( 'archivees' === $vue_archive ) {
+			$where[] = 'd.archive = 1';
+		} elseif ( 'toutes' !== $vue_archive ) {
+			$where[] = 'd.archive = 0';
 		}
 
 		$where_sql = implode( ' AND ', $where );
@@ -147,8 +155,14 @@ class GRC_Admin_Demandes {
 					<?php endforeach; ?>
 				</select>
 
+				<select name="vue">
+					<option value="actives" <?php selected( $vue_archive, 'actives' ); ?>>Actives (masquer les archives)</option>
+					<option value="archivees" <?php selected( $vue_archive, 'archivees' ); ?>>Archivées uniquement</option>
+					<option value="toutes" <?php selected( $vue_archive, 'toutes' ); ?>>Toutes (actives + archivées)</option>
+				</select>
+
 				<button type="submit" class="button">Filtrer</button>
-				<?php if ( $filtre_statut || $filtre_service || $filtre_categorie || $filtre_numero ) : ?>
+				<?php if ( $filtre_statut || $filtre_service || $filtre_categorie || $filtre_numero || 'actives' !== $vue_archive ) : ?>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demandes' ) ); ?>" class="button">Réinitialiser</a>
 				<?php endif; ?>
 			</form>
@@ -195,8 +209,13 @@ class GRC_Admin_Demandes {
 							<td><?php self::render_statut_badge( $row->statut ); ?></td>
 							<td><?php echo esc_html( mysql2date( 'd/m/Y H:i', $row->created_at ) ); ?></td>
 							<td><?php echo $en_retard ? '<span style="color:#b32d2e;font-weight:600;">En retard</span>' : '—'; ?></td>
-							<td>
+							<td style="white-space:nowrap;">
 								<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demandes&demande_id=' . $row->id ) ); ?>">Voir</a>
+								<?php if ( $row->archive ) : ?>
+									<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_demande&id=' . $row->id ), 'grc_archive_demande_' . $row->id ) ); ?>">Désarchiver</a>
+								<?php else : ?>
+									<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_demande&id=' . $row->id ), 'grc_archive_demande_' . $row->id ) ); ?>">Archiver</a>
+								<?php endif; ?>
 							</td>
 						</tr>
 					<?php endforeach; ?>
@@ -539,5 +558,31 @@ class GRC_Admin_Demandes {
 		if ( $email ) {
 			GRC_Notifications::send_statut_change( $demande_id, $email, $statut );
 		}
+	}
+
+	public static function handle_archive_demande() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_demande_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes', [ 'archive' => 1 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'demande_archived', 'demande', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-demandes' ) );
+		exit;
+	}
+
+	public static function handle_unarchive_demande() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_archive_demande_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+		global $wpdb;
+		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes', [ 'archive' => 0 ], [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'demande_unarchived', 'demande', $id );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-demandes' ) );
+		exit;
 	}
 }
