@@ -144,6 +144,7 @@ class GRC_Activator {
 		$sql[] = "CREATE TABLE {$p}pieces_jointes (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			demande_id BIGINT UNSIGNED NULL,
+			demarche_id BIGINT UNSIGNED NULL,
 			message_id BIGINT UNSIGNED NULL,
 			chemin_fichier VARCHAR(500) NOT NULL,
 			nom_original VARCHAR(255) NULL,
@@ -152,6 +153,7 @@ class GRC_Activator {
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
 			KEY demande_id (demande_id),
+			KEY demarche_id (demarche_id),
 			KEY message_id (message_id)
 		) $charset_collate;";
 

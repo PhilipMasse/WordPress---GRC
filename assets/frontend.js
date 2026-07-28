@@ -218,7 +218,10 @@
 		var star = champ.requis ? ' <span class="required">*</span>' : '';
 		var html = '<div class="grc-field"><label for="grc-champ-' + key + '">' + label + star + '</label>';
 
-		if ( 'textarea' === champ.type ) {
+		if ( 'file' === champ.type ) {
+			html += '<input type="file" id="grc-champ-' + key + '" data-key="' + key + '" data-filetype="1" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ' + requis + '>';
+			html += '<p class="grc-hint">Formats acceptés : PDF ou Word (.docx), 8 Mo maximum.</p>';
+		} else if ( 'textarea' === champ.type ) {
 			html += '<textarea id="grc-champ-' + key + '" data-key="' + key + '" rows="4" ' + requis + '></textarea>';
 		} else {
 			var inputType = 'email' === champ.type ? 'email' : ( 'number' === champ.type ? 'number' : 'text' );
@@ -306,9 +309,20 @@
 			var slug = preselectType || typeSelect.value;
 
 			var donnees = {};
+			var fichiers = [];
 			currentChamps.forEach( function ( champ ) {
 				var fieldEl = el( '#grc-champ-' + champ.key, form );
-				donnees[ champ.key ] = fieldEl ? fieldEl.value : '';
+				if ( ! fieldEl ) {
+					return;
+				}
+				if ( 'file' === champ.type ) {
+					if ( fieldEl.files && fieldEl.files[ 0 ] ) {
+						fichiers.push( fieldEl.files[ 0 ] );
+					}
+					donnees[ champ.key ] = fieldEl.files && fieldEl.files[ 0 ] ? fieldEl.files[ 0 ].name : '';
+				} else {
+					donnees[ champ.key ] = fieldEl.value;
+				}
 			} );
 
 			var payload = { type_slug: slug, donnees: donnees };
@@ -330,6 +344,31 @@
 					if ( ! result.ok ) {
 						throw new Error( result.data.message || 'Erreur lors de l\'envoi.' );
 					}
+					var dossierId = result.data.id;
+
+					if ( ! fichiers.length ) {
+						return { uploadsOk: true };
+					}
+
+					return Promise.all( fichiers.map( function ( file ) {
+						var fd = new FormData();
+						fd.append( 'file', file );
+						if ( payload.email ) {
+							fd.append( 'email', payload.email );
+						}
+						return authFetch( grcConfig.restUrl + '/demarches/' + dossierId + '/pieces-jointes', {
+							method: 'POST',
+							body: fd
+						} ).then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } );
+					} ) ).then( function ( results ) {
+						var failed = results.filter( function ( r ) { return ! r.ok; } );
+						if ( failed.length ) {
+							throw new Error( 'Dossier envoyé, mais un ou plusieurs fichiers ont été refusés : ' + failed.map( function ( f ) { return f.data.message; } ).join( ' / ' ) );
+						}
+						return { uploadsOk: true };
+					} );
+				} )
+				.then( function () {
 					showMessage( msgBox, 'Votre dossier a bien été transmis. Vous serez notifié(e) de son traitement.', 'success' );
 					form.reset();
 					dynamicFields.innerHTML = '';
@@ -602,7 +641,7 @@
 
 		function loadDemarcheThread( id, threadEl ) {
 			threadEl.innerHTML = '<p>Chargement...</p>';
-			authFetch( grcConfig.restUrl + '/demarches/' + id )
+			authFetch( grcConfig.restUrl + '/demarches/' + id + '?_=' + Date.now() )
 				.then( function ( res ) { return res.ok ? res.json() : Promise.reject(); } )
 				.then( function ( dossier ) {
 					var html = '';
@@ -612,12 +651,17 @@
 						html += '<span class="grc-demande-date"> — ' + new Date( m.created_at ).toLocaleDateString( 'fr-FR' ) + '</span>';
 						html += '<p>' + m.contenu + '</p></div>';
 					} );
+					if ( ! dossier.messages || ! dossier.messages.length ) {
+						html += '<p class="grc-hint">Aucun message pour le moment.</p>';
+					}
 					html += '<textarea class="grc-thread-reply" rows="2" placeholder="Votre réponse..."></textarea>';
+					html += '<div class="grc-form-message grc-thread-error" style="display:none;"></div>';
 					html += '<button type="button" class="grc-btn-submit grc-thread-send" data-demarche-id="' + id + '">Envoyer</button>';
 					threadEl.innerHTML = html;
 
 					threadEl.querySelector( '.grc-thread-send' ).addEventListener( 'click', function () {
 						var textarea = threadEl.querySelector( '.grc-thread-reply' );
+						var errorBox = threadEl.querySelector( '.grc-thread-error' );
 						var contenu = textarea.value.trim();
 						if ( ! contenu ) {
 							return;
@@ -627,8 +671,16 @@
 							headers: { 'Content-Type': 'application/json' },
 							body: JSON.stringify( { contenu: contenu } )
 						} )
-							.then( function ( res ) { return res.ok ? res.json() : Promise.reject(); } )
-							.then( function () { loadDemarcheThread( id, threadEl ); } );
+							.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+							.then( function ( result ) {
+								if ( ! result.ok ) {
+									throw new Error( result.data.message || 'Erreur lors de l\'envoi du message.' );
+								}
+								loadDemarcheThread( id, threadEl );
+							} )
+							.catch( function ( err ) {
+								showMessage( errorBox, err.message, 'error' );
+							} );
 					} );
 				} )
 				.catch( function () { threadEl.innerHTML = '<p>Erreur lors du chargement de l\'échange.</p>'; } );

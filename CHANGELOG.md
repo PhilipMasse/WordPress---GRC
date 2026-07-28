@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9.0 — Correctif cache fil d'échange + upload de documents sécurisé
+
+### Correctif fil d'échange
+- Les réponses de l'API GRC (`/wp-json/grc/v1/*`) n'étaient potentiellement pas rafraîchies à cause d'un cache (serveur ou plugin) mettant en cache les requêtes GET du fil de messages, donnant l'impression que les échanges n'apparaissaient jamais. Ajout d'en-têtes `no-cache` sur toutes les réponses de l'API GRC, et paramètre anti-cache côté client sur le chargement du fil.
+- Ajout d'une gestion d'erreur visible lors de l'envoi d'un message (au lieu d'un échec silencieux).
+
+### Upload de documents pour les démarches
+- Nouveau type de champ `"type":"file"` dans la définition JSON d'un type de démarche : génère un input fichier dans le formulaire citoyen
+- Formats acceptés : **PDF** et **Word (.docx)** — le format `.doc` legacy (OLE binaire) est volontairement exclu, sa structure propriétaire rendant peu fiable la détection de contenu malveillant comparé aux formats modernes
+- **Contrôles de sécurité avant stockage** (`GRC_File_Scanner`) :
+  - Vérification de la signature binaire réelle du fichier (pas seulement l'extension ou le type déclaré par le navigateur)
+  - Pour les `.docx` : validation de la structure interne (fichier ZIP valide, parties XML attendues présentes) et **rejet si une macro VBA est détectée** (`word/vbaProject.bin`), le vecteur d'infection le plus courant des documents Office
+  - Pour les PDF : **rejet si du JavaScript embarqué ou des actions d'ouverture/lancement automatique** sont détectés (vecteurs classiques d'exploitation PDF)
+  - Analyse ClamAV automatique si le binaire `clamscan` est disponible sur le serveur (sinon, seules les vérifications heuristiques ci-dessus s'appliquent — voir la note importante ci-dessous)
+- Les documents sont stockés dans le même répertoire protégé que les photos de signalement (non accessible par URL directe), et téléchargeables uniquement via l'API avec vérification d'autorisation (agent ou citoyen propriétaire du dossier)
+
+**Note de sécurité importante** : sans moteur antivirus dédié installé sur le serveur de production, ces contrôles ne garantissent pas qu'un fichier soit totalement exempt de code malveillant — ils bloquent les vecteurs d'attaque les plus courants et les fichiers structurellement incohérents. Pour une garantie plus forte, il est recommandé d'installer ClamAV sur le serveur (le plugin l'utilisera automatiquement s'il est détecté).
+
 ## 0.8.0 — Barre citoyenne globale + démarches dans "Mes demandes" + échanges
 
 ### Barre citoyenne globale

@@ -18,6 +18,20 @@ class GRC_REST_API {
 	public static function init() {
 		add_action( 'rest_api_init', [ __CLASS__, 'register_routes' ] );
 		add_filter( 'rest_pre_dispatch', [ __CLASS__, 'authenticate_request' ], 10, 3 );
+		add_filter( 'rest_pre_serve_request', [ __CLASS__, 'prevent_caching' ], 10, 4 );
+	}
+
+	/**
+	 * Empêche la mise en cache des réponses de l'API GRC. Certains plugins/caches
+	 * serveur agressifs mettent en cache les requêtes GET vers /wp-json/, ce qui
+	 * peut faire persister une version obsolète (ex: fil de messages sans les
+	 * derniers messages) même après une mise à jour côté serveur.
+	 */
+	public static function prevent_caching( $served, $result, $request, $server ) {
+		if ( 0 === strpos( $request->get_route(), '/' . self::NAMESPACE_V1 ) ) {
+			nocache_headers();
+		}
+		return $served;
 	}
 
 	public static function register_routes() {

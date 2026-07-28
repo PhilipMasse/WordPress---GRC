@@ -167,6 +167,9 @@ class GRC_Admin_Demarches {
 		$msg_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages';
 		$messages  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$msg_table} WHERE demarche_id = %d ORDER BY created_at ASC", $id ) );
 
+		$pj_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'pieces_jointes';
+		$pieces   = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$pj_table} WHERE demarche_id = %d ORDER BY created_at ASC", $id ) );
+
 		GRC_Audit_Log::log( 'demarche_viewed_admin', 'demarche', $id );
 
 		?>
@@ -193,6 +196,22 @@ class GRC_Admin_Demarches {
 					<?php endforeach; ?>
 				</table>
 			</div>
+
+			<?php if ( ! empty( $pieces ) ) : ?>
+			<div class="card" style="padding:16px;max-width:600px;margin-bottom:16px;">
+				<h2>Documents joints</h2>
+				<ul style="margin:0;">
+					<?php foreach ( $pieces as $piece ) : ?>
+						<li>
+							<a href="<?php echo esc_url( rest_url( 'grc/v1/pieces-jointes/' . $piece->id ) ); ?>" target="_blank">
+								<?php echo esc_html( $piece->nom_original ); ?>
+							</a>
+							<span style="color:#666;font-size:12px;"> (<?php echo esc_html( strtoupper( pathinfo( $piece->nom_original, PATHINFO_EXTENSION ) ) ); ?>)</span>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			</div>
+			<?php endif; ?>
 
 			<div class="card" style="padding:16px;max-width:600px;margin-bottom:16px;">
 				<h2>Échanges avec le citoyen</h2>

@@ -69,6 +69,7 @@ Namespace : `/wp-json/grc/v1/`
 | `/demarches/{id}` | GET | Agent ou citoyen propriétaire | Détail d'un dossier avec le fil de messages |
 | `/demarches/{id}/messages` | POST | Agent ou citoyen propriétaire | Ajouter un message au fil d'échange |
 | `/demarches/{id}/statut` | POST | JWT agent | Changer le statut d'un dossier (avec commentaire optionnel communiqué au citoyen) |
+| `/demarches/{id}/pieces-jointes` | POST | Agent ou citoyen propriétaire | Joindre un document (PDF ou .docx) à un dossier de démarche |
 | `/demandes/{id}/satisfaction` | POST | Selon contexte | Noter une demande résolue (1-5 + commentaire) |
 | `/satisfaction/stats` | GET | JWT agent | Moyenne et répartition des notes de satisfaction |
 
