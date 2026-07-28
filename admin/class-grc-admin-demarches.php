@@ -62,45 +62,65 @@ class GRC_Admin_Demarches {
 		<div class="wrap">
 			<h1>Démarches administratives</h1>
 			<h2>Types de démarches</h2>
-			<p class="description">
-				Chaque type définit ses champs au format JSON. Exemple :
-				<code>[{"key":"adresse","label":"Adresse du terrain","type":"text","requis":true},{"key":"motif","label":"Motif","type":"textarea","requis":false}]</code><br>
-				Types de champ disponibles : <code>text</code>, <code>textarea</code>, <code>email</code>, <code>number</code>.
-			</p>
+			<p class="description">Définissez les champs de chaque type de démarche avec le constructeur ci-dessous — pas besoin d'écrire du JSON à la main.</p>
 
-			<table class="wp-list-table widefat fixed striped">
-				<thead><tr><th style="width:15%;">Nom</th><th style="width:10%;">Slug</th><th>Champs (JSON)</th><th style="width:8%;">Actif</th><th style="width:12%;">Action</th></tr></thead>
-				<tbody>
-					<?php foreach ( $types as $t ) : ?>
-					<tr>
-						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-							<input type="hidden" name="action" value="grc_save_demarche_type">
-							<input type="hidden" name="id" value="<?php echo esc_attr( $t->id ); ?>">
-							<?php wp_nonce_field( 'grc_save_demarche_type' ); ?>
-							<td><input type="text" name="nom" value="<?php echo esc_attr( $t->nom ); ?>" style="width:100%;" required></td>
-							<td><input type="text" name="slug" value="<?php echo esc_attr( $t->slug ); ?>" style="width:100%;" required></td>
-							<td><textarea name="champs_json" rows="3" style="width:100%;font-family:monospace;font-size:12px;"><?php echo esc_textarea( $t->champs_json ); ?></textarea></td>
-							<td><input type="checkbox" name="actif" value="1" <?php checked( $t->actif, 1 ); ?>></td>
-							<td style="white-space:nowrap;">
-								<button type="submit" class="button button-small">Enregistrer</button>
-								<a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_delete_demarche_type&id=' . $t->id ), 'grc_delete_demarche_type_' . $t->id ) ); ?>" onclick="return confirm('Supprimer ce type ?');">Suppr.</a>
-							</td>
-						</form>
-					</tr>
-					<?php endforeach; ?>
-					<tr>
-						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-							<input type="hidden" name="action" value="grc_save_demarche_type">
-							<?php wp_nonce_field( 'grc_save_demarche_type' ); ?>
-							<td><input type="text" name="nom" placeholder="Ex: Demande d'état civil" style="width:100%;" required></td>
-							<td><input type="text" name="slug" placeholder="etat-civil" style="width:100%;" required></td>
-							<td><textarea name="champs_json" rows="3" placeholder='[{"key":"type_acte","label":"Type d\'acte","type":"text","requis":true}]' style="width:100%;font-family:monospace;font-size:12px;"></textarea></td>
-							<td><input type="checkbox" name="actif" value="1" checked></td>
-							<td><button type="submit" class="button button-primary button-small">Ajouter</button></td>
-						</form>
-					</tr>
-				</tbody>
-			</table>
+			<?php foreach ( $types as $t ) : ?>
+				<?php self::render_type_card( $t ); ?>
+			<?php endforeach; ?>
+
+			<h3>Nouveau type de démarche</h3>
+			<?php self::render_type_card( null ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Affiche une carte "type de démarche" avec le constructeur de champs visuel.
+	 * $type est null pour la carte de création d'un nouveau type.
+	 */
+	private static function render_type_card( $type ) {
+		$id          = $type->id ?? 0;
+		$nom         = $type->nom ?? '';
+		$slug        = $type->slug ?? '';
+		$actif       = $type ? (int) $type->actif : 1;
+		$champs_json = $type->champs_json ?? '[]';
+		$champs      = json_decode( $champs_json, true ) ?: [];
+		$uid         = 'grc-champs-builder-' . ( $id ?: 'new' );
+		?>
+		<div class="card" style="padding:16px;max-width:700px;margin-bottom:20px;">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="grc-demarche-type-form">
+				<input type="hidden" name="action" value="grc_save_demarche_type">
+				<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>">
+				<?php wp_nonce_field( 'grc_save_demarche_type' ); ?>
+
+				<div style="display:flex;gap:12px;margin-bottom:12px;">
+					<div style="flex:1;">
+						<label style="display:block;font-weight:600;margin-bottom:4px;">Nom</label>
+						<input type="text" name="nom" value="<?php echo esc_attr( $nom ); ?>" style="width:100%;" placeholder="Ex : Demande d'état civil" required>
+					</div>
+					<div style="flex:1;">
+						<label style="display:block;font-weight:600;margin-bottom:4px;">Slug (identifiant technique)</label>
+						<input type="text" name="slug" value="<?php echo esc_attr( $slug ); ?>" style="width:100%;" placeholder="etat-civil" required>
+					</div>
+					<div>
+						<label style="display:block;font-weight:600;margin-bottom:4px;">Actif</label>
+						<input type="checkbox" name="actif" value="1" <?php checked( $actif, 1 ); ?> style="margin-top:8px;">
+					</div>
+				</div>
+
+				<label style="display:block;font-weight:600;margin-bottom:6px;">Champs du formulaire</label>
+				<div class="grc-champs-builder" id="<?php echo esc_attr( $uid ); ?>" data-initial='<?php echo esc_attr( wp_json_encode( $champs ) ); ?>'></div>
+				<button type="button" class="button grc-champs-add-btn" data-target="<?php echo esc_attr( $uid ); ?>" style="margin:8px 0 16px;">+ Ajouter un champ</button>
+
+				<input type="hidden" name="champs_json" class="grc-champs-json-input">
+
+				<div>
+					<button type="submit" class="button button-primary"><?php echo $id ? 'Enregistrer' : 'Créer le type'; ?></button>
+					<?php if ( $id ) : ?>
+						<a class="button" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_delete_demarche_type&id=' . $id ), 'grc_delete_demarche_type_' . $id ) ); ?>" onclick="return confirm('Supprimer ce type ?');">Supprimer</a>
+					<?php endif; ?>
+				</div>
+			</form>
 		</div>
 		<?php
 	}

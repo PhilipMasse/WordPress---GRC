@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0 — Constructeur de champs visuel pour les démarches
+
+- La configuration des champs d'un type de démarche ne nécessite plus d'écrire du JSON à la main : un constructeur visuel permet d'ajouter/supprimer des champs, choisir leur libellé, leur type (texte court, texte long, email, nombre, fichier PDF/.docx) et s'ils sont obligatoires
+- La clé technique de chaque champ se génère automatiquement à partir du libellé (modifiable manuellement si besoin)
+- Le JSON est généré automatiquement en arrière-plan au moment de l'enregistrement — la structure de données (`champs_json`) et l'API restent identiques, seule l'interface change
+- La page **Démarches** affiche désormais chaque type sous forme de carte plutôt qu'un tableau compact, plus lisible avec le constructeur intégré
+
 ## 0.10.2 — Correctif téléchargement des pièces jointes (403)
 
 - Un lien `<a href>` classique ne peut transporter ni l'en-tête `Authorization` (JWT citoyen) ni le nonce REST (auth cookie WordPress), ce qui provoquait un `403 grc_forbidden` systématique au clic sur un document, aussi bien en administration que côté citoyen.

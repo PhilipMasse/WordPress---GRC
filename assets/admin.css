@@ -1,0 +1,41 @@
+.grc-champs-builder {
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 10px;
+	background: #fafafa;
+}
+
+.grc-champ-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.grc-champ-row .grc-champ-label {
+	flex: 2;
+}
+
+.grc-champ-row .grc-champ-key {
+	flex: 1;
+	font-family: monospace;
+	font-size: 12px;
+	color: #666;
+}
+
+.grc-champ-row .grc-champ-type {
+	flex: 1;
+}
+
+.grc-champ-requis-label {
+	white-space: nowrap;
+	font-size: 12px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.grc-champ-remove {
+	color: #b32d2e;
+	flex-shrink: 0;
+}
