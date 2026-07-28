@@ -76,6 +76,7 @@ Deux shortcodes disponibles pour les pages du site :
 
 - `[grc_signalement_form]` — formulaire public de signalement (compte connecté ou invité)
 - `[grc_mes_demandes]` — suivi des demandes (liste automatique si connecté, recherche par numéro + email sinon)
+- `[grc_demarche_form]` ou `[grc_demarche_form type="slug-du-type"]` — formulaire dynamique de démarche administrative, généré depuis les champs définis en administration
 
 ## Déploiement / Versioning
 

@@ -13,6 +13,7 @@ class GRC_Frontend {
 	public static function init() {
 		add_shortcode( 'grc_signalement_form', [ __CLASS__, 'render_signalement_form' ] );
 		add_shortcode( 'grc_mes_demandes', [ __CLASS__, 'render_mes_demandes' ] );
+		add_shortcode( 'grc_demarche_form', [ __CLASS__, 'render_demarche_form' ] );
 		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'maybe_enqueue_assets' ] );
 	}
 
@@ -193,6 +194,53 @@ class GRC_Frontend {
 			</div>
 
 			<div id="grc-guest-results" class="grc-demandes-liste"></div>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	// ------------------------------------------------------------------
+	// Formulaire de démarche administrative (dynamique)
+	// ------------------------------------------------------------------
+
+	/**
+	 * [grc_demarche_form] ou [grc_demarche_form type="etat-civil"]
+	 * Si "type" est fourni, le formulaire est directement affiché pour ce type.
+	 * Sinon, un sélecteur de type est affiché en premier (rempli via JS).
+	 */
+	public static function render_demarche_form( $atts ): string {
+		$atts = shortcode_atts( [ 'type' => '' ], $atts, 'grc_demarche_form' );
+
+		ob_start();
+		?>
+		<div class="grc-demarche-form-wrapper" data-preselect-type="<?php echo esc_attr( $atts['type'] ); ?>">
+			<div id="grc-demarche-connected-banner" class="grc-connected-banner" style="display:none;">
+				Connecté en tant que <strong id="grc-demarche-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce dossier.
+			</div>
+
+			<form id="grc-demarche-form" class="grc-form">
+				<div class="grc-field" id="grc-demarche-type-selector" style="display:none;">
+					<label for="grc-demarche-type-select">Type de démarche</label>
+					<select id="grc-demarche-type-select">
+						<option value="">— Chargement... —</option>
+					</select>
+				</div>
+
+				<div id="grc-demarche-description" class="grc-hint" style="display:none;"></div>
+
+				<div id="grc-demarche-dynamic-fields"></div>
+
+				<div id="grc-demarche-guest-fields" class="grc-guest-fields">
+					<p class="grc-hint">Vous n'êtes pas connecté(e) : renseignez votre email pour suivre votre dossier.</p>
+					<div class="grc-field">
+						<label for="grc-demarche-email">Email <span class="required">*</span></label>
+						<input type="email" id="grc-demarche-email" name="email">
+					</div>
+				</div>
+
+				<button type="submit" class="grc-btn-submit" disabled>Envoyer le dossier</button>
+				<div class="grc-form-message" style="display:none;"></div>
+			</form>
 		</div>
 		<?php
 		return ob_get_clean();

@@ -161,6 +161,138 @@
 		} );
 	}
 
+	function buildFieldHtml( champ ) {
+		var key = champ.key;
+		var label = champ.label || key;
+		var requis = champ.requis ? 'required' : '';
+		var star = champ.requis ? ' <span class="required">*</span>' : '';
+		var html = '<div class="grc-field"><label for="grc-champ-' + key + '">' + label + star + '</label>';
+
+		if ( 'textarea' === champ.type ) {
+			html += '<textarea id="grc-champ-' + key + '" data-key="' + key + '" rows="4" ' + requis + '></textarea>';
+		} else {
+			var inputType = 'email' === champ.type ? 'email' : ( 'number' === champ.type ? 'number' : 'text' );
+			html += '<input type="' + inputType + '" id="grc-champ-' + key + '" data-key="' + key + '" ' + requis + '>';
+		}
+		html += '</div>';
+		return html;
+	}
+
+	function initDemarcheForm( wrapper ) {
+		var form = el( '#grc-demarche-form', wrapper );
+		var selectorField = el( '#grc-demarche-type-selector', wrapper );
+		var typeSelect = el( '#grc-demarche-type-select', wrapper );
+		var descriptionEl = el( '#grc-demarche-description', wrapper );
+		var dynamicFields = el( '#grc-demarche-dynamic-fields', wrapper );
+        var guestFields = el( '#grc-demarche-guest-fields', wrapper );
+		var banner = el( '#grc-demarche-connected-banner', wrapper );
+		var bannerName = el( '#grc-demarche-connected-name', wrapper );
+		var submitBtn = form.querySelector( '.grc-btn-submit' );
+		var preselectType = wrapper.dataset.preselectType;
+		var types = [];
+		var currentChamps = [];
+
+		if ( isCitoyenLoggedIn() ) {
+			if ( guestFields ) {
+				guestFields.style.display = 'none';
+			}
+			if ( banner ) {
+				banner.style.display = 'block';
+				authFetch( grcConfig.restUrl + '/citoyen/me' )
+					.then( function ( res ) { return res.ok ? res.json() : null; } )
+					.then( function ( me ) {
+						if ( me && bannerName ) {
+							bannerName.textContent = ( me.prenom || me.email || 'vous' ) + ( me.nom ? ' ' + me.nom : '' );
+						}
+					} );
+			}
+		}
+
+		function renderFieldsForType( type ) {
+			currentChamps = type.champs || [];
+			descriptionEl.style.display = type.description ? 'block' : 'none';
+			descriptionEl.textContent = type.description || '';
+			dynamicFields.innerHTML = currentChamps.map( buildFieldHtml ).join( '' );
+			submitBtn.disabled = false;
+		}
+
+		fetch( grcConfig.restUrl + '/demarches/types' )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( result ) {
+				types = result || [];
+				if ( preselectType ) {
+					var match = types.filter( function ( t ) { return t.slug === preselectType; } )[ 0 ];
+					if ( match ) {
+						renderFieldsForType( match );
+					} else {
+						dynamicFields.innerHTML = '<p>Type de démarche introuvable ou inactif.</p>';
+					}
+					return;
+				}
+
+				selectorField.style.display = 'block';
+				typeSelect.innerHTML = '<option value="">— Sélectionner —</option>' + types.map( function ( t ) {
+					return '<option value="' + t.slug + '">' + t.nom + '</option>';
+				} ).join( '' );
+
+				typeSelect.addEventListener( 'change', function () {
+					var match = types.filter( function ( t ) { return t.slug === typeSelect.value; } )[ 0 ];
+					if ( match ) {
+						renderFieldsForType( match );
+					} else {
+						dynamicFields.innerHTML = '';
+						submitBtn.disabled = true;
+					}
+				} );
+			} )
+			.catch( function () {
+				dynamicFields.innerHTML = '<p>Erreur lors du chargement des types de démarches.</p>';
+			} );
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			var msgBox = el( '.grc-form-message', form );
+			var slug = preselectType || typeSelect.value;
+
+			var donnees = {};
+			currentChamps.forEach( function ( champ ) {
+				var fieldEl = el( '#grc-champ-' + champ.key, form );
+				donnees[ champ.key ] = fieldEl ? fieldEl.value : '';
+			} );
+
+			var payload = { type_slug: slug, donnees: donnees };
+			if ( ! isCitoyenLoggedIn() ) {
+				var emailField = el( '#grc-demarche-email', form );
+				payload.email = emailField ? emailField.value : '';
+			}
+
+			submitBtn.disabled = true;
+			submitBtn.textContent = 'Envoi en cours...';
+
+			authFetch( grcConfig.restUrl + '/demarches', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify( payload )
+			} )
+				.then( function ( res ) { return res.json().then( function ( data ) { return { ok: res.ok, data: data }; } ); } )
+				.then( function ( result ) {
+					if ( ! result.ok ) {
+						throw new Error( result.data.message || 'Erreur lors de l\'envoi.' );
+					}
+					showMessage( msgBox, 'Votre dossier a bien été transmis. Vous serez notifié(e) de son traitement.', 'success' );
+					form.reset();
+					dynamicFields.innerHTML = '';
+				} )
+				.catch( function ( err ) {
+					showMessage( msgBox, err.message, 'error' );
+				} )
+				.finally( function () {
+					submitBtn.disabled = false;
+					submitBtn.textContent = 'Envoyer le dossier';
+				} );
+		} );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 
 		// ================= Formulaire de signalement =================
@@ -246,6 +378,12 @@
 						submitBtn.textContent = 'Envoyer le signalement';
 					} );
 			} );
+		}
+
+		// ================= Formulaire de démarche administrative =================
+		var demarcheWrapper = el( '.grc-demarche-form-wrapper' );
+		if ( demarcheWrapper ) {
+			initDemarcheForm( demarcheWrapper );
 		}
 
 		// ================= Suivi des demandes =================

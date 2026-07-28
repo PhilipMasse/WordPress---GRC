@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 — Shortcode formulaire de démarche dynamique
+
+- Nouveau shortcode `[grc_demarche_form]` : génère automatiquement le formulaire à partir des champs JSON définis pour chaque type de démarche (texte, zone de texte, email, nombre ; obligatoire ou non)
+- Sans attribut, affiche un sélecteur de type puis le formulaire correspondant ; avec `[grc_demarche_form type="mon-slug"]`, affiche directement le formulaire de ce type (utile pour dédier une page par démarche)
+- Masque automatiquement les champs invité et affiche la bannière "Connecté en tant que" si un citoyen est authentifié, comme pour le formulaire de signalement
+
 ## 0.6.0 — Démarches administratives + Satisfaction citoyenne
 
 ### Démarches administratives
