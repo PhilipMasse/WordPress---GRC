@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 — Filet de sécurité création des tables
+
+- Les tables sont désormais (re)créées/mises à jour automatiquement à chaque chargement du plugin si la version de schéma (`grc_db_version`) diffère de la version du plugin — pas seulement à l'activation manuelle. Couvre le cas d'une mise à jour automatique via GitHub Releases, qui ne déclenche pas `register_activation_hook`.
+- `dbDelta()` étant idempotent, aucune donnée existante n'est perdue lors de ce contrôle.
+
 ## 0.1.0 — Fondations (en cours)
 
 ### Implémenté

@@ -6,6 +6,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 class GRC_Activator {
 
 	public static function activate() {
+		self::create_or_upgrade_tables();
+		update_option( 'grc_db_version', GRC_VERSION );
+		update_option( 'grc_activated_at', current_time( 'mysql' ) );
+		flush_rewrite_rules();
+	}
+
+	/**
+	 * Filet de sécurité appelé à chaque chargement du plugin (plugins_loaded)
+	 * quand la version de schéma enregistrée diffère de GRC_VERSION.
+	 * Couvre le cas d'une mise à jour automatique (GitHub Releases) qui ne
+	 * déclenche pas register_activation_hook.
+	 */
+	public static function maybe_upgrade_db() {
+		self::create_or_upgrade_tables();
+		update_option( 'grc_db_version', GRC_VERSION );
+	}
+
+	/**
+	 * Crée les tables si elles n'existent pas, ou les met à jour si le schéma a changé.
+	 * dbDelta() est idempotent : si une table existe déjà avec la bonne structure,
+	 * rien n'est modifié et aucune donnée n'est perdue.
+	 */
+	private static function create_or_upgrade_tables() {
 		global $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
@@ -217,11 +240,6 @@ class GRC_Activator {
 		}
 
 		self::seed_default_data( $p );
-
-		update_option( 'grc_db_version', GRC_VERSION );
-		update_option( 'grc_activated_at', current_time( 'mysql' ) );
-
-		flush_rewrite_rules();
 	}
 
 	/**

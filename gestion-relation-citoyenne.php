@@ -3,7 +3,7 @@
  * Plugin Name: Gestion de la Relation Citoyenne (GRC)
  * Plugin URI: https://github.com/PhilipMasse/WordPress---GRC
  * Description: Module de Gestion de la Relation Citoyenne pour la Mairie de Berre-les-Alpes : signalements, demandes, rendez-vous, démarches administratives, API REST pour application mobile.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: Mairie de Berre-les-Alpes
  * Text Domain: grc-citoyenne
  * Requires PHP: 8.1
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Accès direct interdit.
 }
 
-define( 'GRC_VERSION', '0.1.0' );
+define( 'GRC_VERSION', '0.1.1' );
 define( 'GRC_PLUGIN_FILE', __FILE__ );
 define( 'GRC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GRC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -54,6 +54,14 @@ register_deactivation_hook( __FILE__, [ 'GRC_Activator', 'deactivate' ] );
 function grc_init_plugin() {
 	if ( ! defined( 'GRC_ENCRYPTION_KEY' ) || ! defined( 'GRC_JWT_SECRET' ) ) {
 		return; // On ne charge rien tant que les clés ne sont pas en place.
+	}
+
+	// Filet de sécurité : si les tables n'existent pas ou si le schéma a changé
+	// (ex. après une mise à jour automatique via GitHub, qui ne déclenche PAS
+	// register_activation_hook), on les (re)crée ici. dbDelta() est idempotent :
+	// aucune donnée existante n'est touchée si les tables sont déjà à jour.
+	if ( get_option( 'grc_db_version' ) !== GRC_VERSION ) {
+		GRC_Activator::maybe_upgrade_db();
 	}
 
 	GRC_Roles::init();
