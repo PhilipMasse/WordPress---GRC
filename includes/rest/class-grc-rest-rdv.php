@@ -64,6 +64,8 @@ class GRC_REST_RDV {
 			$mois = current_time( 'Y-m' );
 		}
 
+		GRC_Creneaux_Generator::ensure_generated_for_month( $service_id, $mois );
+
 		$debut_mois = $mois . '-01 00:00:00';
 		$fin_mois   = gmdate( 'Y-m-t 23:59:59', strtotime( $debut_mois ) );
 		// Ne propose jamais un créneau déjà passé, même s'il est dans le mois affiché.
@@ -111,6 +113,8 @@ class GRC_REST_RDV {
 		if ( ! preg_match( '/^\d{4}-\d{2}$/', $mois ) ) {
 			$mois = gmdate( 'Y-m' );
 		}
+
+		GRC_Creneaux_Generator::ensure_generated_for_month( $service_id, $mois );
 
 		$debut_mois = $mois . '-01 00:00:00';
 		$fin_mois   = gmdate( 'Y-m-t 23:59:59', strtotime( $debut_mois ) );

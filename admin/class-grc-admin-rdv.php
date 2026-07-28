@@ -4,14 +4,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Administration des rendez-vous : gestion des créneaux disponibles par service
- * (création unitaire ou génération en masse) et suivi des rendez-vous pris.
+ * Administration des rendez-vous : horaires hebdomadaires par service (avec
+ * pause méridienne), gestion des absences, et suivi des rendez-vous pris.
+ * Les créneaux individuels ne sont plus jamais gérés à la main : ils sont
+ * générés automatiquement en arrière-plan à partir du modèle hebdomadaire
+ * (voir GRC_Creneaux_Generator).
  */
 class GRC_Admin_RDV {
 
+	const JOURS = [ 1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi', 4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi', 0 => 'Dimanche' ];
+
 	public static function init() {
-		add_action( 'admin_post_grc_generate_creneaux', [ __CLASS__, 'handle_generate_creneaux' ] );
-		add_action( 'admin_post_grc_delete_creneau', [ __CLASS__, 'handle_delete_creneau' ] );
+		add_action( 'admin_post_grc_save_disponibilites', [ __CLASS__, 'handle_save_disponibilites' ] );
+		add_action( 'admin_post_grc_save_absence', [ __CLASS__, 'handle_save_absence' ] );
+		add_action( 'admin_post_grc_delete_absence', [ __CLASS__, 'handle_delete_absence' ] );
 		add_action( 'admin_post_grc_cancel_rdv', [ __CLASS__, 'handle_cancel_rdv' ] );
 	}
 
@@ -35,14 +41,14 @@ class GRC_Admin_RDV {
 			'rdv' === $tab ? ' nav-tab-active' : ''
 		);
 		printf(
-			'<a href="%s" class="nav-tab%s">Créneaux</a>',
-			esc_url( admin_url( 'admin.php?page=grc-rdv&tab=creneaux' ) ),
-			'creneaux' === $tab ? ' nav-tab-active' : ''
+			'<a href="%s" class="nav-tab%s">Disponibilités</a>',
+			esc_url( admin_url( 'admin.php?page=grc-rdv&tab=disponibilites' ) ),
+			'disponibilites' === $tab ? ' nav-tab-active' : ''
 		);
 		echo '</nav>';
 
-		if ( 'creneaux' === $tab ) {
-			self::render_creneaux_tab();
+		if ( 'disponibilites' === $tab ) {
+			self::render_disponibilites_tab();
 		} else {
 			self::render_rdv_tab();
 		}
@@ -51,19 +57,28 @@ class GRC_Admin_RDV {
 
 	private static function render_notice( string $code ) {
 		$messages = [
-			'creneau_deleted'    => [ 'success', 'Créneau supprimé.' ],
-			'creneaux_generated' => [ 'success', 'Créneaux générés avec succès.' ],
-			'rdv_cancelled'      => [ 'success', 'Rendez-vous annulé.' ],
-			'error'              => [ 'error', 'Une erreur est survenue.' ],
+			'disponibilites_saved' => [ 'success', 'Horaires enregistrés. Les créneaux à venir ont été mis à jour.' ],
+			'absence_saved'        => [ 'success', 'Absence enregistrée.' ],
+			'absence_deleted'      => [ 'success', 'Absence supprimée.' ],
+			'rdv_cancelled'        => [ 'success', 'Rendez-vous annulé.' ],
+			'error'                => [ 'error', 'Une erreur est survenue.' ],
 		];
 		if ( isset( $messages[ $code ] ) ) {
 			[ $type, $text ] = $messages[ $code ];
 			printf( '<div class="notice notice-%s is-dismissible"><p>%s</p></div>', esc_attr( $type ), esc_html( $text ) );
 		}
+
+		$affectes = isset( $_GET['rdv_affectes'] ) ? absint( $_GET['rdv_affectes'] ) : 0;
+		if ( $affectes > 0 ) {
+			printf(
+				'<div class="notice notice-warning"><p><strong>Attention :</strong> %d rendez-vous déjà confirmé(s) tombent dans cette période d\'absence. Ils n\'ont pas été annulés automatiquement — vérifiez l\'onglet "Rendez-vous" et annulez-les manuellement en prévenant les citoyens concernés.</p></div>',
+				(int) $affectes
+			);
+		}
 	}
 
 	// ------------------------------------------------------------------
-	// Onglet Rendez-vous
+	// Onglet Rendez-vous (inchangé)
 	// ------------------------------------------------------------------
 
 	private static function render_rdv_tab() {
@@ -148,37 +163,111 @@ class GRC_Admin_RDV {
 	}
 
 	// ------------------------------------------------------------------
-	// Onglet Créneaux
+	// Onglet Disponibilités (horaires hebdomadaires + absences)
 	// ------------------------------------------------------------------
 
-	private static function render_creneaux_tab() {
+	private static function render_disponibilites_tab() {
 		global $wpdb;
-		$creneaux_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
 		$services_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'services';
+		$dispo_table    = $wpdb->prefix . GRC_TABLE_PREFIX . 'disponibilites';
+		$absences_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'absences';
 
 		$services = $wpdb->get_results( "SELECT id, nom FROM {$services_table} WHERE actif = 1 ORDER BY nom" );
-
 		$filtre_service = absint( $_GET['service_id'] ?? ( $services[0]->id ?? 0 ) );
 
-		$creneaux = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$creneaux_table} WHERE service_id = %d AND debut > %s ORDER BY debut ASC LIMIT 100",
-			$filtre_service,
-			current_time( 'mysql' )
+		$dispos_existantes = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$dispo_table} WHERE service_id = %d", $filtre_service
+		) );
+		$dispos_par_jour = [];
+		foreach ( $dispos_existantes as $d ) {
+			$dispos_par_jour[ (int) $d->jour_semaine ] = $d;
+		}
+
+		$absences = $wpdb->get_results( $wpdb->prepare(
+			"SELECT a.*, s.nom AS service_nom FROM {$absences_table} a
+			 LEFT JOIN {$services_table} s ON s.id = a.service_id
+			 WHERE a.date_fin >= %s AND ( a.service_id = %d OR a.service_id IS NULL )
+			 ORDER BY a.date_debut ASC",
+			current_time( 'Y-m-d' ),
+			$filtre_service
 		) );
 
 		?>
-		<div style="display:flex;gap:24px;align-items:flex-start;margin-top:16px;">
-			<div style="flex:1;">
-				<h2>Générer des créneaux récurrents</h2>
-				<div class="card" style="padding:16px;max-width:420px;">
-					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-						<input type="hidden" name="action" value="grc_generate_creneaux">
-						<?php wp_nonce_field( 'grc_generate_creneaux' ); ?>
+		<form method="get" style="margin:16px 0;">
+			<input type="hidden" name="page" value="grc-rdv">
+			<input type="hidden" name="tab" value="disponibilites">
+			<label style="font-weight:600;">Service : </label>
+			<select name="service_id" onchange="this.form.submit()">
+				<?php foreach ( $services as $s ) : ?>
+					<option value="<?php echo esc_attr( $s->id ); ?>" <?php selected( $filtre_service, (int) $s->id ); ?>><?php echo esc_html( $s->nom ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</form>
 
-						<label style="display:block;font-weight:600;margin-bottom:4px;">Service</label>
+		<div style="display:flex;gap:24px;align-items:flex-start;">
+			<div style="flex:2;">
+				<h2>Horaires d'ouverture</h2>
+				<p class="description">Définissez, pour chaque jour de la semaine, la plage horaire et la pause méridienne (facultative). Les créneaux sont générés automatiquement en arrière-plan selon ces horaires.</p>
+
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<input type="hidden" name="action" value="grc_save_disponibilites">
+					<input type="hidden" name="service_id" value="<?php echo esc_attr( $filtre_service ); ?>">
+					<?php wp_nonce_field( 'grc_save_disponibilites_' . $filtre_service ); ?>
+
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th style="width:30px;">Actif</th>
+								<th>Jour</th>
+								<th>Début</th>
+								<th>Fin</th>
+								<th>Pause de</th>
+								<th>Pause à</th>
+								<th>Durée créneau</th>
+								<th>Capacité</th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( self::JOURS as $num => $label ) : ?>
+								<?php $d = $dispos_par_jour[ $num ] ?? null; ?>
+								<tr>
+									<td><input type="checkbox" name="jours[<?php echo $num; ?>][actif]" value="1" <?php checked( $d ? (int) $d->actif : 0, 1 ); ?>></td>
+									<td><strong><?php echo esc_html( $label ); ?></strong></td>
+									<td><input type="time" name="jours[<?php echo $num; ?>][debut]" value="<?php echo esc_attr( $d->heure_debut ?? '09:00' ); ?>"></td>
+									<td><input type="time" name="jours[<?php echo $num; ?>][fin]" value="<?php echo esc_attr( $d->heure_fin ?? '17:00' ); ?>"></td>
+									<td><input type="time" name="jours[<?php echo $num; ?>][pause_debut]" value="<?php echo esc_attr( $d->pause_debut ?? '12:00' ); ?>"></td>
+									<td><input type="time" name="jours[<?php echo $num; ?>][pause_fin]" value="<?php echo esc_attr( $d->pause_fin ?? '14:00' ); ?>"></td>
+									<td>
+										<select name="jours[<?php echo $num; ?>][duree]">
+											<?php foreach ( [ 15, 30, 45, 60 ] as $m ) : ?>
+												<option value="<?php echo $m; ?>" <?php selected( $d ? (int) $d->duree_minutes : 30, $m ); ?>><?php echo $m; ?> min</option>
+											<?php endforeach; ?>
+										</select>
+									</td>
+									<td><input type="number" name="jours[<?php echo $num; ?>][capacite]" value="<?php echo esc_attr( $d->capacite ?? 1 ); ?>" min="1" style="width:60px;"></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+					<p class="description">Laissez la pause vide (ou identique début/fin) si le service ne ferme pas à midi.</p>
+					<button type="submit" class="button button-primary" style="margin-top:12px;">Enregistrer les horaires</button>
+				</form>
+			</div>
+
+			<div style="flex:1;">
+				<h2>Absences</h2>
+				<p class="description">Bloque la prise de rendez-vous sur une période (congé, fermeture exceptionnelle...). Les créneaux non réservés de cette période sont supprimés ; les rendez-vous déjà confirmés doivent être annulés manuellement.</p>
+
+				<div class="card" style="padding:16px;margin-bottom:16px;">
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<input type="hidden" name="action" value="grc_save_absence">
+						<?php wp_nonce_field( 'grc_save_absence' ); ?>
+
+						<label style="display:block;font-weight:600;margin-bottom:4px;">Portée</label>
 						<select name="service_id" style="width:100%;margin-bottom:10px;">
+							<option value="">Tous les services (mairie fermée)</option>
 							<?php foreach ( $services as $s ) : ?>
-								<option value="<?php echo esc_attr( $s->id ); ?>"><?php echo esc_html( $s->nom ); ?></option>
+								<option value="<?php echo esc_attr( $s->id ); ?>" <?php selected( $filtre_service, (int) $s->id ); ?>><?php echo esc_html( $s->nom ); ?></option>
 							<?php endforeach; ?>
 						</select>
 
@@ -188,69 +277,25 @@ class GRC_Admin_RDV {
 							<input type="date" name="date_fin" required style="flex:1;">
 						</div>
 
-						<label style="display:block;font-weight:600;margin-bottom:4px;">Jours de la semaine</label>
-						<div style="margin-bottom:10px;">
-							<?php foreach ( [ 1 => 'Lun', 2 => 'Mar', 3 => 'Mer', 4 => 'Jeu', 5 => 'Ven', 6 => 'Sam', 0 => 'Dim' ] as $val => $label ) : ?>
-								<label style="margin-right:8px;"><input type="checkbox" name="jours[]" value="<?php echo esc_attr( $val ); ?>" <?php checked( $val >= 1 && $val <= 5 ); ?>> <?php echo esc_html( $label ); ?></label>
-							<?php endforeach; ?>
-						</div>
+						<label style="display:block;font-weight:600;margin-bottom:4px;">Motif</label>
+						<input type="text" name="motif" placeholder="Ex : congés, formation..." style="width:100%;margin-bottom:10px;">
 
-						<label style="display:block;font-weight:600;margin-bottom:4px;">Créneaux horaires</label>
-						<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
-							<input type="time" name="heure_debut" value="09:00" required style="flex:1;">
-							<span>à</span>
-							<input type="time" name="heure_fin" value="17:00" required style="flex:1;">
-						</div>
-
-						<div style="display:flex;gap:8px;margin-bottom:10px;">
-							<div style="flex:1;">
-								<label style="display:block;font-weight:600;margin-bottom:4px;">Durée (min)</label>
-								<input type="number" name="duree_minutes" value="30" min="5" style="width:100%;">
-							</div>
-							<div style="flex:1;">
-								<label style="display:block;font-weight:600;margin-bottom:4px;">Capacité/créneau</label>
-								<input type="number" name="capacite" value="1" min="1" style="width:100%;">
-							</div>
-						</div>
-
-						<p class="description">Les pauses méridiennes ne sont pas gérées automatiquement : générez deux plages (ex : 9h-12h puis 14h-17h) si besoin.</p>
-						<p class="description" style="color:#b32d2e;">⚠️ Si vous proposez des rendez-vous de 30 min <strong>et</strong> 1h pour ce service, générez les deux durées sur des <strong>plages horaires distinctes</strong> (ex : 30 min le matin, 1h l'après-midi). Générer les deux durées sur le même créneau horaire créerait un risque de double réservation.</p>
-
-						<button type="submit" class="button button-primary">Générer les créneaux</button>
+						<button type="submit" class="button button-primary">Ajouter l'absence</button>
 					</form>
 				</div>
-			</div>
-
-			<div style="flex:1;">
-				<h2>Créneaux à venir</h2>
-				<form method="get" style="margin-bottom:12px;">
-					<input type="hidden" name="page" value="grc-rdv">
-					<input type="hidden" name="tab" value="creneaux">
-					<select name="service_id" onchange="this.form.submit()">
-						<?php foreach ( $services as $s ) : ?>
-							<option value="<?php echo esc_attr( $s->id ); ?>" <?php selected( $filtre_service, (int) $s->id ); ?>><?php echo esc_html( $s->nom ); ?></option>
-						<?php endforeach; ?>
-					</select>
-				</form>
 
 				<table class="wp-list-table widefat fixed striped">
-					<thead><tr><th>Début</th><th>Fin</th><th>Places</th><th>Action</th></tr></thead>
+					<thead><tr><th>Période</th><th>Portée</th><th>Motif</th><th></th></tr></thead>
 					<tbody>
-						<?php if ( empty( $creneaux ) ) : ?>
-							<tr><td colspan="4">Aucun créneau à venir pour ce service.</td></tr>
+						<?php if ( empty( $absences ) ) : ?>
+							<tr><td colspan="4">Aucune absence à venir.</td></tr>
 						<?php endif; ?>
-						<?php foreach ( $creneaux as $c ) : ?>
+						<?php foreach ( $absences as $a ) : ?>
 							<tr>
-								<td><?php echo esc_html( mysql2date( 'd/m/Y H:i', $c->debut ) ); ?></td>
-								<td><?php echo esc_html( mysql2date( 'H:i', $c->fin ) ); ?></td>
-								<td><?php echo (int) $c->reserve; ?> / <?php echo (int) $c->capacite; ?></td>
-								<td>
-									<?php if ( 0 === (int) $c->reserve ) : ?>
-										<a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_delete_creneau&id=' . $c->id ), 'grc_delete_creneau_' . $c->id ) ); ?>" onclick="return confirm('Supprimer ce créneau ?');">Suppr.</a>
-									<?php else : ?>
-										<em style="color:#888;font-size:12px;">Réservé</em>
-									<?php endif; ?>
-								</td>
+								<td><?php echo esc_html( mysql2date( 'd/m/Y', $a->date_debut ) ); ?> → <?php echo esc_html( mysql2date( 'd/m/Y', $a->date_fin ) ); ?></td>
+								<td><?php echo esc_html( $a->service_nom ?: 'Toute la mairie' ); ?></td>
+								<td><?php echo esc_html( $a->motif ?: '—' ); ?></td>
+								<td><a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_delete_absence&id=' . $a->id ), 'grc_delete_absence_' . $a->id ) ); ?>" onclick="return confirm('Supprimer cette absence ?');">Suppr.</a></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
@@ -264,80 +309,118 @@ class GRC_Admin_RDV {
 	// Handlers
 	// ------------------------------------------------------------------
 
-	public static function handle_generate_creneaux() {
-		check_admin_referer( 'grc_generate_creneaux' );
+	public static function handle_save_disponibilites() {
+		$service_id = absint( $_POST['service_id'] ?? 0 );
+		check_admin_referer( 'grc_save_disponibilites_' . $service_id );
 		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
 			wp_die( 'Permission refusée.' );
 		}
 
-		$service_id    = absint( $_POST['service_id'] ?? 0 );
-		$date_debut    = sanitize_text_field( wp_unslash( $_POST['date_debut'] ?? '' ) );
-		$date_fin      = sanitize_text_field( wp_unslash( $_POST['date_fin'] ?? '' ) );
-		$jours         = array_map( 'absint', $_POST['jours'] ?? [] );
-		$heure_debut   = sanitize_text_field( wp_unslash( $_POST['heure_debut'] ?? '09:00' ) );
-		$heure_fin     = sanitize_text_field( wp_unslash( $_POST['heure_fin'] ?? '17:00' ) );
-		$duree_minutes = max( 5, absint( $_POST['duree_minutes'] ?? 30 ) );
-		$capacite      = max( 1, absint( $_POST['capacite'] ?? 1 ) );
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'disponibilites';
+		$jours = $_POST['jours'] ?? [];
 
-		if ( ! $service_id || ! $date_debut || ! $date_fin || empty( $jours ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&tab=creneaux&grc_notice=error' ) );
+		foreach ( self::JOURS as $num => $label ) {
+			$j = $jours[ $num ] ?? [];
+
+			$actif       = ! empty( $j['actif'] ) ? 1 : 0;
+			$heure_debut = sanitize_text_field( wp_unslash( $j['debut'] ?? '09:00' ) );
+			$heure_fin   = sanitize_text_field( wp_unslash( $j['fin'] ?? '17:00' ) );
+			$pause_debut = sanitize_text_field( wp_unslash( $j['pause_debut'] ?? '' ) );
+			$pause_fin   = sanitize_text_field( wp_unslash( $j['pause_fin'] ?? '' ) );
+			$duree       = max( 5, absint( $j['duree'] ?? 30 ) );
+			$capacite    = max( 1, absint( $j['capacite'] ?? 1 ) );
+
+			// Pas de pause si les deux heures sont identiques ou l'une des deux vide.
+			if ( ! $pause_debut || ! $pause_fin || $pause_debut === $pause_fin ) {
+				$pause_debut = null;
+				$pause_fin   = null;
+			}
+
+			$existing = $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$table} WHERE service_id = %d AND jour_semaine = %d",
+				$service_id,
+				$num
+			) );
+
+			$data = [
+				'heure_debut'   => $heure_debut,
+				'heure_fin'     => $heure_fin,
+				'pause_debut'   => $pause_debut,
+				'pause_fin'     => $pause_fin,
+				'duree_minutes' => $duree,
+				'capacite'      => $capacite,
+				'actif'         => $actif,
+			];
+
+			if ( $existing ) {
+				$wpdb->update( $table, $data, [ 'id' => $existing ] );
+			} else {
+				$wpdb->insert( $table, array_merge( $data, [ 'service_id' => $service_id, 'jour_semaine' => $num ] ) );
+			}
+		}
+
+		// Le modèle a changé : on nettoie les créneaux futurs non réservés pour
+		// que la prochaine consultation régénère selon le nouvel horaire.
+		GRC_Creneaux_Generator::purge_unreserved_future( $service_id );
+		GRC_Creneaux_Generator::generate_range( $service_id, current_time( 'Y-m-d' ), gmdate( 'Y-m-d', strtotime( '+90 days' ) ) );
+
+		GRC_Audit_Log::log( 'disponibilites_saved', 'service', $service_id );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&tab=disponibilites&service_id=' . $service_id . '&grc_notice=disponibilites_saved' ) );
+		exit;
+	}
+
+	public static function handle_save_absence() {
+		check_admin_referer( 'grc_save_absence' );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		$service_id = ! empty( $_POST['service_id'] ) ? absint( $_POST['service_id'] ) : null;
+		$date_debut = sanitize_text_field( wp_unslash( $_POST['date_debut'] ?? '' ) );
+		$date_fin   = sanitize_text_field( wp_unslash( $_POST['date_fin'] ?? '' ) );
+		$motif      = sanitize_text_field( wp_unslash( $_POST['motif'] ?? '' ) );
+
+		if ( ! $date_debut || ! $date_fin || $date_fin < $date_debut ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&tab=disponibilites&grc_notice=error' ) );
 			exit;
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'absences';
+		$wpdb->insert( $table, [
+			'service_id' => $service_id,
+			'date_debut' => $date_debut,
+			'date_fin'   => $date_fin,
+			'motif'      => $motif,
+			'created_at' => current_time( 'mysql' ),
+		] );
 
-		$current = strtotime( $date_debut );
-		$end     = strtotime( $date_fin );
-		$count   = 0;
-		$max_iterations = 366; // Garde-fou : pas plus d'un an de génération en une fois.
+		$rdv_affectes = GRC_Creneaux_Generator::purge_unreserved_range( $service_id, $date_debut, $date_fin );
 
-		while ( $current <= $end && $max_iterations-- > 0 ) {
-			$jour_semaine = (int) gmdate( 'w', $current );
-			if ( in_array( $jour_semaine, $jours, true ) ) {
-				$jour_str         = gmdate( 'Y-m-d', $current );
-				$slot_start       = strtotime( $jour_str . ' ' . $heure_debut );
-				$slot_end_of_day  = strtotime( $jour_str . ' ' . $heure_fin );
+		GRC_Audit_Log::log( 'absence_saved', 'service', $service_id ?: 0, [ 'date_debut' => $date_debut, 'date_fin' => $date_fin ] );
 
-				while ( $slot_start < $slot_end_of_day ) {
-					$slot_end = $slot_start + ( $duree_minutes * 60 );
-					if ( $slot_end > $slot_end_of_day ) {
-						break;
-					}
-					$wpdb->insert( $table, [
-						'service_id' => $service_id,
-						'debut'      => gmdate( 'Y-m-d H:i:s', $slot_start ),
-						'fin'        => gmdate( 'Y-m-d H:i:s', $slot_end ),
-						'capacite'   => $capacite,
-						'reserve'    => 0,
-					] );
-					$count++;
-					$slot_start = $slot_end;
-				}
-			}
-			$current = strtotime( '+1 day', $current );
+		$redirect = admin_url( 'admin.php?page=grc-rdv&tab=disponibilites&grc_notice=absence_saved' );
+		if ( $rdv_affectes > 0 ) {
+			$redirect .= '&rdv_affectes=' . $rdv_affectes;
 		}
-
-		GRC_Audit_Log::log( 'creneaux_generated', 'service', $service_id, [ 'nombre' => $count ] );
-
-		wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&tab=creneaux&service_id=' . $service_id . '&grc_notice=creneaux_generated' ) );
+		wp_safe_redirect( $redirect );
 		exit;
 	}
 
-	public static function handle_delete_creneau() {
+	public static function handle_delete_absence() {
 		$id = absint( $_GET['id'] ?? 0 );
-		check_admin_referer( 'grc_delete_creneau_' . $id );
+		check_admin_referer( 'grc_delete_absence_' . $id );
 		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
 			wp_die( 'Permission refusée.' );
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
-		// Sécurité : on ne supprime jamais un créneau déjà réservé.
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE id = %d AND reserve = 0", $id ) );
-		GRC_Audit_Log::log( 'creneau_deleted', 'creneau', $id );
+		$wpdb->delete( $wpdb->prefix . GRC_TABLE_PREFIX . 'absences', [ 'id' => $id ] );
+		GRC_Audit_Log::log( 'absence_deleted', 'absence', $id );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&tab=creneaux&grc_notice=creneau_deleted' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-rdv&tab=disponibilites&grc_notice=absence_deleted' ) );
 		exit;
 	}
 

@@ -13,9 +13,29 @@ class GRC_Cron {
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'check_sla_escalation' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'purge_rgpd_expired' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'send_rdv_reminders' ] );
+		add_action( 'grc_daily_maintenance', [ __CLASS__, 'extend_creneaux_generation' ] );
 
 		if ( ! wp_next_scheduled( 'grc_daily_maintenance' ) ) {
 			wp_schedule_event( time(), 'daily', 'grc_daily_maintenance' );
+		}
+	}
+
+	/**
+	 * Maintient une fenêtre glissante de créneaux générés (90 jours) pour tous
+	 * les services ayant un modèle de disponibilité actif, afin que le
+	 * calendrier citoyen ne soit jamais en attente de génération à la volée
+	 * au-delà de cette fenêtre.
+	 */
+	public static function extend_creneaux_generation() {
+		global $wpdb;
+		$dispo_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'disponibilites';
+		$service_ids = $wpdb->get_col( "SELECT DISTINCT service_id FROM {$dispo_table} WHERE actif = 1" );
+
+		$debut = current_time( 'Y-m-d' );
+		$fin   = gmdate( 'Y-m-d', strtotime( '+90 days' ) );
+
+		foreach ( $service_ids as $service_id ) {
+			GRC_Creneaux_Generator::generate_range( (int) $service_id, $debut, $fin );
 		}
 	}
 

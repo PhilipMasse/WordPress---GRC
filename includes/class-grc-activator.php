@@ -200,6 +200,35 @@ class GRC_Activator {
 			UNIQUE KEY slug (slug)
 		) $charset_collate;";
 
+		// --- Disponibilités hebdomadaires (modèle horaire par service/jour) ---
+		$sql[] = "CREATE TABLE {$p}disponibilites (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			service_id BIGINT UNSIGNED NOT NULL,
+			jour_semaine TINYINT UNSIGNED NOT NULL,
+			heure_debut TIME NOT NULL,
+			heure_fin TIME NOT NULL,
+			pause_debut TIME NULL,
+			pause_fin TIME NULL,
+			duree_minutes INT UNSIGNED NOT NULL DEFAULT 30,
+			capacite INT UNSIGNED NOT NULL DEFAULT 1,
+			actif TINYINT(1) NOT NULL DEFAULT 1,
+			PRIMARY KEY (id),
+			UNIQUE KEY service_jour (service_id, jour_semaine)
+		) $charset_collate;";
+
+		// --- Absences (blocage de dates, par service ou global) -------------
+		$sql[] = "CREATE TABLE {$p}absences (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			service_id BIGINT UNSIGNED NULL,
+			date_debut DATE NOT NULL,
+			date_fin DATE NOT NULL,
+			motif VARCHAR(255) NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY service_id (service_id),
+			KEY date_debut (date_debut)
+		) $charset_collate;";
+
 		// --- Démarches administratives --------------------------------------
 		$sql[] = "CREATE TABLE {$p}demarches (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

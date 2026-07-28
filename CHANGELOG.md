@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.15.0 — Refonte de la gestion des disponibilités (horaires + absences)
+
+### Le problème résolu
+La génération manuelle de créneaux produisait des dizaines de lignes individuelles à gérer une par une en administration — inutilisable en pratique.
+
+### Nouvelle approche : modèle hebdomadaire + génération automatique invisible
+- Nouvel onglet **Disponibilités** (remplace "Créneaux") : un tableau de 7 lignes (Lundi à Dimanche), chacune avec heure de début, heure de fin, pause méridienne (facultative), durée de créneau et capacité — **une seule sauvegarde pour toute la semaine**
+- Les créneaux individuels ne sont plus jamais visibles ni gérés à la main : ils sont **générés automatiquement en arrière-plan** (`GRC_Creneaux_Generator`) à partir de ce modèle hebdomadaire, à la demande (quand un citoyen consulte le calendrier) et via une tâche quotidienne qui maintient une fenêtre glissante de 90 jours
+- Modifier les horaires d'un service supprime automatiquement les créneaux futurs **non réservés** et les régénère selon le nouveau modèle (les créneaux déjà réservés ne sont jamais touchés automatiquement)
+
+### Gestion des absences
+- Nouvelle table `wp_grc_absences` : bloque une période pour un service précis ou pour toute la mairie (congés, formation, fermeture exceptionnelle...)
+- Déclarer une absence supprime automatiquement les créneaux non réservés de la période ; si des rendez-vous étaient déjà confirmés sur cette période, un avertissement les signale pour une annulation manuelle (avec information du citoyen)
+
+### Nouvelles tables
+- `wp_grc_disponibilites` : modèle horaire hebdomadaire par service et jour de semaine
+- `wp_grc_absences` : périodes bloquées
+
 ## 0.14.0 — Prise de rendez-vous : calendrier coloré + choix de durée
 
 - `[grc_rdv_form]` remplace la liste de créneaux plate par un **vrai calendrier mensuel** avec code couleur par jour :
