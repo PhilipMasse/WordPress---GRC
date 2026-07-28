@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.3 — Fiche citoyen : sections de droite plus larges
+
+- La colonne Coordonnées/Résumé passe en largeur fixe (320px, inchangée visuellement) tandis que les sections Demandes/Signalements, Démarches et Rendez-vous occupent désormais tout l'espace restant de l'écran, quelle que soit sa largeur.
+
 ## 0.18.2 — Fiche citoyen : retour à la mise en page en deux colonnes
 
 - Retour à la disposition précédente : Coordonnées et Résumé à gauche (colonne étroite), Demandes/Signalements, Démarches et Rendez-vous à droite (colonne large), le tout aligné côte à côte.

@@ -197,7 +197,7 @@ class GRC_Admin_Citoyens {
 			</h1>
 
 			<div style="display:flex;gap:24px;align-items:flex-start;margin-top:16px;">
-				<div style="flex:1;">
+				<div style="flex:0 0 320px;">
 					<div class="card" style="padding:16px;margin-bottom:16px;">
 						<h2>Coordonnées</h2>
 						<table class="widefat">
@@ -218,7 +218,7 @@ class GRC_Admin_Citoyens {
 					</div>
 				</div>
 
-				<div style="flex:2;">
+				<div style="flex:1;min-width:0;">
 					<div class="card" style="padding:16px;margin-bottom:16px;">
 						<h2>Demandes / Signalements</h2>
 						<?php if ( empty( $demandes ) ) : ?>
