@@ -20,6 +20,15 @@ class GRC_REST_RDV {
 			],
 		] );
 
+		register_rest_route( $ns, '/rdv/disponibilites', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'list_disponibilites' ],
+			'permission_callback' => '__return_true',
+			'args'                => [
+				'service_id' => [ 'required' => true, 'type' => 'integer' ],
+			],
+		] );
+
 		register_rest_route( $ns, '/rdv', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'book' ],
@@ -84,6 +93,62 @@ class GRC_REST_RDV {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Agrégation par jour pour la vue calendrier citoyenne : nombre de places
+	 * restantes et statut (aucune / dernieres / disponible) par jour, pour un
+	 * service et une durée de créneau données, sur un mois donné.
+	 */
+	public static function list_disponibilites( WP_REST_Request $request ) {
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'creneaux';
+
+		$service_id = absint( $request->get_param( 'service_id' ) );
+		$duree      = absint( $request->get_param( 'duree' ) ?? 30 );
+		$mois       = sanitize_text_field( $request->get_param( 'mois' ) ?? '' );
+
+		if ( ! preg_match( '/^\d{4}-\d{2}$/', $mois ) ) {
+			$mois = gmdate( 'Y-m' );
+		}
+
+		$debut_mois = $mois . '-01 00:00:00';
+		$fin_mois   = gmdate( 'Y-m-t 23:59:59', strtotime( $debut_mois ) );
+		$borne_min  = max( strtotime( $debut_mois ), time() );
+
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			"SELECT DATE(debut) as jour, SUM(capacite) as total, SUM(reserve) as reserve
+			 FROM {$table}
+			 WHERE service_id = %d
+			 AND debut >= %s
+			 AND debut <= %s
+			 AND TIMESTAMPDIFF(MINUTE, debut, fin) = %d
+			 GROUP BY DATE(debut)",
+			$service_id,
+			gmdate( 'Y-m-d H:i:s', $borne_min ),
+			$fin_mois,
+			$duree
+		) );
+
+		return array_map( function ( $r ) {
+			$total     = (int) $r->total;
+			$restantes = max( 0, $total - (int) $r->reserve );
+			$seuil_bas = max( 1, (int) round( $total * 0.2 ) );
+
+			if ( $restantes <= 0 ) {
+				$statut = 'aucune';
+			} elseif ( $restantes <= $seuil_bas ) {
+				$statut = 'dernieres';
+			} else {
+				$statut = 'disponible';
+			}
+
+			return [
+				'jour'             => $r->jour,
+				'places_restantes' => $restantes,
+				'statut'           => $statut,
+			];
+		}, $rows );
 	}
 
 	public static function book( WP_REST_Request $request ) {

@@ -9,6 +9,7 @@
   - Navigation mois précédent/suivant
 - Sélecteur de **durée** (30 min / 1h) au-dessus du calendrier : ne montre que les créneaux correspondants
 - `GET /rdv/creneaux` retourne désormais tout le mois demandé (paramètres `mois` et `duree`), y compris les créneaux complets, nécessaire pour colorer le calendrier — les créneaux passés restent exclus
+- Nouvel endpoint `GET /rdv/disponibilites` : agrégation serveur par jour (total/restantes/statut) pour un service, une durée et un mois donnés — alternative plus légère à l'agrégation actuellement faite côté client, utile pour une future app mobile
 - Note ajoutée dans l'admin : générer des créneaux de 30 min et 1h sur les **mêmes plages horaires** créerait un risque de double réservation (les créneaux ne sont pas liés entre eux) ; à générer sur des plages distinctes
 
 ## 0.13.0 — Module Rendez-vous complet
