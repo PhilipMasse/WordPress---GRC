@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.3 — Correctif : comparaison stricte float/int filtrait tous les créneaux
+
+- `round()` en PHP retourne toujours un nombre à virgule flottante (`30.0`), comparé en strict (`!==`) à la durée demandée (entier `30`) — cette comparaison échouait systématiquement même quand les valeurs étaient "égales", filtrant silencieusement **tous** les créneaux quel que soit le paramètre `duree` envoyé. C'est ce qui causait un calendrier toujours vide malgré des créneaux bien générés et un sélecteur de durée correctement détecté.
+- Correction : la durée calculée est désormais explicitement castée en entier avant comparaison.
+
 ## 0.15.2 — Correctif durée : sélecteur dynamique au lieu de 30/60 fixes
 
 - Cause du calendrier vide identifiée : le sélecteur citoyen proposait uniquement "30 min" et "1h" en dur, alors que la durée réellement configurée en admin peut être différente (15, 45 min...) — aucun des deux boutons ne correspondait, filtrant tous les créneaux

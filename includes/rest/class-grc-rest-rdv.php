@@ -89,7 +89,7 @@ class GRC_REST_RDV {
 
 		$results = [];
 		foreach ( $rows as $c ) {
-			$duree_minutes = round( ( strtotime( $c->fin ) - strtotime( $c->debut ) ) / 60 );
+			$duree_minutes = (int) round( ( strtotime( $c->fin ) - strtotime( $c->debut ) ) / 60 );
 			if ( $duree_filtre && $duree_minutes !== $duree_filtre ) {
 				continue;
 			}
