@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.2 — Règle d'archivage pour les rendez-vous
+
+- Un **rendez-vous** ne peut être archivé que s'il n'est plus "En attente" (Confirmé, Refusé ou Annulé) — cohérent avec les règles déjà en place pour les demandes et les démarches
+- Bouton "Archiver" grisé tant que le rendez-vous est en attente, avec contrôle serveur équivalent
+
 ## 0.19.1 — Règles d'archivage par statut (demandes/démarches)
 
 - Une **demande/signalement** ne peut être archivée que si son statut est **Résolu** ou **Clôturé**

@@ -68,6 +68,7 @@ class GRC_Admin_RDV {
 			'rdv_validated'        => [ 'success', 'Rendez-vous validé et confirmé.' ],
 			'rdv_refused'          => [ 'success', 'Rendez-vous refusé.' ],
 			'error'                => [ 'error', 'Une erreur est survenue.' ],
+			'archive_error'        => [ 'error', 'Un rendez-vous "En attente" ne peut pas être archivé (validez ou refusez-le d\'abord).' ],
 		];
 		if ( isset( $messages[ $code ] ) ) {
 			[ $type, $text ] = $messages[ $code ];
@@ -195,8 +196,10 @@ class GRC_Admin_RDV {
 							<?php endif; ?>
 							<?php if ( $r->archive ) : ?>
 								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_rdv&id=' . $r->id ), 'grc_archive_rdv_' . $r->id ) ); ?>">Désarchiver</a>
-							<?php else : ?>
+							<?php elseif ( 'en_attente' !== $r->statut ) : ?>
 								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_archive_rdv&id=' . $r->id ), 'grc_archive_rdv_' . $r->id ) ); ?>">Archiver</a>
+							<?php else : ?>
+								<span class="button button-small" style="opacity:0.4;cursor:not-allowed;" title="Un rendez-vous En attente ne peut pas être archivé">Archiver</span>
 							<?php endif; ?>
 						</td>
 					</tr>
@@ -593,7 +596,15 @@ class GRC_Admin_RDV {
 			wp_die( 'Permission refusée.' );
 		}
 		global $wpdb;
-		$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv', [ 'archive' => 1 ], [ 'id' => $id ] );
+		$table  = $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv';
+		$statut = $wpdb->get_var( $wpdb->prepare( "SELECT statut FROM {$table} WHERE id = %d", $id ) );
+
+		if ( 'en_attente' === $statut ) {
+			wp_safe_redirect( add_query_arg( 'grc_notice', 'archive_error', wp_get_referer() ?: admin_url( 'admin.php?page=grc-rdv' ) ) );
+			exit;
+		}
+
+		$wpdb->update( $table, [ 'archive' => 1 ], [ 'id' => $id ] );
 		GRC_Audit_Log::log( 'rdv_archived', 'rdv', $id );
 		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=grc-rdv' ) );
 		exit;
