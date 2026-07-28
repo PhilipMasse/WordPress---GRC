@@ -209,6 +209,18 @@ class GRC_Activator {
 			KEY citoyen_id (citoyen_id)
 		) $charset_collate;";
 
+		// --- Messages liés aux démarches (échange citoyen/agent) -----------
+		$sql[] = "CREATE TABLE {$p}demarche_messages (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			demarche_id BIGINT UNSIGNED NOT NULL,
+			auteur_type VARCHAR(20) NOT NULL,
+			auteur_id BIGINT UNSIGNED NULL,
+			contenu LONGTEXT NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY demarche_id (demarche_id)
+		) $charset_collate;";
+
 		// --- Satisfaction ---------------------------------------------------
 		$sql[] = "CREATE TABLE {$p}satisfaction (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

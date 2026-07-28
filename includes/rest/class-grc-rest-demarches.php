@@ -33,6 +33,22 @@ class GRC_REST_Demarches {
 			},
 		] );
 
+		register_rest_route( $ns, '/demarches/(?P<id>\d+)', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'get_demarche' ],
+			'permission_callback' => function ( WP_REST_Request $request ) {
+				return self::can_access_demarche( $request, absint( $request['id'] ) );
+			},
+		] );
+
+		register_rest_route( $ns, '/demarches/(?P<id>\d+)/messages', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'add_message' ],
+			'permission_callback' => function ( WP_REST_Request $request ) {
+				return self::can_access_demarche( $request, absint( $request['id'] ) );
+			},
+		] );
+
 		register_rest_route( $ns, '/demarches/(?P<id>\d+)/statut', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'update_statut' ],
@@ -148,13 +164,20 @@ class GRC_REST_Demarches {
 		$citoyen_id = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
 
 		global $wpdb;
-		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
-		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE citoyen_id = %d ORDER BY created_at DESC", $citoyen_id ) );
+		$table       = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+		$types_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_types';
+		$rows  = $wpdb->get_results( $wpdb->prepare(
+			"SELECT d.*, t.nom AS type_nom FROM {$table} d
+			 LEFT JOIN {$types_table} t ON t.slug = d.type_demarche
+			 WHERE d.citoyen_id = %d ORDER BY d.created_at DESC",
+			$citoyen_id
+		) );
 
 		return array_map( function ( $d ) {
 			return [
 				'id'            => (int) $d->id,
 				'type_demarche' => $d->type_demarche,
+				'type_nom'      => $d->type_nom,
 				'statut'        => $d->statut,
 				'created_at'    => $d->created_at,
 				'updated_at'    => $d->updated_at,
@@ -162,9 +185,96 @@ class GRC_REST_Demarches {
 		}, $rows );
 	}
 
+	/**
+	 * Détail d'un dossier avec le fil de messages (utilisé par le citoyen et l'admin).
+	 */
+	public static function get_demarche( WP_REST_Request $request ) {
+		global $wpdb;
+		$table       = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+		$types_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_types';
+		$msg_table   = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages';
+
+		$id      = absint( $request['id'] );
+		$dossier = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ) );
+		if ( ! $dossier ) {
+			return new WP_Error( 'grc_not_found', 'Dossier introuvable.', [ 'status' => 404 ] );
+		}
+
+		$type     = $wpdb->get_row( $wpdb->prepare( "SELECT nom, champs_json FROM {$types_table} WHERE slug = %s", $dossier->type_demarche ) );
+		$messages = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$msg_table} WHERE demarche_id = %d ORDER BY created_at ASC", $id ) );
+
+		return [
+			'id'            => (int) $dossier->id,
+			'type_demarche' => $dossier->type_demarche,
+			'type_nom'      => $type->nom ?? $dossier->type_demarche,
+			'statut'        => $dossier->statut,
+			'donnees'       => json_decode( $dossier->donnees_json, true ) ?: [],
+			'champs'        => $type ? ( json_decode( $type->champs_json, true ) ?: [] ) : [],
+			'created_at'    => $dossier->created_at,
+			'messages'      => array_map( function ( $m ) {
+				return [
+					'id'          => (int) $m->id,
+					'auteur_type' => $m->auteur_type,
+					'contenu'     => $m->contenu,
+					'created_at'  => $m->created_at,
+				];
+			}, $messages ),
+		];
+	}
+
+	/**
+	 * Ajoute un message au fil d'échange d'un dossier (agent ou citoyen propriétaire).
+	 */
+	public static function add_message( WP_REST_Request $request ) {
+		$id      = absint( $request['id'] );
+		$contenu = sanitize_textarea_field( $request->get_param( 'contenu' ) ?? '' );
+		if ( '' === trim( $contenu ) ) {
+			return new WP_Error( 'grc_empty_message', 'Le message ne peut pas être vide.', [ 'status' => 400 ] );
+		}
+
+		$auteur_type = current_user_can( 'grc_manage_demandes' ) ? 'agent' : 'citoyen';
+		$auteur_id   = 'agent' === $auteur_type ? get_current_user_id() : GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
+
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages';
+		$wpdb->insert( $table, [
+			'demarche_id' => $id,
+			'auteur_type' => $auteur_type,
+			'auteur_id'   => $auteur_id,
+			'contenu'     => $contenu,
+			'created_at'  => current_time( 'mysql' ),
+		] );
+
+		GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => $auteur_type ] );
+
+		return [ 'success' => true, 'id' => (int) $wpdb->insert_id ];
+	}
+
+	/**
+	 * Autorise l'accès (lecture/écriture) à un dossier : agent avec capacité, ou
+	 * citoyen JWT propriétaire du dossier.
+	 */
+	public static function can_access_demarche( WP_REST_Request $request, int $demarche_id ): bool {
+		if ( current_user_can( 'grc_manage_demandes' ) || current_user_can( 'grc_view_all' ) ) {
+			return true;
+		}
+
+		$citoyen_id = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
+		if ( ! $citoyen_id ) {
+			return false;
+		}
+
+		global $wpdb;
+		$table   = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+		$dossier = $wpdb->get_var( $wpdb->prepare( "SELECT citoyen_id FROM {$table} WHERE id = %d", $demarche_id ) );
+
+		return $dossier && (int) $dossier === $citoyen_id;
+	}
+
 	public static function update_statut( WP_REST_Request $request ) {
 		$id     = absint( $request['id'] );
 		$statut = sanitize_text_field( $request->get_param( 'statut' ) );
+		$commentaire = sanitize_textarea_field( $request->get_param( 'commentaire' ) ?? '' );
 
 		$allowed = [ 'en_attente', 'en_cours', 'valide', 'rejete', 'complement_requis' ];
 		if ( ! in_array( $statut, $allowed, true ) ) {
@@ -174,6 +284,17 @@ class GRC_REST_Demarches {
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
 		$wpdb->update( $table, [ 'statut' => $statut ], [ 'id' => $id ] );
+
+		if ( '' !== trim( $commentaire ) ) {
+			$msg_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages';
+			$wpdb->insert( $msg_table, [
+				'demarche_id' => $id,
+				'auteur_type' => 'agent',
+				'auteur_id'   => get_current_user_id(),
+				'contenu'     => $commentaire,
+				'created_at'  => current_time( 'mysql' ),
+			] );
+		}
 
 		GRC_Audit_Log::log( 'demarche_statut_changed', 'demarche', $id, [ 'nouveau_statut' => $statut ] );
 

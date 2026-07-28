@@ -344,7 +344,113 @@
 		} );
 	}
 
+	function initGlobalCitoyenBar() {
+		if ( ! isCitoyenLoggedIn() ) {
+			return;
+		}
+
+		var bar = document.createElement( 'div' );
+		bar.id = 'grc-global-bar';
+		bar.innerHTML =
+			'<div class="grc-global-bar-inner">' +
+				'<span id="grc-global-bar-name">Connecté</span>' +
+				'<button type="button" id="grc-global-profil-btn" class="grc-btn-link">Mon profil</button>' +
+				'<button type="button" id="grc-global-logout-btn" class="grc-btn-link">Se déconnecter</button>' +
+			'</div>' +
+			'<div id="grc-global-profil-panel" class="grc-global-profil-panel" style="display:none;">' +
+				'<form id="grc-global-profil-form" class="grc-form">' +
+					'<div class="grc-field"><label>Prénom</label><input type="text" id="grc-gb-prenom"></div>' +
+					'<div class="grc-field"><label>Nom</label><input type="text" id="grc-gb-nom"></div>' +
+					'<div class="grc-field"><label>Email</label><input type="email" id="grc-gb-email"></div>' +
+					'<div class="grc-field"><label>Téléphone</label><input type="tel" id="grc-gb-telephone"></div>' +
+					'<button type="submit" class="grc-btn-submit">Enregistrer</button>' +
+					'<div class="grc-form-message" style="display:none;"></div>' +
+				'</form>' +
+				'<hr style="margin:16px 0;border:none;border-top:1px solid #ddd;">' +
+				'<form id="grc-global-password-form" class="grc-form">' +
+					'<div class="grc-field"><label>Mot de passe actuel</label><input type="password" id="grc-gb-current-password" required></div>' +
+					'<div class="grc-field"><label>Nouveau mot de passe</label><input type="password" id="grc-gb-new-password" minlength="8" required></div>' +
+					'<button type="submit" class="grc-btn-submit">Changer le mot de passe</button>' +
+					'<div class="grc-form-message" style="display:none;"></div>' +
+				'</form>' +
+			'</div>';
+
+		document.body.insertBefore( bar, document.body.firstChild );
+
+		var nameSpan = el( '#grc-global-bar-name', bar );
+		var panel = el( '#grc-global-profil-panel', bar );
+
+		authFetch( grcConfig.restUrl + '/citoyen/me' )
+			.then( function ( res ) { return res.ok ? res.json() : null; } )
+			.then( function ( me ) {
+				if ( ! me ) {
+					return;
+				}
+				nameSpan.textContent = 'Connecté : ' + ( ( me.prenom || '' ) + ' ' + ( me.nom || me.email || '' ) ).trim();
+				el( '#grc-gb-prenom', bar ).value = me.prenom || '';
+				el( '#grc-gb-nom', bar ).value = me.nom || '';
+				el( '#grc-gb-email', bar ).value = me.email || '';
+				el( '#grc-gb-telephone', bar ).value = me.telephone || '';
+			} );
+
+		el( '#grc-global-profil-btn', bar ).addEventListener( 'click', function () {
+			panel.style.display = 'block' === panel.style.display ? 'none' : 'block';
+		} );
+
+		el( '#grc-global-logout-btn', bar ).addEventListener( 'click', function () {
+			clearSession();
+			window.location.reload();
+		} );
+
+		el( '#grc-global-profil-form', bar ).addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			var msgBox = el( '.grc-form-message', e.target );
+			authFetch( grcConfig.restUrl + '/citoyen/me', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify( {
+					prenom: el( '#grc-gb-prenom', bar ).value,
+					nom: el( '#grc-gb-nom', bar ).value,
+					email: el( '#grc-gb-email', bar ).value,
+					telephone: el( '#grc-gb-telephone', bar ).value
+				} )
+			} )
+				.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+				.then( function ( result ) {
+					if ( ! result.ok ) {
+						throw new Error( result.data.message || 'Erreur lors de la mise à jour.' );
+					}
+					nameSpan.textContent = 'Connecté : ' + ( ( result.data.prenom || '' ) + ' ' + ( result.data.nom || result.data.email || '' ) ).trim();
+					showMessage( msgBox, 'Profil mis à jour.', 'success' );
+				} )
+				.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+		} );
+
+		el( '#grc-global-password-form', bar ).addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			var msgBox = el( '.grc-form-message', e.target );
+			authFetch( grcConfig.restUrl + '/citoyen/password', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify( {
+					current_password: el( '#grc-gb-current-password', bar ).value,
+					new_password: el( '#grc-gb-new-password', bar ).value
+				} )
+			} )
+				.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+				.then( function ( result ) {
+					if ( ! result.ok ) {
+						throw new Error( result.data.message || 'Erreur lors du changement de mot de passe.' );
+					}
+					showMessage( msgBox, 'Mot de passe modifié.', 'success' );
+					e.target.reset();
+				} )
+				.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+		} );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
+		initGlobalCitoyenBar();
 
 		// ================= Formulaire de signalement =================
 		var form = el( '#grc-signalement-form' );
@@ -446,91 +552,100 @@
 		var authForms = el( '#grc-auth-forms', wrapper );
 		var connecteView = el( '#grc-citoyen-connecte', wrapper );
 		var demandesListe = el( '#grc-demandes-liste', wrapper );
-		var citoyenNomSpan = el( '#grc-citoyen-nom', wrapper );
-		var profilSection = el( '#grc-citoyen-profil', wrapper );
-		var profilToggle = el( '#grc-citoyen-profil-toggle', wrapper );
+		var demarchesListe = el( '#grc-demarches-liste', wrapper );
 
-		function loadProfil() {
-			authFetch( grcConfig.restUrl + '/citoyen/me' )
-				.then( function ( res ) { return res.ok ? res.json() : null; } )
-				.then( function ( me ) {
-					if ( ! me ) {
-						return;
+		function demarcheStatutLabel( statut ) {
+			var labels = {
+				en_attente: 'En attente', en_cours: 'En cours', valide: 'Validé',
+				rejete: 'Rejeté', complement_requis: 'Complément requis'
+			};
+			return labels[ statut ] || statut;
+		}
+
+		function renderDemarchesList( container, demarches ) {
+			if ( ! demarches || ! demarches.length ) {
+				container.innerHTML = '<p>Aucune démarche trouvée.</p>';
+				return;
+			}
+			var html = '<div class="grc-demandes-cards">';
+			demarches.forEach( function ( d ) {
+				var needsAction = 'rejete' === d.statut || 'complement_requis' === d.statut;
+				html += '<div class="grc-demande-card">';
+				html += '<div class="grc-demande-card-header">';
+				html += '<code>#' + d.id + '</code>';
+				html += '<span class="grc-badge grc-badge--' + d.statut + '">' + demarcheStatutLabel( d.statut ) + '</span>';
+				html += '</div>';
+				html += '<h3>' + ( d.type_nom || d.type_demarche ) + '</h3>';
+				html += '<p class="grc-demande-date">Soumise le ' + new Date( d.created_at ).toLocaleDateString( 'fr-FR' ) + '</p>';
+				html += '<button type="button" class="grc-btn-link grc-demarche-toggle-thread" data-demarche-id="' + d.id + '">' + ( needsAction ? 'Voir le message et répondre' : 'Voir l\'échange' ) + '</button>';
+				html += '<div class="grc-demarche-thread" data-demarche-id="' + d.id + '" style="display:none;"></div>';
+				html += '</div>';
+			} );
+			html += '</div>';
+			container.innerHTML = html;
+			attachDemarcheThreadHandlers( container );
+		}
+
+		function attachDemarcheThreadHandlers( container ) {
+			container.querySelectorAll( '.grc-demarche-toggle-thread' ).forEach( function ( btn ) {
+				btn.addEventListener( 'click', function () {
+					var id = btn.dataset.demarcheId;
+					var threadEl = container.querySelector( '.grc-demarche-thread[data-demarche-id="' + id + '"]' );
+					var isOpen = threadEl.style.display === 'block';
+					threadEl.style.display = isOpen ? 'none' : 'block';
+					if ( ! isOpen ) {
+						loadDemarcheThread( id, threadEl );
 					}
-					citoyenNomSpan.textContent = ( me.prenom || '' ) + ' ' + ( me.nom || me.email || '' );
-					el( '#grc-profil-prenom', wrapper ).value = me.prenom || '';
-					el( '#grc-profil-nom', wrapper ).value = me.nom || '';
-					el( '#grc-profil-email', wrapper ).value = me.email || '';
-					el( '#grc-profil-telephone', wrapper ).value = me.telephone || '';
 				} );
-		}
-
-		if ( profilToggle ) {
-			profilToggle.addEventListener( 'click', function () {
-				var visible = profilSection.style.display === 'block';
-				profilSection.style.display = visible ? 'none' : 'block';
 			} );
 		}
 
-		var profilForm = el( '#grc-profil-form', wrapper );
-		if ( profilForm ) {
-			profilForm.addEventListener( 'submit', function ( e ) {
-				e.preventDefault();
-				var msgBox = el( '.grc-form-message', profilForm );
-				authFetch( grcConfig.restUrl + '/citoyen/me', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify( {
-						prenom: el( '#grc-profil-prenom', wrapper ).value,
-						nom: el( '#grc-profil-nom', wrapper ).value,
-						email: el( '#grc-profil-email', wrapper ).value,
-						telephone: el( '#grc-profil-telephone', wrapper ).value
-					} )
-				} )
-					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
-					.then( function ( result ) {
-						if ( ! result.ok ) {
-							throw new Error( result.data.message || 'Erreur lors de la mise à jour.' );
+		function loadDemarcheThread( id, threadEl ) {
+			threadEl.innerHTML = '<p>Chargement...</p>';
+			authFetch( grcConfig.restUrl + '/demarches/' + id )
+				.then( function ( res ) { return res.ok ? res.json() : Promise.reject(); } )
+				.then( function ( dossier ) {
+					var html = '';
+					( dossier.messages || [] ).forEach( function ( m ) {
+						html += '<div class="grc-thread-message grc-thread-message--' + m.auteur_type + '">';
+						html += '<strong>' + ( 'agent' === m.auteur_type ? 'Mairie' : 'Vous' ) + '</strong>';
+						html += '<span class="grc-demande-date"> — ' + new Date( m.created_at ).toLocaleDateString( 'fr-FR' ) + '</span>';
+						html += '<p>' + m.contenu + '</p></div>';
+					} );
+					html += '<textarea class="grc-thread-reply" rows="2" placeholder="Votre réponse..."></textarea>';
+					html += '<button type="button" class="grc-btn-submit grc-thread-send" data-demarche-id="' + id + '">Envoyer</button>';
+					threadEl.innerHTML = html;
+
+					threadEl.querySelector( '.grc-thread-send' ).addEventListener( 'click', function () {
+						var textarea = threadEl.querySelector( '.grc-thread-reply' );
+						var contenu = textarea.value.trim();
+						if ( ! contenu ) {
+							return;
 						}
-						citoyenNomSpan.textContent = ( result.data.prenom || '' ) + ' ' + ( result.data.nom || result.data.email || '' );
-						showMessage( msgBox, 'Profil mis à jour.', 'success' );
-					} )
-					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
-			} );
-		}
-
-		var passwordForm = el( '#grc-password-form', wrapper );
-		if ( passwordForm ) {
-			passwordForm.addEventListener( 'submit', function ( e ) {
-				e.preventDefault();
-				var msgBox = el( '.grc-form-message', passwordForm );
-				authFetch( grcConfig.restUrl + '/citoyen/password', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify( {
-						current_password: el( '#grc-current-password', wrapper ).value,
-						new_password: el( '#grc-new-password', wrapper ).value
-					} )
+						authFetch( grcConfig.restUrl + '/demarches/' + id + '/messages', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify( { contenu: contenu } )
+						} )
+							.then( function ( res ) { return res.ok ? res.json() : Promise.reject(); } )
+							.then( function () { loadDemarcheThread( id, threadEl ); } );
+					} );
 				} )
-					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
-					.then( function ( result ) {
-						if ( ! result.ok ) {
-							throw new Error( result.data.message || 'Erreur lors du changement de mot de passe.' );
-						}
-						showMessage( msgBox, 'Mot de passe modifié.', 'success' );
-						passwordForm.reset();
-					} )
-					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
-			} );
+				.catch( function () { threadEl.innerHTML = '<p>Erreur lors du chargement de l\'échange.</p>'; } );
 		}
 
 		function loadMesDemandes() {
 			demandesListe.innerHTML = '<p>Chargement de vos demandes...</p>';
-			loadProfil();
 			authFetch( grcConfig.restUrl + '/mes-demandes' )
 				.then( function ( res ) { return res.ok ? res.json() : []; } )
 				.then( function ( demandes ) { renderDemandesList( demandesListe, demandes ); } )
 				.catch( function () { demandesListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
+
+			demarchesListe.innerHTML = '<p>Chargement de vos démarches...</p>';
+			authFetch( grcConfig.restUrl + '/mes-demarches' )
+				.then( function ( res ) { return res.ok ? res.json() : []; } )
+				.then( function ( demarches ) { renderDemarchesList( demarchesListe, demarches ); } )
+				.catch( function () { demarchesListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
 		}
 
 		function showConnecteView() {

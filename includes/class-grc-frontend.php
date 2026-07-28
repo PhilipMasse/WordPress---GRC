@@ -186,54 +186,11 @@ class GRC_Frontend {
 			</div>
 
 			<div id="grc-citoyen-connecte" class="grc-citoyen-connecte" style="display:none;">
-				<div class="grc-citoyen-header">
-					<span id="grc-citoyen-nom"></span>
-					<span>
-						<button type="button" id="grc-citoyen-profil-toggle" class="grc-btn-link">Mon profil</button>
-						<button type="button" id="grc-citoyen-logout" class="grc-btn-link">Se déconnecter</button>
-					</span>
-				</div>
-
-				<div id="grc-citoyen-profil" class="grc-citoyen-profil" style="display:none;">
-					<form id="grc-profil-form" class="grc-form">
-						<div class="grc-field">
-							<label for="grc-profil-prenom">Prénom</label>
-							<input type="text" id="grc-profil-prenom" name="prenom">
-						</div>
-						<div class="grc-field">
-							<label for="grc-profil-nom">Nom</label>
-							<input type="text" id="grc-profil-nom" name="nom">
-						</div>
-						<div class="grc-field">
-							<label for="grc-profil-email">Email</label>
-							<input type="email" id="grc-profil-email" name="email">
-						</div>
-						<div class="grc-field">
-							<label for="grc-profil-telephone">Téléphone</label>
-							<input type="tel" id="grc-profil-telephone" name="telephone">
-						</div>
-						<button type="submit" class="grc-btn-submit">Enregistrer</button>
-						<div class="grc-form-message" style="display:none;"></div>
-					</form>
-
-					<hr style="margin:20px 0;border:none;border-top:1px solid #eee;">
-
-					<form id="grc-password-form" class="grc-form">
-						<h4 style="margin-bottom:10px;">Changer de mot de passe</h4>
-						<div class="grc-field">
-							<label for="grc-current-password">Mot de passe actuel</label>
-							<input type="password" id="grc-current-password" name="current_password" required>
-						</div>
-						<div class="grc-field">
-							<label for="grc-new-password">Nouveau mot de passe (8 caractères minimum)</label>
-							<input type="password" id="grc-new-password" name="new_password" minlength="8" required>
-						</div>
-						<button type="submit" class="grc-btn-submit">Changer le mot de passe</button>
-						<div class="grc-form-message" style="display:none;"></div>
-					</form>
-				</div>
-
+				<h3>Mes demandes</h3>
 				<div id="grc-demandes-liste" class="grc-demandes-liste"><p>Chargement de vos demandes...</p></div>
+
+				<h3 style="margin-top:24px;">Mes démarches</h3>
+				<div id="grc-demarches-liste" class="grc-demandes-liste"><p>Chargement de vos démarches...</p></div>
 			</div>
 
 			<div id="grc-guest-results" class="grc-demandes-liste"></div>

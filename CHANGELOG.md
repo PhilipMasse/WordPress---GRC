@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.8.0 — Barre citoyenne globale + démarches dans "Mes demandes" + échanges
+
+### Barre citoyenne globale
+- "Mon profil" et "Se déconnecter" apparaissent désormais sur **toutes les pages du site** via une barre injectée en haut de page (plus besoin d'être sur la page `[grc_mes_demandes]`), avec panneau profil/mot de passe intégré
+
+### Démarches visibles côté citoyen
+- `[grc_mes_demandes]` affiche maintenant une seconde liste "Mes démarches" en plus des signalements
+
+### Vrai fil d'échange sur les démarches
+- Nouvelle table `wp_grc_demarche_messages` : fil de discussion dédié à chaque dossier de démarche
+- Endpoints REST : `GET /demarches/{id}` (détail + messages), `POST /demarches/{id}/messages` (agent ou citoyen propriétaire)
+- Le changement de statut en admin accepte un **commentaire à communiquer au citoyen**, automatiquement ajouté au fil d'échange (particulièrement utile pour "Rejeté" et "Complément requis")
+- Côté citoyen, chaque démarche a un bouton "Voir l'échange" (ou "Voir le message et répondre" si le statut nécessite une action) : le citoyen peut lire les messages de la mairie et répondre directement
+- Côté admin, la vue détail d'un dossier affiche l'intégralité du fil et permet d'envoyer un message indépendamment d'un changement de statut
+
 ## 0.7.0 — Correctif expiration de token + gestion du profil citoyen
 
 ### Correctif important

@@ -13,6 +13,7 @@ class GRC_Admin_Demarches {
 		add_action( 'admin_post_grc_save_demarche_type', [ __CLASS__, 'handle_save_type' ] );
 		add_action( 'admin_post_grc_delete_demarche_type', [ __CLASS__, 'handle_delete_type' ] );
 		add_action( 'admin_post_grc_demarche_statut', [ __CLASS__, 'handle_update_statut' ] );
+		add_action( 'admin_post_grc_demarche_message', [ __CLASS__, 'handle_add_message' ] );
 	}
 
 	public static function render() {
@@ -163,6 +164,9 @@ class GRC_Admin_Demarches {
 		$donnees = json_decode( $dossier->donnees_json, true ) ?: [];
 		$champs  = $type ? ( json_decode( $type->champs_json, true ) ?: [] ) : [];
 
+		$msg_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages';
+		$messages  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$msg_table} WHERE demarche_id = %d ORDER BY created_at ASC", $id ) );
+
 		GRC_Audit_Log::log( 'demarche_viewed_admin', 'demarche', $id );
 
 		?>
@@ -190,17 +194,41 @@ class GRC_Admin_Demarches {
 				</table>
 			</div>
 
+			<div class="card" style="padding:16px;max-width:600px;margin-bottom:16px;">
+				<h2>Échanges avec le citoyen</h2>
+				<?php if ( empty( $messages ) ) : ?>
+					<p><em>Aucun message pour le moment.</em></p>
+				<?php endif; ?>
+				<?php foreach ( $messages as $m ) : ?>
+					<div style="border-left:3px solid <?php echo 'agent' === $m->auteur_type ? '#2D6AB0' : '#587526'; ?>;padding:8px 12px;margin-bottom:10px;background:#f9f9f9;">
+						<strong><?php echo 'agent' === $m->auteur_type ? 'Mairie' : 'Citoyen'; ?></strong>
+						<span style="color:#666;font-size:12px;"> — <?php echo esc_html( mysql2date( 'd/m/Y H:i', $m->created_at ) ); ?></span>
+						<p style="margin:6px 0 0;"><?php echo esc_html( $m->contenu ); ?></p>
+					</div>
+				<?php endforeach; ?>
+
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:12px;">
+					<input type="hidden" name="action" value="grc_demarche_message">
+					<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>">
+					<?php wp_nonce_field( 'grc_demarche_message_' . $id ); ?>
+					<textarea name="contenu" rows="3" style="width:100%;" placeholder="Écrire un message au citoyen..."></textarea>
+					<button type="submit" class="button button-primary" style="margin-top:8px;">Envoyer</button>
+				</form>
+			</div>
+
 			<div class="card" style="padding:16px;max-width:600px;">
 				<h2>Statut</h2>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<input type="hidden" name="action" value="grc_demarche_statut">
 					<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>">
 					<?php wp_nonce_field( 'grc_demarche_statut_' . $id ); ?>
-					<select name="statut" style="margin-bottom:8px;">
+					<select name="statut" style="margin-bottom:8px;display:block;">
 						<?php foreach ( [ 'en_attente' => 'En attente', 'en_cours' => 'En cours', 'valide' => 'Validé', 'rejete' => 'Rejeté', 'complement_requis' => 'Complément requis' ] as $val => $label ) : ?>
 							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $dossier->statut, $val ); ?>><?php echo esc_html( $label ); ?></option>
 						<?php endforeach; ?>
 					</select>
+					<label style="display:block;margin-bottom:6px;">Commentaire à communiquer au citoyen (obligatoire si Rejeté ou Complément requis)</label>
+					<textarea name="commentaire" rows="3" style="width:100%;margin-bottom:8px;" placeholder="Ex : merci de fournir une copie de votre pièce d'identité."></textarea>
 					<button type="submit" class="button button-primary">Mettre à jour</button>
 				</form>
 			</div>
@@ -268,12 +296,50 @@ class GRC_Admin_Demarches {
 			wp_die( 'Permission refusée.' );
 		}
 
-		$statut  = sanitize_text_field( wp_unslash( $_POST['statut'] ?? '' ) );
-		$allowed = [ 'en_attente', 'en_cours', 'valide', 'rejete', 'complement_requis' ];
+		$statut      = sanitize_text_field( wp_unslash( $_POST['statut'] ?? '' ) );
+		$commentaire = sanitize_textarea_field( wp_unslash( $_POST['commentaire'] ?? '' ) );
+		$allowed     = [ 'en_attente', 'en_cours', 'valide', 'rejete', 'complement_requis' ];
+
 		if ( in_array( $statut, $allowed, true ) ) {
 			global $wpdb;
 			$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches', [ 'statut' => $statut ], [ 'id' => $id ] );
 			GRC_Audit_Log::log( 'demarche_statut_changed', 'demarche', $id, [ 'nouveau_statut' => $statut ] );
+
+			if ( '' !== trim( $commentaire ) ) {
+				$msg_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages';
+				$wpdb->insert( $msg_table, [
+					'demarche_id' => $id,
+					'auteur_type' => 'agent',
+					'auteur_id'   => get_current_user_id(),
+					'contenu'     => $commentaire,
+					'created_at'  => current_time( 'mysql' ),
+				] );
+				GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => 'agent' ] );
+			}
+		}
+
+		wp_safe_redirect( admin_url( "admin.php?page=grc-demarches&dossier_id={$id}&grc_notice=statut_updated" ) );
+		exit;
+	}
+
+	public static function handle_add_message() {
+		$id = absint( $_POST['id'] ?? 0 );
+		check_admin_referer( 'grc_demarche_message_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		$contenu = sanitize_textarea_field( wp_unslash( $_POST['contenu'] ?? '' ) );
+		if ( '' !== trim( $contenu ) ) {
+			global $wpdb;
+			$wpdb->insert( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages', [
+				'demarche_id' => $id,
+				'auteur_type' => 'agent',
+				'auteur_id'   => get_current_user_id(),
+				'contenu'     => $contenu,
+				'created_at'  => current_time( 'mysql' ),
+			] );
+			GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => 'agent' ] );
 		}
 
 		wp_safe_redirect( admin_url( "admin.php?page=grc-demarches&dossier_id={$id}&grc_notice=statut_updated" ) );

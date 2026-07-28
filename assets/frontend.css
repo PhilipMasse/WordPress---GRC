@@ -149,6 +149,10 @@
 .grc-badge--resolu { background: #587526; }
 .grc-badge--cloture { background: #777; }
 .grc-badge--reouvert { background: #b32d2e; }
+.grc-badge--en_attente { background: #2D6AB0; }
+.grc-badge--valide { background: #587526; }
+.grc-badge--rejete { background: #b32d2e; }
+.grc-badge--complement_requis { background: #DEA128; }
 
 .grc-mes-demandes-wrapper {
 	max-width: 640px;
@@ -202,6 +206,73 @@
 	border-radius: 8px;
 	padding: 16px;
 	margin-bottom: 20px;
+}
+
+#grc-global-bar {
+	background: #2D6AB0;
+	color: #fff;
+	position: relative;
+	z-index: 9999;
+	font-size: 13px;
+}
+
+.grc-global-bar-inner {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 8px 20px;
+	max-width: 1100px;
+	margin: 0 auto;
+}
+
+#grc-global-bar .grc-btn-link {
+	color: #fff;
+	text-decoration: underline;
+}
+
+.grc-global-profil-panel {
+	background: #fff;
+	color: #222;
+	max-width: 500px;
+	margin: 0 auto;
+	padding: 16px 20px;
+	border-bottom: 1px solid #ddd;
+}
+
+.grc-demarche-toggle-thread {
+	margin-top: 10px;
+}
+
+.grc-demarche-thread {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px dashed #ddd;
+}
+
+.grc-thread-message {
+	background: #f5f5f5;
+	border-radius: 8px;
+	padding: 8px 12px;
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+
+.grc-thread-message--agent {
+	background: #eaf1f8;
+}
+
+.grc-thread-message p {
+	margin: 4px 0 0;
+}
+
+.grc-thread-reply {
+	width: 100%;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	font-size: 13px;
+	box-sizing: border-box;
+	margin-bottom: 8px;
 }
 
 .grc-btn-link {
