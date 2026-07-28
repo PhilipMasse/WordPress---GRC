@@ -32,8 +32,89 @@ class GRC_Admin_Demarches {
 			return;
 		}
 
-		self::render_types_section();
 		self::render_dossiers_section();
+	}
+
+	/**
+	 * Écran "Types de démarches" : liste des types, ou écran d'édition/création
+	 * si un type_id est fourni (ou action=new).
+	 */
+	public static function render_types() {
+		if ( ! current_user_can( 'grc_manage_settings' ) ) {
+			echo '<div class="wrap"><p>Accès non autorisé.</p></div>';
+			return;
+		}
+
+		if ( isset( $_GET['grc_notice'] ) ) {
+			self::render_notice( sanitize_text_field( wp_unslash( $_GET['grc_notice'] ) ) );
+		}
+
+		$editing = isset( $_GET['type_id'] ) || 'new' === ( $_GET['action'] ?? '' );
+
+		if ( $editing ) {
+			$type_id = absint( $_GET['type_id'] ?? 0 );
+			self::render_type_edit_screen( $type_id );
+			return;
+		}
+
+		self::render_types_list();
+	}
+
+	private static function render_types_list() {
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_types';
+		$types = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY nom" );
+
+		?>
+		<div class="wrap">
+			<h1>
+				Types de démarches
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarche-types&action=new' ) ); ?>" class="page-title-action">Ajouter un type</a>
+			</h1>
+
+			<table class="wp-list-table widefat fixed striped">
+				<thead><tr><th>Nom</th><th>Slug</th><th>Nb champs</th><th>Actif</th><th>Action</th></tr></thead>
+				<tbody>
+					<?php if ( empty( $types ) ) : ?>
+						<tr><td colspan="5">Aucun type de démarche pour le moment.</td></tr>
+					<?php endif; ?>
+					<?php foreach ( $types as $t ) : ?>
+						<?php $nb_champs = count( json_decode( $t->champs_json, true ) ?: [] ); ?>
+						<tr>
+							<td><strong><?php echo esc_html( $t->nom ); ?></strong></td>
+							<td><code><?php echo esc_html( $t->slug ); ?></code></td>
+							<td><?php echo (int) $nb_champs; ?></td>
+							<td><?php echo $t->actif ? '✅' : '—'; ?></td>
+							<td style="white-space:nowrap;">
+								<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarche-types&type_id=' . $t->id ) ); ?>">Modifier</a>
+								<a class="button button-small" style="color:#b32d2e;" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_delete_demarche_type&id=' . $t->id ), 'grc_delete_demarche_type_' . $t->id ) ); ?>" onclick="return confirm('Supprimer ce type ?');">Supprimer</a>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+		<?php
+	}
+
+	private static function render_type_edit_screen( int $type_id ) {
+		global $wpdb;
+		$type = null;
+		if ( $type_id ) {
+			$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_types';
+			$type  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $type_id ) );
+			if ( ! $type ) {
+				echo '<div class="wrap"><p>Type introuvable.</p></div>';
+				return;
+			}
+		}
+		?>
+		<div class="wrap">
+			<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarche-types' ) ); ?>">&larr; Retour à la liste des types</a></p>
+			<h1><?php echo $type ? 'Modifier le type de démarche' : 'Nouveau type de démarche'; ?></h1>
+			<?php self::render_type_card( $type ); ?>
+		</div>
+		<?php
 	}
 
 	private static function render_notice( string $code ) {
@@ -47,31 +128,6 @@ class GRC_Admin_Demarches {
 			[ $type, $text ] = $messages[ $code ];
 			printf( '<div class="notice notice-%s is-dismissible"><p>%s</p></div>', esc_attr( $type ), esc_html( $text ) );
 		}
-	}
-
-	private static function render_types_section() {
-		if ( ! current_user_can( 'grc_manage_settings' ) ) {
-			return;
-		}
-
-		global $wpdb;
-		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_types';
-		$types = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY nom" );
-
-		?>
-		<div class="wrap">
-			<h1>Démarches administratives</h1>
-			<h2>Types de démarches</h2>
-			<p class="description">Définissez les champs de chaque type de démarche avec le constructeur ci-dessous — pas besoin d'écrire du JSON à la main.</p>
-
-			<?php foreach ( $types as $t ) : ?>
-				<?php self::render_type_card( $t ); ?>
-			<?php endforeach; ?>
-
-			<h3>Nouveau type de démarche</h3>
-			<?php self::render_type_card( null ); ?>
-		</div>
-		<?php
 	}
 
 	/**
@@ -130,28 +186,119 @@ class GRC_Admin_Demarches {
 		$demarches_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
 		$types_table     = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_types';
 
-		$rows = $wpdb->get_results(
-			"SELECT d.*, t.nom AS type_nom FROM {$demarches_table} d
-			 LEFT JOIN {$types_table} t ON t.slug = d.type_demarche
-			 ORDER BY d.created_at DESC LIMIT 100"
-		);
+		$filtre_type   = sanitize_key( wp_unslash( $_GET['type'] ?? '' ) );
+		$filtre_statut = sanitize_text_field( wp_unslash( $_GET['statut'] ?? '' ) );
+		$date_from     = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
+		$date_to       = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
+		$paged         = max( 1, absint( $_GET['paged'] ?? 1 ) );
+		$per_page      = 25;
+
+		$where  = [ '1=1' ];
+		$params = [];
+
+		if ( $filtre_type ) {
+			$where[]  = 'd.type_demarche = %s';
+			$params[] = $filtre_type;
+		}
+		if ( $filtre_statut ) {
+			$where[]  = 'd.statut = %s';
+			$params[] = $filtre_statut;
+		}
+		if ( $date_from ) {
+			$where[]  = 'd.created_at >= %s';
+			$params[] = $date_from . ' 00:00:00';
+		}
+		if ( $date_to ) {
+			$where[]  = 'd.created_at <= %s';
+			$params[] = $date_to . ' 23:59:59';
+		}
+
+		$where_sql = implode( ' AND ', $where );
+
+		// --- Reporting : répartition par statut et par type (sur l'ensemble filtré hors pagination) ---
+		$stats_statut_sql = "SELECT d.statut, COUNT(*) as total FROM {$demarches_table} d WHERE {$where_sql} GROUP BY d.statut";
+		$stats_statut     = $params ? $wpdb->get_results( $wpdb->prepare( $stats_statut_sql, $params ) ) : $wpdb->get_results( $stats_statut_sql );
+
+		$stats_type_sql = "SELECT d.type_demarche, t.nom AS type_nom, COUNT(*) as total FROM {$demarches_table} d LEFT JOIN {$types_table} t ON t.slug = d.type_demarche WHERE {$where_sql} GROUP BY d.type_demarche ORDER BY total DESC";
+		$stats_type     = $params ? $wpdb->get_results( $wpdb->prepare( $stats_type_sql, $params ) ) : $wpdb->get_results( $stats_type_sql );
+
+		$total_count_sql = "SELECT COUNT(*) FROM {$demarches_table} d WHERE {$where_sql}";
+		$total = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $total_count_sql, $params ) ) : $wpdb->get_var( $total_count_sql ) );
+
+		// --- Liste paginée ---
+		$offset   = ( $paged - 1 ) * $per_page;
+		$list_sql = "SELECT d.*, t.nom AS type_nom FROM {$demarches_table} d
+			LEFT JOIN {$types_table} t ON t.slug = d.type_demarche
+			WHERE {$where_sql}
+			ORDER BY d.created_at DESC
+			LIMIT %d OFFSET %d";
+		$rows = $wpdb->get_results( $wpdb->prepare( $list_sql, array_merge( $params, [ $per_page, $offset ] ) ) );
+
+		$types = $wpdb->get_results( "SELECT slug, nom FROM {$types_table} ORDER BY nom" );
 
 		$statut_labels = [
-			'en_attente'         => 'En attente',
-			'en_cours'           => 'En cours',
-			'valide'             => 'Validé',
-			'rejete'             => 'Rejeté',
-			'complement_requis'  => 'Complément requis',
+			'en_attente'        => 'En attente',
+			'en_cours'          => 'En cours',
+			'valide'            => 'Validé',
+			'rejete'            => 'Rejeté',
+			'complement_requis' => 'Complément requis',
 		];
 
 		?>
-		<div class="wrap" style="margin-top:24px;">
-			<h2>Dossiers soumis</h2>
+		<div class="wrap">
+			<h1>Démarches — Dossiers soumis</h1>
+
+			<?php if ( ! empty( $stats_statut ) ) : ?>
+			<div style="display:flex;gap:16px;margin:20px 0;flex-wrap:wrap;">
+				<div class="card" style="padding:12px 20px;"><strong style="font-size:22px;"><?php echo (int) $total; ?></strong><br>Total (filtré)</div>
+				<?php foreach ( $stats_statut as $s ) : ?>
+					<div class="card" style="padding:12px 20px;"><strong style="font-size:22px;"><?php echo (int) $s->total; ?></strong><br><?php echo esc_html( $statut_labels[ $s->statut ] ?? $s->statut ); ?></div>
+				<?php endforeach; ?>
+			</div>
+
+			<?php if ( ! empty( $stats_type ) ) : ?>
+			<div class="card" style="padding:16px;max-width:400px;margin-bottom:20px;">
+				<h3 style="margin-top:0;">Répartition par type</h3>
+				<table class="widefat">
+					<?php foreach ( $stats_type as $st ) : ?>
+						<tr><td><?php echo esc_html( $st->type_nom ?: $st->type_demarche ); ?></td><td style="text-align:right;"><?php echo (int) $st->total; ?></td></tr>
+					<?php endforeach; ?>
+				</table>
+			</div>
+			<?php endif; ?>
+			<?php endif; ?>
+
+			<form method="get" style="margin:16px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+				<input type="hidden" name="page" value="grc-demarches">
+
+				<select name="type">
+					<option value="">Tous les types</option>
+					<?php foreach ( $types as $t ) : ?>
+						<option value="<?php echo esc_attr( $t->slug ); ?>" <?php selected( $filtre_type, $t->slug ); ?>><?php echo esc_html( $t->nom ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
+				<select name="statut">
+					<option value="">Tous les statuts</option>
+					<?php foreach ( $statut_labels as $val => $label ) : ?>
+						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $filtre_statut, $val ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
+				<label>Du <input type="date" name="date_from" value="<?php echo esc_attr( $date_from ); ?>"></label>
+				<label>Au <input type="date" name="date_to" value="<?php echo esc_attr( $date_to ); ?>"></label>
+
+				<button type="submit" class="button">Filtrer</button>
+				<?php if ( $filtre_type || $filtre_statut || $date_from || $date_to ) : ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demarches' ) ); ?>" class="button">Réinitialiser</a>
+				<?php endif; ?>
+			</form>
+
 			<table class="wp-list-table widefat fixed striped">
 				<thead><tr><th>Type</th><th>Statut</th><th>Soumis le</th><th>Action</th></tr></thead>
 				<tbody>
 					<?php if ( empty( $rows ) ) : ?>
-						<tr><td colspan="4">Aucun dossier soumis pour le moment.</td></tr>
+						<tr><td colspan="4">Aucun dossier trouvé.</td></tr>
 					<?php endif; ?>
 					<?php foreach ( $rows as $d ) : ?>
 					<tr>
@@ -163,6 +310,24 @@ class GRC_Admin_Demarches {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+
+			<?php
+			$total_pages = (int) ceil( $total / $per_page );
+			if ( $total_pages > 1 ) :
+				?>
+				<div class="tablenav"><div class="tablenav-pages">
+					<?php
+					echo paginate_links( [
+						'base'      => add_query_arg( 'paged', '%#%' ),
+						'format'    => '',
+						'prev_text' => '«',
+						'next_text' => '»',
+						'total'     => $total_pages,
+						'current'   => $paged,
+					] );
+					?>
+				</div></div>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -293,7 +458,7 @@ class GRC_Admin_Demarches {
 		$champs_json = wp_unslash( $_POST['champs_json'] ?? '[]' );
 		$decoded     = json_decode( $champs_json, true );
 		if ( null === $decoded && '' !== trim( $champs_json ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=grc-demarches&grc_notice=error' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=grc-demarche-types&grc_notice=error' ) );
 			exit;
 		}
 
@@ -316,7 +481,7 @@ class GRC_Admin_Demarches {
 		}
 
 		GRC_Audit_Log::log( 'demarche_type_saved', 'demarche_type', $id );
-		wp_safe_redirect( admin_url( 'admin.php?page=grc-demarches&grc_notice=type_saved' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-demarche-types&grc_notice=type_saved' ) );
 		exit;
 	}
 
@@ -331,7 +496,7 @@ class GRC_Admin_Demarches {
 		$wpdb->delete( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_types', [ 'id' => $id ] );
 		GRC_Audit_Log::log( 'demarche_type_deleted', 'demarche_type', $id );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=grc-demarches&grc_notice=type_deleted' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-demarche-types&grc_notice=type_deleted' ) );
 		exit;
 	}
 

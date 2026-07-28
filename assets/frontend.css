@@ -47,6 +47,28 @@
 	margin-bottom: 16px;
 }
 
+.grc-phone-field {
+	display: flex;
+	gap: 8px;
+}
+
+.grc-phone-field .grc-phone-country {
+	flex: 0 0 auto;
+	max-width: 160px;
+	padding: 10px 8px;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	font-size: 14px;
+}
+
+.grc-phone-field .grc-phone-number {
+	flex: 1;
+	padding: 10px 12px;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	font-size: 15px;
+}
+
 .grc-hint {
 	font-size: 13px;
 	color: #555;

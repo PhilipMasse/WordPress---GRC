@@ -116,6 +116,18 @@ class GRC_REST_Demarches {
 					case 'textarea':
 						$valeur = sanitize_textarea_field( $valeur );
 						break;
+					case 'date':
+						if ( '' !== $valeur && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $valeur ) ) {
+							return new WP_Error( 'grc_invalid_date', sprintf( 'Le champ "%s" doit être une date valide.', $label ), [ 'status' => 400 ] );
+						}
+						$valeur = sanitize_text_field( $valeur );
+						break;
+					case 'phone':
+						$valeur = preg_replace( '/[^\d+]/', '', (string) $valeur );
+						if ( '' !== $valeur && ! preg_match( '/^\+[1-9]\d{7,14}$/', $valeur ) ) {
+							return new WP_Error( 'grc_invalid_phone', sprintf( 'Le champ "%s" doit être un numéro de téléphone valide (avec indicatif pays).', $label ), [ 'status' => 400 ] );
+						}
+						break;
 					default:
 						$valeur = sanitize_text_field( $valeur );
 				}

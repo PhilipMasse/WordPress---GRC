@@ -6,6 +6,8 @@
 		textarea: 'Texte long',
 		email: 'Email',
 		number: 'Nombre',
+		date: 'Date',
+		phone: 'Téléphone',
 		file: 'Fichier (PDF/.docx)'
 	};
 

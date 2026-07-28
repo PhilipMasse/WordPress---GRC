@@ -211,6 +211,36 @@
 		} );
 	}
 
+	var GRC_COUNTRIES = [
+		{ code: 'FR', dial: '+33', flag: '🇫🇷', name: 'France' },
+		{ code: 'BE', dial: '+32', flag: '🇧🇪', name: 'Belgique' },
+		{ code: 'CH', dial: '+41', flag: '🇨🇭', name: 'Suisse' },
+		{ code: 'LU', dial: '+352', flag: '🇱🇺', name: 'Luxembourg' },
+		{ code: 'MC', dial: '+377', flag: '🇲🇨', name: 'Monaco' },
+		{ code: 'DE', dial: '+49', flag: '🇩🇪', name: 'Allemagne' },
+		{ code: 'ES', dial: '+34', flag: '🇪🇸', name: 'Espagne' },
+		{ code: 'IT', dial: '+39', flag: '🇮🇹', name: 'Italie' },
+		{ code: 'GB', dial: '+44', flag: '🇬🇧', name: 'Royaume-Uni' },
+		{ code: 'PT', dial: '+351', flag: '🇵🇹', name: 'Portugal' },
+		{ code: 'NL', dial: '+31', flag: '🇳🇱', name: 'Pays-Bas' },
+		{ code: 'US', dial: '+1', flag: '🇺🇸', name: 'États-Unis' },
+		{ code: 'CA', dial: '+1', flag: '🇨🇦', name: 'Canada' },
+		{ code: 'MA', dial: '+212', flag: '🇲🇦', name: 'Maroc' },
+		{ code: 'DZ', dial: '+213', flag: '🇩🇿', name: 'Algérie' },
+		{ code: 'TN', dial: '+216', flag: '🇹🇳', name: 'Tunisie' },
+		{ code: 'RE', dial: '+262', flag: '🇷🇪', name: 'La Réunion' },
+		{ code: 'GP', dial: '+590', flag: '🇬🇵', name: 'Guadeloupe' },
+		{ code: 'MQ', dial: '+596', flag: '🇲🇶', name: 'Martinique' },
+		{ code: 'GF', dial: '+594', flag: '🇬🇫', name: 'Guyane' }
+	];
+
+	function buildPhoneCountryOptions() {
+		return GRC_COUNTRIES.map( function ( c ) {
+			var selected = 'FR' === c.code ? ' selected' : '';
+			return '<option value="' + c.dial + '"' + selected + '>' + c.flag + ' ' + c.dial + ' (' + c.name + ')</option>';
+		} ).join( '' );
+	}
+
 	function buildFieldHtml( champ ) {
 		var key = champ.key;
 		var label = champ.label || key;
@@ -221,6 +251,13 @@
 		if ( 'file' === champ.type ) {
 			html += '<input type="file" id="grc-champ-' + key + '" data-key="' + key + '" data-filetype="1" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ' + requis + '>';
 			html += '<p class="grc-hint">Formats acceptés : PDF ou Word (.docx), 8 Mo maximum par fichier. Plusieurs fichiers peuvent être sélectionnés.</p>';
+		} else if ( 'date' === champ.type ) {
+			html += '<input type="date" id="grc-champ-' + key + '" data-key="' + key + '" ' + requis + '>';
+		} else if ( 'phone' === champ.type ) {
+			html += '<div class="grc-phone-field" id="grc-champ-' + key + '" data-key="' + key + '" data-phonetype="1">';
+			html += '<select class="grc-phone-country">' + buildPhoneCountryOptions() + '</select>';
+			html += '<input type="tel" class="grc-phone-number" placeholder="6 12 34 56 78" ' + requis + '>';
+			html += '</div>';
 		} else if ( 'textarea' === champ.type ) {
 			html += '<textarea id="grc-champ-' + key + '" data-key="' + key + '" rows="4" ' + requis + '></textarea>';
 		} else {
@@ -319,6 +356,10 @@
 					var selectedFiles = fieldEl.files ? Array.prototype.slice.call( fieldEl.files ) : [];
 					fichiers = fichiers.concat( selectedFiles );
 					donnees[ champ.key ] = selectedFiles.map( function ( f ) { return f.name; } ).join( ', ' );
+				} else if ( 'phone' === champ.type ) {
+					var dial = fieldEl.querySelector( '.grc-phone-country' ).value;
+					var num = fieldEl.querySelector( '.grc-phone-number' ).value.replace( /[^\d]/g, '' );
+					donnees[ champ.key ] = num ? ( dial + num ) : '';
 				} else {
 					donnees[ champ.key ] = fieldEl.value;
 				}

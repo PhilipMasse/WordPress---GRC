@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.0 — Nouveaux types de champs + réorganisation des écrans admin
+
+### Nouveaux types de champs
+- **Date** : sélecteur de date natif, validé au format `AAAA-MM-JJ` côté serveur
+- **Téléphone** : sélecteur de pays avec drapeau + indicatif (France `+33` par défaut, 19 pays courants disponibles), combiné en un numéro international validé côté serveur (format général type E.164)
+
+### Réorganisation des écrans admin
+- **Types de démarches** (nouveau sous-menu séparé) : liste des types (nom, slug, nombre de champs, actif) avec bouton "Ajouter un type" ; le constructeur de champs visuel se trouve désormais sur son propre écran d'édition, accessible via "Modifier"
+- **Démarches** (sous-menu existant, refondu) : écran dédié aux dossiers soumis avec :
+  - **Filtres** : type de démarche, statut, plage de dates
+  - **Reporting** : total filtré, répartition par statut, répartition par type
+  - **Pagination** (25 dossiers par page)
+
 ## 0.11.0 — Constructeur de champs visuel pour les démarches
 
 - La configuration des champs d'un type de démarche ne nécessite plus d'écrire du JSON à la main : un constructeur visuel permet d'ajouter/supprimer des champs, choisir leur libellé, leur type (texte court, texte long, email, nombre, fichier PDF/.docx) et s'ils sont obligatoires
