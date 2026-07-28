@@ -197,51 +197,50 @@ class GRC_Admin_Citoyens {
 			</h1>
 
 			<div style="display:flex;gap:24px;align-items:flex-start;margin-top:16px;">
-				<div style="flex:1;">
-					<div class="card" style="padding:16px;margin-bottom:16px;">
-						<h2>Coordonnées</h2>
-						<table class="widefat">
-							<tr><td style="width:140px;font-weight:600;">Email</td><td><?php echo esc_html( $email ?: '—' ); ?></td></tr>
-							<tr><td style="font-weight:600;">Téléphone</td><td><?php echo esc_html( $telephone ?: '—' ); ?></td></tr>
-							<tr><td style="font-weight:600;">Adresse</td><td><?php echo esc_html( $adresse ?: '—' ); ?></td></tr>
-							<tr><td style="font-weight:600;">Type de compte</td><td><?php echo $citoyen->password_hash ? 'Compte inscrit' : 'Invité (sans compte)'; ?></td></tr>
-							<tr><td style="font-weight:600;">Consentement RGPD</td><td><?php echo $citoyen->consentement_rgpd ? '✅ Oui' : '—'; ?></td></tr>
-							<tr><td style="font-weight:600;">Inscrit depuis le</td><td><?php echo esc_html( mysql2date( 'd/m/Y', $citoyen->created_at ) ); ?></td></tr>
-						</table>
-					</div>
-
-					<div class="card" style="padding:16px;">
-						<h2>Résumé</h2>
-						<p><strong><?php echo count( $demandes ); ?></strong> signalement(s)</p>
-						<p><strong><?php echo count( $demarches ); ?></strong> démarche(s)</p>
-						<p><strong><?php echo count( $rdv_list ); ?></strong> rendez-vous</p>
-					</div>
+				<div class="card" style="flex:1;padding:16px;max-width:420px;">
+					<h2>Coordonnées</h2>
+					<table class="widefat">
+						<tr><td style="width:140px;font-weight:600;">Email</td><td><?php echo esc_html( $email ?: '—' ); ?></td></tr>
+						<tr><td style="font-weight:600;">Téléphone</td><td><?php echo esc_html( $telephone ?: '—' ); ?></td></tr>
+						<tr><td style="font-weight:600;">Adresse</td><td><?php echo esc_html( $adresse ?: '—' ); ?></td></tr>
+						<tr><td style="font-weight:600;">Type de compte</td><td><?php echo $citoyen->password_hash ? 'Compte inscrit' : 'Invité (sans compte)'; ?></td></tr>
+						<tr><td style="font-weight:600;">Consentement RGPD</td><td><?php echo $citoyen->consentement_rgpd ? '✅ Oui' : '—'; ?></td></tr>
+						<tr><td style="font-weight:600;">Inscrit depuis le</td><td><?php echo esc_html( mysql2date( 'd/m/Y', $citoyen->created_at ) ); ?></td></tr>
+					</table>
 				</div>
 
-				<div style="flex:2;">
-					<div class="card" style="padding:16px;margin-bottom:16px;">
-						<h2>Demandes / Signalements</h2>
-						<?php if ( empty( $demandes ) ) : ?>
-							<p><em>Aucune demande.</em></p>
-						<?php else : ?>
-							<table class="wp-list-table widefat fixed striped">
-								<thead><tr><th>N° suivi</th><th>Titre</th><th>Service</th><th>Statut</th><th>Note</th><th>Créée le</th><th></th></tr></thead>
-								<tbody>
-									<?php foreach ( $demandes as $d ) : ?>
-										<tr>
-											<td><code><?php echo esc_html( $d->numero_suivi ); ?></code></td>
-											<td><?php echo esc_html( $d->titre ); ?></td>
-											<td><?php echo esc_html( $d->service_nom ?: '—' ); ?></td>
-											<td><?php echo esc_html( $statut_demande_labels[ $d->statut ] ?? $d->statut ); ?></td>
-											<td><?php echo $d->satisfaction_note ? str_repeat( '★', (int) $d->satisfaction_note ) : '—'; ?></td>
-											<td><?php echo esc_html( mysql2date( 'd/m/Y', $d->created_at ) ); ?></td>
-											<td><a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demandes&demande_id=' . $d->id ) ); ?>">Voir</a></td>
-										</tr>
-									<?php endforeach; ?>
-								</tbody>
-							</table>
-						<?php endif; ?>
-					</div>
+				<div class="card" style="flex:0 0 220px;padding:16px;">
+					<h2>Résumé</h2>
+					<p><strong><?php echo count( $demandes ); ?></strong> signalement(s)</p>
+					<p><strong><?php echo count( $demarches ); ?></strong> démarche(s)</p>
+					<p><strong><?php echo count( $rdv_list ); ?></strong> rendez-vous</p>
+				</div>
+			</div>
+
+			<div style="margin-top:24px;">
+				<div class="card" style="padding:20px;margin-bottom:20px;">
+					<h2>Demandes / Signalements</h2>
+					<?php if ( empty( $demandes ) ) : ?>
+						<p><em>Aucune demande.</em></p>
+					<?php else : ?>
+						<table class="wp-list-table widefat fixed striped">
+							<thead><tr><th>N° suivi</th><th>Titre</th><th>Service</th><th>Statut</th><th>Note</th><th>Créée le</th><th></th></tr></thead>
+							<tbody>
+								<?php foreach ( $demandes as $d ) : ?>
+									<tr>
+										<td><code><?php echo esc_html( $d->numero_suivi ); ?></code></td>
+										<td><?php echo esc_html( $d->titre ); ?></td>
+										<td><?php echo esc_html( $d->service_nom ?: '—' ); ?></td>
+										<td><?php echo esc_html( $statut_demande_labels[ $d->statut ] ?? $d->statut ); ?></td>
+										<td><?php echo $d->satisfaction_note ? str_repeat( '★', (int) $d->satisfaction_note ) : '—'; ?></td>
+										<td><?php echo esc_html( mysql2date( 'd/m/Y', $d->created_at ) ); ?></td>
+										<td><a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demandes&demande_id=' . $d->id ) ); ?>">Voir</a></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					<?php endif; ?>
+				</div>
 
 					<div class="card" style="padding:16px;margin-bottom:16px;">
 						<h2>Démarches</h2>
@@ -287,7 +286,6 @@ class GRC_Admin_Citoyens {
 					</div>
 				</div>
 			</div>
-		</div>
-		<?php
+			<?php
 	}
 }

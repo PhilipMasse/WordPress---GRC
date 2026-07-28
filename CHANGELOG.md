@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.1 — Fiche citoyen : sections en pleine largeur
+
+- Réorganisation de la fiche citoyen : les cartes Coordonnées et Résumé passent en haut de page en format compact côte à côte, tandis que Demandes/Signalements, Démarches et Rendez-vous s'affichent désormais en **pleine largeur**, empilées verticalement — plus de place pour lire les tableaux confortablement.
+
 ## 0.18.0 — Numéros de dossier (démarches/RDV) + citoyen visible partout
 
 - **Démarches** et **rendez-vous** disposent désormais chacun d'un numéro unique lisible (`DEM-2026-XXXXXX`, `RDV-2026-XXXXXX`), à l'image du `numero_suivi` des signalements — visible côté admin (listes, détail) et côté citoyen (`[grc_mes_demandes]`)
