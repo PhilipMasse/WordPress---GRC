@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.20.0 — Purge automatique du journal d'audit (conformité CNIL)
+
+- Nouveau réglage **GRC Citoyenne → Réglages → Journal d'audit** : durée de conservation configurable (en mois), **12 mois par défaut** — dans la fourchette recommandée par la CNIL (recommandation du 8 octobre 2021 : 6 mois à 1 an pour les journaux techniques)
+- Avertissement visuel si la durée est réglée au-delà de 12 mois, rappelant qu'un dépassement doit être documenté (obligation légale, contentieux en cours...) et n'est pas la règle par défaut
+- **Purge automatique quotidienne** (cron) : les entrées plus anciennes que la durée configurée sont supprimées progressivement, jour après jour — pas de suppression brutale rétroactive
+- La purge elle-même est journalisée (nombre d'entrées supprimées, durée de rétention appliquée), pour garder une trace de cette opération de conformité
+
 ## 0.19.5 — Correctif : colonne Citoyen vide dans le journal d'audit
 
 - La colonne "Citoyen" ne s'affichait que si le détail enregistré contenait explicitement un `citoyen_id` — ce qui n'était pas le cas pour la majorité des logs (créations, messages, pièces jointes, connexions...), et jamais pour les actions dont l'objet audité EST un citoyen (inscription, connexion, changement de profil...).

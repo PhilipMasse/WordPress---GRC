@@ -14,6 +14,7 @@ class GRC_Cron {
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'purge_rgpd_expired' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'send_rdv_reminders' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'extend_creneaux_generation' ] );
+		add_action( 'grc_daily_maintenance', [ __CLASS__, 'purge_audit_log' ] );
 		add_action( 'grc_hourly_maintenance', [ __CLASS__, 'check_rdv_auto_refus' ] );
 
 		if ( ! wp_next_scheduled( 'grc_daily_maintenance' ) ) {
@@ -150,6 +151,36 @@ class GRC_Cron {
 				'adresse'        => null,
 			], [ 'id' => $citoyen_id ] );
 			GRC_Audit_Log::log( 'rgpd_auto_anonymise', 'citoyen', (int) $citoyen_id );
+		}
+	}
+
+	/**
+	 * Purge quotidiennement les entrées du journal d'audit plus anciennes que
+	 * la durée de conservation configurée (Réglages GRC → Journal d'audit),
+	 * conformément à la recommandation CNIL du 8 octobre 2021 (6 mois à 1 an
+	 * en base active pour les journaux techniques).
+	 */
+	public static function purge_audit_log() {
+		$retention_mois = max( 1, (int) get_option( 'grc_audit_retention_mois', 12 ) );
+
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'audit_log';
+		$seuil = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_mois} months" ) );
+
+		$nombre_supprime = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE created_at < %s",
+			$seuil
+		) );
+
+		if ( $nombre_supprime > 0 ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $seuil ) );
+			// On journalise la purge elle-même (sans créer de boucle : cette
+			// entrée est ajoutée APRÈS la suppression, elle ne peut donc pas
+			// s'auto-supprimer avant le prochain cycle).
+			GRC_Audit_Log::log( 'audit_log_purged', 'audit_log', 0, [
+				'nombre_supprime' => $nombre_supprime,
+				'retention_mois'  => $retention_mois,
+			] );
 		}
 	}
 }

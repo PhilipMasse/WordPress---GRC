@@ -184,7 +184,8 @@ class GRC_Admin {
 			echo '<div class="notice notice-success is-dismissible"><p>Réglages enregistrés.</p></div>';
 		}
 
-		$delai_validation = (int) get_option( 'grc_rdv_delai_validation_heures', 48 );
+		$delai_validation  = (int) get_option( 'grc_rdv_delai_validation_heures', 48 );
+		$audit_retention   = (int) get_option( 'grc_audit_retention_mois', 12 );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
@@ -211,10 +212,26 @@ class GRC_Admin {
 						</td>
 					</tr>
 				</table>
+
+				<h2>Journal d'audit (RGPD)</h2>
+				<table class="form-table">
+					<tr>
+						<th><label for="grc-audit-retention">Durée de conservation du journal d'audit</label></th>
+						<td>
+							<input type="number" id="grc-audit-retention" name="audit_retention_mois" value="<?php echo esc_attr( $audit_retention ); ?>" min="1" max="36" style="width:80px;" onchange="document.getElementById('grc-audit-warning').style.display = (this.value > 12) ? 'block' : 'none';"> mois
+							<p class="description">
+								La CNIL recommande une conservation des journaux techniques comprise entre <strong>6 mois et 1 an</strong> (recommandation du 8 octobre 2021). Un dépassement au-delà de 12 mois n'est toléré qu'en cas de justification documentée (obligation légale, contentieux en cours, menace de sécurité avérée) — ce n'est pas la règle par défaut.
+							</p>
+							<p id="grc-audit-warning" class="description" style="color:#b32d2e;<?php echo $audit_retention > 12 ? '' : 'display:none;'; ?>">
+								⚠️ Vous dépassez la durée recommandée par la CNIL (12 mois). Assurez-vous de documenter la justification de ce choix dans votre registre des traitements.
+							</p>
+							<p class="description">Une purge automatique quotidienne supprime les entrées plus anciennes que cette durée. Elle ne s'applique jamais rétroactivement de façon brutale : les entrées sont supprimées progressivement au fur et à mesure qu'elles dépassent le seuil.</p>
+						</td>
+					</tr>
+				</table>
+
 				<button type="submit" class="button button-primary">Enregistrer</button>
 			</form>
-
-			<p style="margin-top:24px;"><em>Durée de rétention RGPD, modèles d'emails, catégories par défaut — à implémenter.</em></p>
 		</div>
 		<?php
 	}
@@ -227,7 +244,14 @@ class GRC_Admin {
 
 		$delai = max( 1, absint( $_POST['delai_validation_heures'] ?? 48 ) );
 		update_option( 'grc_rdv_delai_validation_heures', $delai );
-		GRC_Audit_Log::log( 'settings_saved', 'settings', 0, [ 'delai_validation_heures' => $delai ] );
+
+		$audit_retention = min( 36, max( 1, absint( $_POST['audit_retention_mois'] ?? 12 ) ) );
+		update_option( 'grc_audit_retention_mois', $audit_retention );
+
+		GRC_Audit_Log::log( 'settings_saved', 'settings', 0, [
+			'delai_validation_heures' => $delai,
+			'audit_retention_mois'    => $audit_retention,
+		] );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=grc-settings&grc_notice=settings_saved' ) );
 		exit;
