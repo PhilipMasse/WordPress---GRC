@@ -96,6 +96,7 @@ class GRC_Cron {
 			$email = GRC_Encryption::decrypt( $email_encrypted );
 			if ( $email ) {
 				GRC_Notifications::send_rdv_reminder( $email, $rdv->debut );
+				GRC_Audit_Log::log( 'rdv_reminder_sent', 'rdv', (int) $rdv->id );
 			}
 		}
 	}

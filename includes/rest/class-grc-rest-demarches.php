@@ -219,6 +219,8 @@ class GRC_REST_Demarches {
 			return new WP_Error( 'grc_not_found', 'Dossier introuvable.', [ 'status' => 404 ] );
 		}
 
+		GRC_Audit_Log::log( 'demarche_viewed', 'demarche', $id );
+
 		$type     = $wpdb->get_row( $wpdb->prepare( "SELECT nom, champs_json FROM {$types_table} WHERE slug = %s", $dossier->type_demarche ) );
 		$messages = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$msg_table} WHERE demarche_id = %d ORDER BY created_at ASC", $id ) );
 

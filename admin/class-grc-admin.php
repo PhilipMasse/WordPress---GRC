@@ -86,6 +86,7 @@ class GRC_Admin {
 		add_submenu_page( 'grc-dashboard', 'Démarches', 'Démarches', 'grc_manage_demandes', 'grc-demarches', [ __CLASS__, 'render_demarches' ] );
 		add_submenu_page( 'grc-dashboard', 'Statistiques', 'Statistiques', 'grc_view_stats', 'grc-stats', [ __CLASS__, 'render_stats' ] );
 		add_submenu_page( 'grc-dashboard', 'Réglages', 'Réglages', 'grc_manage_settings', 'grc-settings', [ __CLASS__, 'render_settings' ] );
+		add_submenu_page( 'grc-dashboard', 'Journal d\'audit', 'Journal d\'audit', 'grc_view_all', 'grc-audit', [ __CLASS__, 'render_audit' ] );
 	}
 
 	public static function enqueue_assets( $hook ) {
@@ -128,6 +129,10 @@ class GRC_Admin {
 
 	public static function render_citoyens() {
 		GRC_Admin_Citoyens::render();
+	}
+
+	public static function render_audit() {
+		GRC_Admin_Audit::render();
 	}
 
 	public static function render_rdv() {
@@ -222,6 +227,7 @@ class GRC_Admin {
 
 		$delai = max( 1, absint( $_POST['delai_validation_heures'] ?? 48 ) );
 		update_option( 'grc_rdv_delai_validation_heures', $delai );
+		GRC_Audit_Log::log( 'settings_saved', 'settings', 0, [ 'delai_validation_heures' => $delai ] );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=grc-settings&grc_notice=settings_saved' ) );
 		exit;

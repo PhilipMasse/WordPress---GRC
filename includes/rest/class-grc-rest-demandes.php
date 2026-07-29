@@ -170,6 +170,8 @@ class GRC_REST_Demandes {
 			return new WP_Error( 'grc_not_found', 'Aucune demande trouvée pour ces informations.', [ 'status' => 404 ] );
 		}
 
+		GRC_Audit_Log::log( 'demande_guest_lookup', 'demande', (int) $demande->id );
+
 		return self::format_demande_public( $demande );
 	}
 

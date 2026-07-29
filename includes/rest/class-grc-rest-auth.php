@@ -96,6 +96,7 @@ class GRC_REST_Auth {
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'api_tokens';
 		$wpdb->update( $table, [ 'revoked' => 1 ], [ 'wp_user_id' => get_current_user_id() ] );
+		GRC_Audit_Log::log( 'agent_logout', 'user', get_current_user_id() );
 		return [ 'success' => true ];
 	}
 

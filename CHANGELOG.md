@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.3 — Journal d'audit accessible (bug critique corrigé) + revue de couverture
+
+- **Bug critique corrigé** : le menu "Journal d'audit" existait mais provoquait une erreur fatale au clic (fichier non chargé, méthode manquante). Il est maintenant fonctionnel : **GRC Citoyenne → Journal d'audit** (réservé élus/admin).
+- Écran de consultation avec filtres (type d'action, type d'objet, plage de dates) et pagination — affiche qui a fait quoi, quand, avec quel détail, pour les agents comme pour les citoyens.
+- Revue complète du code confirmant que les actions sensibles sont déjà tracées : connexions/déconnexions (agent et citoyen), créations et modifications (demandes, démarches, rendez-vous, services, catégories, absences, disponibilités), changements de statut, assignations, archivages/désarchivages, envoi de messages, upload/téléchargement de documents, notation de satisfaction, réglages.
+
 ## 0.19.2 — Règle d'archivage pour les rendez-vous
 
 - Un **rendez-vous** ne peut être archivé que s'il n'est plus "En attente" (Confirmé, Refusé ou Annulé) — cohérent avec les règles déjà en place pour les demandes et les démarches
