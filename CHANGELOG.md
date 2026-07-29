@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.1 — Mini-carte de prévisualisation lors de la géolocalisation
+
+- Le bouton "Utiliser ma position" sur `[grc_signalement_form]` affiche désormais une **mini-carte** (Leaflet, chargé dynamiquement au premier usage, sans alourdir les autres pages) montrant l'emplacement capturé
+- Le repère est **déplaçable** : le citoyen peut ajuster précisément l'emplacement si le GPS n'est pas parfaitement exact, avant d'envoyer le signalement
+
 ## 0.21.0 — Statistiques avancées : graphiques, carte, export CSV
 
 ### Tableau de bord enrichi (GRC Citoyenne → Statistiques)

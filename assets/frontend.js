@@ -534,6 +534,61 @@
 		} );
 	}
 
+	var grcGeolocMapInstance = null;
+	var grcGeolocMarker = null;
+
+	function loadLeafletThenShowMap( form, lat, lng ) {
+		if ( typeof L !== 'undefined' ) {
+			showGeolocMap( form, lat, lng );
+			return;
+		}
+
+		// Charge Leaflet dynamiquement (CSS + JS) uniquement au premier besoin,
+		// pour ne pas alourdir le chargement de toutes les pages du site.
+		if ( ! document.getElementById( 'grc-leaflet-css' ) ) {
+			var link = document.createElement( 'link' );
+			link.id = 'grc-leaflet-css';
+			link.rel = 'stylesheet';
+			link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
+			document.head.appendChild( link );
+		}
+		if ( ! document.getElementById( 'grc-leaflet-js' ) ) {
+			var script = document.createElement( 'script' );
+			script.id = 'grc-leaflet-js';
+			script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+			script.onload = function () { showGeolocMap( form, lat, lng ); };
+			document.body.appendChild( script );
+		}
+	}
+
+	function showGeolocMap( form, lat, lng ) {
+		var mapEl = el( '#grc-geoloc-map', form );
+		if ( ! mapEl ) {
+			return;
+		}
+		mapEl.style.display = 'block';
+
+		if ( grcGeolocMapInstance ) {
+			grcGeolocMapInstance.setView( [ lat, lng ], 16 );
+			grcGeolocMarker.setLatLng( [ lat, lng ] );
+			return;
+		}
+
+		grcGeolocMapInstance = L.map( mapEl ).setView( [ lat, lng ], 16 );
+		L.tileLayer( 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '© OpenStreetMap contributors',
+			maxZoom: 19
+		} ).addTo( grcGeolocMapInstance );
+
+		grcGeolocMarker = L.marker( [ lat, lng ], { draggable: true } ).addTo( grcGeolocMapInstance );
+		grcGeolocMarker.bindPopup( 'Faites glisser ce repère pour ajuster l\'emplacement exact.' ).openPopup();
+		grcGeolocMarker.on( 'dragend', function () {
+			var pos = grcGeolocMarker.getLatLng();
+			el( '#grc-latitude', form ).value = pos.lat;
+			el( '#grc-longitude', form ).value = pos.lng;
+		} );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		initGlobalCitoyenBar();
 
@@ -551,9 +606,12 @@
 					geolocStatus.textContent = 'Localisation en cours...';
 					navigator.geolocation.getCurrentPosition(
 						function ( position ) {
-							el( '#grc-latitude', form ).value = position.coords.latitude;
-							el( '#grc-longitude', form ).value = position.coords.longitude;
-							geolocStatus.textContent = '✅ Position enregistrée.';
+							var lat = position.coords.latitude;
+							var lng = position.coords.longitude;
+							el( '#grc-latitude', form ).value = lat;
+							el( '#grc-longitude', form ).value = lng;
+							geolocStatus.textContent = '✅ Position enregistrée — vous pouvez ajuster le repère si besoin.';
+							loadLeafletThenShowMap( form, lat, lng );
 						},
 						function () {
 							geolocStatus.textContent = 'Impossible de récupérer votre position (autorisation refusée ou indisponible).';
