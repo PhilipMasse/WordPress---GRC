@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.21.0 — Statistiques avancées : graphiques, carte, export CSV
+
+### Tableau de bord enrichi (GRC Citoyenne → Statistiques)
+- Filtre par plage de dates (12 derniers mois par défaut)
+- **4 indicateurs clés** : demandes (taux de résolution, délai moyen), démarches (taux de validation), rendez-vous (taux de confirmation), satisfaction moyenne
+- **6 graphiques** (Chart.js, chargé uniquement sur cet écran) : évolution mensuelle créées/résolues, répartition par catégorie, répartition par statut (demandes/démarches/RDV), répartition des notes de satisfaction
+- **Carte des signalements géolocalisés** (Leaflet + OpenStreetMap) : marqueurs colorés par statut, popup avec lien direct vers la demande
+- **Export CSV** (demandes, démarches, rendez-vous) respectant la plage de dates filtrée, avec BOM UTF-8 pour une ouverture correcte dans Excel
+
+### Géolocalisation du formulaire de signalement
+- Nouveau bouton "Utiliser ma position actuelle" sur `[grc_signalement_form]` (géolocalisation navigateur, facultative) — nécessaire pour alimenter la carte, l'API supportait déjà les coordonnées mais rien ne les envoyait jusqu'ici
+
 ## 0.20.0 — Purge automatique du journal d'audit (conformité CNIL)
 
 - Nouveau réglage **GRC Citoyenne → Réglages → Journal d'audit** : durée de conservation configurable (en mois), **12 mois par défaut** — dans la fourchette recommandée par la CNIL (recommandation du 8 octobre 2021 : 6 mois à 1 an pour les journaux techniques)

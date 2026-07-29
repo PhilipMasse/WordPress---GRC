@@ -540,6 +540,27 @@
 		// ================= Formulaire de signalement =================
 		var form = el( '#grc-signalement-form' );
 		if ( form ) {
+			var geolocBtn = el( '#grc-geoloc-btn', form );
+			var geolocStatus = el( '#grc-geoloc-status', form );
+			if ( geolocBtn ) {
+				geolocBtn.addEventListener( 'click', function () {
+					if ( ! navigator.geolocation ) {
+						geolocStatus.textContent = 'La géolocalisation n\'est pas disponible sur ce navigateur.';
+						return;
+					}
+					geolocStatus.textContent = 'Localisation en cours...';
+					navigator.geolocation.getCurrentPosition(
+						function ( position ) {
+							el( '#grc-latitude', form ).value = position.coords.latitude;
+							el( '#grc-longitude', form ).value = position.coords.longitude;
+							geolocStatus.textContent = '✅ Position enregistrée.';
+						},
+						function () {
+							geolocStatus.textContent = 'Impossible de récupérer votre position (autorisation refusée ou indisponible).';
+						}
+					);
+				} );
+			}
 			var guestFields = el( '#grc-guest-fields', form );
 			var banner = el( '#grc-connected-banner' );
 			var bannerName = el( '#grc-connected-name' );
@@ -574,6 +595,13 @@
 					categorie_id: el( '#grc-categorie', form ).value || null,
 					adresse_lieu: el( '#grc-adresse', form ).value
 				};
+
+				var latField = el( '#grc-latitude', form );
+				var lonField = el( '#grc-longitude', form );
+				if ( latField && latField.value ) {
+					payload.latitude = latField.value;
+					payload.longitude = lonField.value;
+				}
 
 				if ( ! isCitoyenLoggedIn() ) {
 					payload.prenom = el( '#grc-prenom', form ).value;

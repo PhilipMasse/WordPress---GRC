@@ -15,6 +15,7 @@ class GRC_Admin {
 		GRC_Admin_Demarches::init();
 		GRC_Admin_RDV::init();
 		GRC_Admin_Citoyens::init();
+		GRC_Admin_Stats::init();
 	}
 
 	/**
@@ -95,6 +96,7 @@ class GRC_Admin {
 		}
 		wp_enqueue_style( 'grc-admin', GRC_PLUGIN_URL . 'assets/admin.css', [], GRC_VERSION );
 		wp_enqueue_script( 'grc-admin', GRC_PLUGIN_URL . 'assets/admin.js', [ 'jquery' ], GRC_VERSION, true );
+		GRC_Admin_Stats::enqueue_assets( $hook );
 	}
 
 	public static function render_dashboard() {
@@ -152,29 +154,7 @@ class GRC_Admin {
 	}
 
 	public static function render_stats() {
-		global $wpdb;
-		$satisfaction_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'satisfaction';
-		$row = $wpdb->get_row( "SELECT COUNT(*) as total, AVG(note) as moyenne FROM {$satisfaction_table}" );
-		$repartition = $wpdb->get_results( "SELECT note, COUNT(*) as total FROM {$satisfaction_table} GROUP BY note ORDER BY note DESC" );
-		?>
-		<div class="wrap">
-			<h1>Statistiques</h1>
-
-			<h2>Satisfaction citoyenne</h2>
-			<?php if ( empty( $row->total ) ) : ?>
-				<p><em>Aucune évaluation pour le moment.</em></p>
-			<?php else : ?>
-				<p><strong style="font-size:28px;color:#DEA128;"><?php echo esc_html( round( (float) $row->moyenne, 1 ) ); ?> / 5</strong> — basé sur <?php echo (int) $row->total; ?> évaluation(s)</p>
-				<table class="wp-list-table widefat fixed striped" style="max-width:300px;">
-					<?php foreach ( $repartition as $r ) : ?>
-						<tr><td><?php echo str_repeat( '★', (int) $r->note ); ?></td><td><?php echo (int) $r->total; ?></td></tr>
-					<?php endforeach; ?>
-				</table>
-			<?php endif; ?>
-
-			<p style="margin-top:24px;"><em>Graphiques par catégorie/quartier, cartographie thermique, export CSV — à implémenter.</em></p>
-		</div>
-		<?php
+		GRC_Admin_Stats::render();
 	}
 
 	public static function render_settings() {

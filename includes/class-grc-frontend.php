@@ -79,6 +79,10 @@ class GRC_Frontend {
 				<div class="grc-field">
 					<label for="grc-adresse">Adresse / lieu concerné</label>
 					<input type="text" id="grc-adresse" name="adresse_lieu" placeholder="Ex: 12 rue de la Mairie">
+					<button type="button" id="grc-geoloc-btn" class="grc-btn-link" style="margin-top:4px;">📍 Utiliser ma position actuelle</button>
+					<span id="grc-geoloc-status" class="grc-hint"></span>
+					<input type="hidden" id="grc-latitude" name="latitude">
+					<input type="hidden" id="grc-longitude" name="longitude">
 				</div>
 
 				<div class="grc-field">
