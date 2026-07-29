@@ -93,30 +93,26 @@ class GRC_Admin_Audit {
 			</form>
 
 			<table class="wp-list-table widefat fixed striped">
-				<thead><tr><th style="width:150px;">Date</th><th>Action</th><th>Objet</th><th>Auteur</th><th>IP</th><th>Détails</th></tr></thead>
+				<thead><tr><th style="width:150px;">Date</th><th>Action</th><th>Objet</th><th>Citoyen</th><th>Auteur</th><th>IP</th><th>Détails</th></tr></thead>
 				<tbody>
 					<?php if ( empty( $rows ) ) : ?>
-						<tr><td colspan="6">Aucune entrée trouvée.</td></tr>
+						<tr><td colspan="7">Aucune entrée trouvée.</td></tr>
 					<?php endif; ?>
 					<?php foreach ( $rows as $row ) : ?>
 						<?php
-						$objet_label = $row->objet_type ? $row->objet_type . ( $row->objet_id ? ' #' . $row->objet_id : '' ) : '—';
-						$auteur = $row->display_name ?: ( $row->wp_user_id ? 'Utilisateur #' . $row->wp_user_id : 'Citoyen / invité' );
 						$details = $row->details_json ? json_decode( $row->details_json, true ) : null;
+						$objet_link  = self::format_objet_link( $row->objet_type, (int) $row->objet_id, $details );
+						$citoyen_link = self::format_citoyen_link( $details );
+						$auteur = $row->display_name ?: ( $row->wp_user_id ? 'Utilisateur #' . $row->wp_user_id : 'Citoyen / invité' );
 						?>
 						<tr>
 							<td><?php echo esc_html( mysql2date( 'd/m/Y H:i:s', $row->created_at ) ); ?></td>
 							<td><code><?php echo esc_html( $row->action ); ?></code></td>
-							<td><?php echo esc_html( $objet_label ); ?></td>
+							<td><?php echo $objet_link; // déjà échappé dans le helper ?></td>
+							<td><?php echo $citoyen_link; // déjà échappé dans le helper ?></td>
 							<td><?php echo esc_html( $auteur ); ?></td>
 							<td><code style="font-size:11px;"><?php echo esc_html( $row->ip_address ?: '—' ); ?></code></td>
-							<td>
-								<?php if ( $details ) : ?>
-									<code style="font-size:11px;"><?php echo esc_html( wp_json_encode( $details ) ); ?></code>
-								<?php else : ?>
-									—
-								<?php endif; ?>
-							</td>
+							<td><?php echo self::format_details( $details ); // déjà échappé dans le helper ?></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
@@ -141,5 +137,111 @@ class GRC_Admin_Audit {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Résout un objet audité (demande, démarche, rdv, citoyen...) en un lien
+	 * lisible vers sa fiche/détail, plutôt que d'afficher un ID technique brut.
+	 */
+	private static function format_objet_link( ?string $type, int $id, ?array $details ): string {
+		if ( ! $type || ! $id ) {
+			return '—';
+		}
+		global $wpdb;
+
+		switch ( $type ) {
+			case 'demande':
+				$numero = $details['numero_suivi'] ?? $wpdb->get_var( $wpdb->prepare(
+					"SELECT numero_suivi FROM {$wpdb->prefix}" . GRC_TABLE_PREFIX . "demandes WHERE id = %d", $id
+				) );
+				$url = admin_url( 'admin.php?page=grc-demandes&demande_id=' . $id );
+				return '<a href="' . esc_url( $url ) . '">' . esc_html( $numero ?: ( 'demande #' . $id ) ) . '</a>';
+
+			case 'demarche':
+				$numero = $details['numero_dossier'] ?? $wpdb->get_var( $wpdb->prepare(
+					"SELECT numero_dossier FROM {$wpdb->prefix}" . GRC_TABLE_PREFIX . "demarches WHERE id = %d", $id
+				) );
+				$url = admin_url( 'admin.php?page=grc-demarches&dossier_id=' . $id );
+				return '<a href="' . esc_url( $url ) . '">' . esc_html( $numero ?: ( 'démarche #' . $id ) ) . '</a>';
+
+			case 'rdv':
+				$numero = $details['numero_rdv'] ?? $wpdb->get_var( $wpdb->prepare(
+					"SELECT numero_rdv FROM {$wpdb->prefix}" . GRC_TABLE_PREFIX . "rdv WHERE id = %d", $id
+				) );
+				return '<code>' . esc_html( $numero ?: ( 'rdv #' . $id ) ) . '</code>';
+
+			case 'citoyen':
+				$url = admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $id );
+				return '<a href="' . esc_url( $url ) . '">' . esc_html( GRC_Citoyen_Helper::numero( $id ) ) . '</a>';
+
+			default:
+				return esc_html( $type . ' #' . $id );
+		}
+	}
+
+	/**
+	 * Affiche un lien vers la fiche du citoyen concerné par l'action, si le
+	 * détail enregistré contient un citoyen_id.
+	 */
+	private static function format_citoyen_link( ?array $details ): string {
+		if ( empty( $details['citoyen_id'] ) ) {
+			return '—';
+		}
+		$id  = (int) $details['citoyen_id'];
+		$url = admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $id );
+		return '<a href="' . esc_url( $url ) . '">' . esc_html( GRC_Citoyen_Helper::numero( $id ) ) . '</a>';
+	}
+
+	/**
+	 * Formate les détails enregistrés (tableau associatif) en liste lisible
+	 * "clé : valeur" plutôt qu'un bloc JSON brut, en excluant les clés déjà
+	 * affichées ailleurs (numero_suivi, numero_dossier, numero_rdv, citoyen_id).
+	 */
+	private static function format_details( ?array $details ): string {
+		if ( ! $details ) {
+			return '—';
+		}
+
+		$labels = [
+			'ancien_statut'          => 'Ancien statut',
+			'nouveau_statut'         => 'Nouveau statut',
+			'agent_nom'              => 'Agent',
+			'agent_id'               => 'ID agent',
+			'service_id'             => 'ID service',
+			'note'                   => 'Note',
+			'reason'                 => 'Raison',
+			'fichier'                => 'Fichier',
+			'attachment_id'          => 'ID pièce jointe',
+			'interne'                => 'Note interne',
+			'auteur_type'            => 'Auteur',
+			'type'                   => 'Type',
+			'nombre'                 => 'Nombre',
+			'date_debut'             => 'Du',
+			'date_fin'               => 'Au',
+			'delai_validation_heures'=> 'Délai (h)',
+			'automatique'            => 'Automatique',
+			'avec_commentaire'       => 'Avec commentaire',
+			'username'               => 'Identifiant saisi',
+		];
+
+		$masquer = [ 'numero_suivi', 'numero_dossier', 'numero_rdv', 'citoyen_id' ];
+
+		$lignes = [];
+		foreach ( $details as $cle => $valeur ) {
+			if ( in_array( $cle, $masquer, true ) || null === $valeur || '' === $valeur ) {
+				continue;
+			}
+			if ( is_bool( $valeur ) ) {
+				$valeur = $valeur ? 'Oui' : 'Non';
+			}
+			$label = $labels[ $cle ] ?? ucfirst( str_replace( '_', ' ', $cle ) );
+			$lignes[] = '<strong>' . esc_html( $label ) . '</strong> : ' . esc_html( (string) $valeur );
+		}
+
+		if ( empty( $lignes ) ) {
+			return '—';
+		}
+
+		return '<span style="font-size:12px;">' . implode( '<br>', $lignes ) . '</span>';
 	}
 }

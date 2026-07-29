@@ -558,8 +558,17 @@ class GRC_Admin_Demarches {
 
 		if ( in_array( $statut, $allowed, true ) ) {
 			global $wpdb;
-			$wpdb->update( $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches', [ 'statut' => $statut ], [ 'id' => $id ] );
-			GRC_Audit_Log::log( 'demarche_statut_changed', 'demarche', $id, [ 'nouveau_statut' => $statut ] );
+			$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+			$avant = $wpdb->get_row( $wpdb->prepare( "SELECT statut, numero_dossier, citoyen_id FROM {$table} WHERE id = %d", $id ) );
+
+			$wpdb->update( $table, [ 'statut' => $statut ], [ 'id' => $id ] );
+			GRC_Audit_Log::log( 'demarche_statut_changed', 'demarche', $id, [
+				'numero_dossier' => $avant->numero_dossier ?? null,
+				'citoyen_id'     => $avant->citoyen_id ?? null,
+				'ancien_statut'  => $avant->statut ?? null,
+				'nouveau_statut' => $statut,
+				'avec_commentaire' => '' !== trim( $commentaire ),
+			] );
 
 			if ( '' !== trim( $commentaire ) ) {
 				$msg_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarche_messages';

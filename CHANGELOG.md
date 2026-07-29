@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.4 — Journal d'audit plus détaillé et plus lisible
+
+### Logs enrichis
+- Les changements de statut (demandes, démarches) enregistrent désormais l'**ancien statut** en plus du nouveau, avec le numéro de dossier et le citoyen concerné
+- L'assignation d'agent enregistre le **nom de l'agent** (pas seulement son ID)
+- La validation/refus de rendez-vous enregistre le numéro de RDV, le citoyen concerné, et si le refus était automatique
+
+### Affichage plus lisible
+- Le journal (**GRC Citoyenne → Journal d'audit**) résout désormais les objets audités en **liens cliquables** vers leur fiche (numéro de suivi/dossier/RDV au lieu d'un ID technique brut)
+- Nouvelle colonne **Citoyen** avec lien direct vers la fiche, quand l'action concerne un citoyen identifiable
+- Les détails s'affichent en **liste lisible** ("Ancien statut : Nouveau", "Agent : Jean Dupont"...) au lieu d'un bloc JSON brut
+
 ## 0.19.3 — Journal d'audit accessible (bug critique corrigé) + revue de couverture
 
 - **Bug critique corrigé** : le menu "Journal d'audit" existait mais provoquait une erreur fatale au clic (fichier non chargé, méthode manquante). Il est maintenant fonctionnel : **GRC Citoyenne → Journal d'audit** (réservé élus/admin).

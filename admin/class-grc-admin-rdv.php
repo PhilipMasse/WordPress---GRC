@@ -504,7 +504,10 @@ class GRC_Admin_RDV {
 		$rdv = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$rdv_table} WHERE id = %d", $id ) );
 		if ( $rdv && 'en_attente' === $rdv->statut ) {
 			$wpdb->update( $rdv_table, [ 'statut' => 'confirme' ], [ 'id' => $id ] );
-			GRC_Audit_Log::log( 'rdv_validated', 'rdv', $id );
+			GRC_Audit_Log::log( 'rdv_validated', 'rdv', $id, [
+				'numero_rdv' => $rdv->numero_rdv,
+				'citoyen_id' => $rdv->citoyen_id,
+			] );
 
 			$creneau = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$creneaux_table} WHERE id = %d", $rdv->creneau_id ) );
 			$email   = self::get_rdv_email( $rdv->citoyen_id );
@@ -548,7 +551,11 @@ class GRC_Admin_RDV {
 		$wpdb->update( $rdv_table, [ 'statut' => 'refuse' ], [ 'id' => $id ] );
 		$wpdb->query( $wpdb->prepare( "UPDATE {$creneaux_table} SET reserve = GREATEST(0, reserve - 1) WHERE id = %d", $rdv->creneau_id ) );
 
-		GRC_Audit_Log::log( $automatique ? 'rdv_refused_auto' : 'rdv_refused', 'rdv', $id );
+		GRC_Audit_Log::log( $automatique ? 'rdv_refused_auto' : 'rdv_refused', 'rdv', $id, [
+			'numero_rdv' => $rdv->numero_rdv,
+			'citoyen_id' => $rdv->citoyen_id,
+			'automatique' => $automatique,
+		] );
 
 		$creneau = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$creneaux_table} WHERE id = %d", $rdv->creneau_id ) );
 		$email   = self::get_rdv_email( $rdv->citoyen_id );

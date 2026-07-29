@@ -465,13 +465,22 @@ class GRC_Admin_Demandes {
 		$service_id = absint( $_POST['service_id'] ?? 0 );
 		$agent_id   = absint( $_POST['agent_id'] ?? 0 );
 
+		$numero_suivi = $wpdb->get_var( $wpdb->prepare( "SELECT numero_suivi FROM {$table} WHERE id = %d", $demande_id ) );
+
 		$wpdb->update( $table, [
 			'service_id'       => $service_id ?: null,
 			'agent_assigne_id' => $agent_id ?: null,
 			'statut'           => $agent_id ? 'assigne' : 'nouveau',
 		], [ 'id' => $demande_id ] );
 
-		GRC_Audit_Log::log( 'demande_assigned', 'demande', $demande_id, [ 'agent_id' => $agent_id, 'service_id' => $service_id ] );
+		$agent_nom = $agent_id ? get_userdata( $agent_id )->display_name ?? null : null;
+
+		GRC_Audit_Log::log( 'demande_assigned', 'demande', $demande_id, [
+			'numero_suivi' => $numero_suivi,
+			'agent_id'     => $agent_id,
+			'agent_nom'    => $agent_nom,
+			'service_id'   => $service_id,
+		] );
 
 		wp_safe_redirect( admin_url( "admin.php?page=grc-demandes&demande_id={$demande_id}&grc_notice=assigned" ) );
 		exit;
@@ -495,6 +504,8 @@ class GRC_Admin_Demandes {
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
 
+		$avant = $wpdb->get_row( $wpdb->prepare( "SELECT statut, numero_suivi, citoyen_id FROM {$table} WHERE id = %d", $demande_id ) );
+
 		$extra = [];
 		if ( 'resolu' === $statut ) {
 			$extra['resolved_at'] = current_time( 'mysql' );
@@ -504,7 +515,12 @@ class GRC_Admin_Demandes {
 		}
 
 		$wpdb->update( $table, array_merge( [ 'statut' => $statut ], $extra ), [ 'id' => $demande_id ] );
-		GRC_Audit_Log::log( 'demande_statut_changed', 'demande', $demande_id, [ 'nouveau_statut' => $statut ] );
+		GRC_Audit_Log::log( 'demande_statut_changed', 'demande', $demande_id, [
+			'numero_suivi'   => $avant->numero_suivi ?? null,
+			'citoyen_id'     => $avant->citoyen_id ?? null,
+			'ancien_statut'  => $avant->statut ?? null,
+			'nouveau_statut' => $statut,
+		] );
 
 		// Notification citoyen si un email est disponible.
 		self::notify_citoyen_if_email( $demande_id, $statut );
