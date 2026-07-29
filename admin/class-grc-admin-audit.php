@@ -101,8 +101,8 @@ class GRC_Admin_Audit {
 					<?php foreach ( $rows as $row ) : ?>
 						<?php
 						$details = $row->details_json ? json_decode( $row->details_json, true ) : null;
-						$objet_link  = self::format_objet_link( $row->objet_type, (int) $row->objet_id, $details );
-						$citoyen_link = self::format_citoyen_link( $details );
+						$objet_link   = self::format_objet_link( $row->objet_type, (int) $row->objet_id, $details );
+						$citoyen_link = self::format_citoyen_link( $row->objet_type, (int) $row->objet_id, $details );
 						$auteur = $row->display_name ?: ( $row->wp_user_id ? 'Utilisateur #' . $row->wp_user_id : 'Citoyen / invité' );
 						?>
 						<tr>
@@ -180,16 +180,41 @@ class GRC_Admin_Audit {
 	}
 
 	/**
-	 * Affiche un lien vers la fiche du citoyen concerné par l'action, si le
-	 * détail enregistré contient un citoyen_id.
+	 * Résout et affiche un lien vers la fiche du citoyen concerné par l'action.
+	 * Résolution en cascade :
+	 * 1. Si l'objet audité EST un citoyen (objet_type = 'citoyen'), on utilise
+	 *    directement l'objet_id.
+	 * 2. Sinon, si le détail enregistré contient déjà un citoyen_id, on l'utilise.
+	 * 3. Sinon, on va chercher le citoyen_id directement en base depuis la table
+	 *    correspondant au type d'objet (demande/démarche/rdv) — cela couvre aussi
+	 *    les entrées de log plus anciennes qui n'enregistraient pas encore ce champ.
 	 */
-	private static function format_citoyen_link( ?array $details ): string {
-		if ( empty( $details['citoyen_id'] ) ) {
+	private static function format_citoyen_link( ?string $objet_type, int $objet_id, ?array $details ): string {
+		$citoyen_id = null;
+
+		if ( 'citoyen' === $objet_type && $objet_id ) {
+			$citoyen_id = $objet_id;
+		} elseif ( ! empty( $details['citoyen_id'] ) ) {
+			$citoyen_id = (int) $details['citoyen_id'];
+		} elseif ( $objet_id ) {
+			global $wpdb;
+			$table_par_type = [
+				'demande'  => 'demandes',
+				'demarche' => 'demarches',
+				'rdv'      => 'rdv',
+			];
+			if ( isset( $table_par_type[ $objet_type ] ) ) {
+				$table = $wpdb->prefix . GRC_TABLE_PREFIX . $table_par_type[ $objet_type ];
+				$citoyen_id = $wpdb->get_var( $wpdb->prepare( "SELECT citoyen_id FROM {$table} WHERE id = %d", $objet_id ) );
+			}
+		}
+
+		if ( ! $citoyen_id ) {
 			return '—';
 		}
-		$id  = (int) $details['citoyen_id'];
-		$url = admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $id );
-		return '<a href="' . esc_url( $url ) . '">' . esc_html( GRC_Citoyen_Helper::numero( $id ) ) . '</a>';
+
+		$url = admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $citoyen_id );
+		return '<a href="' . esc_url( $url ) . '">' . esc_html( GRC_Citoyen_Helper::numero( (int) $citoyen_id ) ) . '</a>';
 	}
 
 	/**

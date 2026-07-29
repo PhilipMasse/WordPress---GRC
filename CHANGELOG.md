@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.5 — Correctif : colonne Citoyen vide dans le journal d'audit
+
+- La colonne "Citoyen" ne s'affichait que si le détail enregistré contenait explicitement un `citoyen_id` — ce qui n'était pas le cas pour la majorité des logs (créations, messages, pièces jointes, connexions...), et jamais pour les actions dont l'objet audité EST un citoyen (inscription, connexion, changement de profil...).
+- Résolution désormais automatique et rétroactive (fonctionne aussi sur les entrées déjà enregistrées) : recherche directe en base du `citoyen_id` associé à l'objet audité (demande/démarche/rdv), ou utilisation directe de l'ID quand l'objet audité est un citoyen.
+
 ## 0.19.4 — Journal d'audit plus détaillé et plus lisible
 
 ### Logs enrichis
