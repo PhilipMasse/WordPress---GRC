@@ -193,13 +193,52 @@ class GRC_Frontend {
 			</div>
 
 			<div id="grc-citoyen-connecte" class="grc-citoyen-connecte" style="display:none;">
-				<h3>Mes demandes</h3>
+				<div class="grc-liste-toolbar">
+					<h3>Mes demandes</h3>
+					<div class="grc-liste-controls">
+						<select class="grc-statut-filter" data-target="demandes">
+							<option value="">Tous les statuts</option>
+							<option value="nouveau">Nouveau</option>
+							<option value="en_cours">En cours</option>
+							<option value="assigne">Assigné</option>
+							<option value="resolu">Résolu</option>
+							<option value="cloture">Clôturé</option>
+							<option value="reouvert">Réouvert</option>
+						</select>
+						<button type="button" class="grc-vue-toggle" data-target="demandes" title="Changer d'affichage">☰ Liste</button>
+					</div>
+				</div>
 				<div id="grc-demandes-liste" class="grc-demandes-liste"><p>Chargement de vos demandes...</p></div>
 
-				<h3 style="margin-top:24px;">Mes démarches</h3>
+				<div class="grc-liste-toolbar" style="margin-top:24px;">
+					<h3>Mes démarches</h3>
+					<div class="grc-liste-controls">
+						<select class="grc-statut-filter" data-target="demarches">
+							<option value="">Tous les statuts</option>
+							<option value="en_attente">En attente</option>
+							<option value="en_cours">En cours</option>
+							<option value="valide">Validé</option>
+							<option value="rejete">Rejeté</option>
+							<option value="complement_requis">Complément requis</option>
+						</select>
+						<button type="button" class="grc-vue-toggle" data-target="demarches" title="Changer d'affichage">☰ Liste</button>
+					</div>
+				</div>
 				<div id="grc-demarches-liste" class="grc-demandes-liste"><p>Chargement de vos démarches...</p></div>
 
-				<h3 style="margin-top:24px;">Mes rendez-vous</h3>
+				<div class="grc-liste-toolbar" style="margin-top:24px;">
+					<h3>Mes rendez-vous</h3>
+					<div class="grc-liste-controls">
+						<select class="grc-statut-filter" data-target="rdv">
+							<option value="">Tous les statuts</option>
+							<option value="en_attente">En attente</option>
+							<option value="confirme">Confirmé</option>
+							<option value="refuse">Refusé</option>
+							<option value="annule">Annulé</option>
+						</select>
+						<button type="button" class="grc-vue-toggle" data-target="rdv" title="Changer d'affichage">☰ Liste</button>
+					</div>
+				</div>
 				<div id="grc-rdv-liste" class="grc-demandes-liste"><p>Chargement de vos rendez-vous...</p></div>
 			</div>
 

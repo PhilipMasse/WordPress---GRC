@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.23.0 — Vue Cartes/Liste + filtres par statut dans "Mes demandes"
+
+- Nouveau bouton **☰ Liste / 🔲 Cartes** sur chacune des trois sections (Demandes, Démarches, Rendez-vous) de `[grc_mes_demandes]` : la vue liste affiche un tableau compact, plus économe en espace que les cartes
+- Le choix de vue est **mémorisé** (navigateur du citoyen) et partagé entre les trois sections
+- **Filtre par statut** sur chaque section (ex : n'afficher que les demandes "En cours"), appliqué instantanément côté client sans rechargement
+- Le fil d'échange des démarches et l'annulation de rendez-vous restent accessibles en mode liste
+
 ## 0.22.0 — Déconnexion automatique après inactivité (recommandation CNIL)
 
 - Nouveau réglage **GRC Citoyenne → Réglages → Sécurité des sessions** : délai d'inactivité avant déconnexion automatique, **30 minutes par défaut**, réglable entre 5 et 60 minutes

@@ -130,6 +130,69 @@
 	margin-top: 16px;
 }
 
+.grc-liste-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.grc-liste-toolbar h3 {
+	margin: 0;
+}
+
+.grc-liste-controls {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.grc-liste-controls select {
+	padding: 6px 10px;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+.grc-vue-toggle {
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	padding: 6px 12px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.grc-vue-toggle:hover {
+	border-color: #2D6AB0;
+}
+
+.grc-liste-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 12px;
+	font-size: 13px;
+}
+
+.grc-liste-table th {
+	text-align: left;
+	padding: 8px 10px;
+	border-bottom: 2px solid #eee;
+	color: #555;
+	font-weight: 600;
+}
+
+.grc-liste-table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid #f0f0f0;
+	vertical-align: middle;
+}
+
+.grc-liste-table tr:hover td {
+	background: #fafafa;
+}
+
 .grc-demande-card {
 	border: 1px solid #e0e0e0;
 	border-radius: 10px;

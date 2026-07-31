@@ -130,11 +130,28 @@
 		return labels[ statut ] || statut;
 	}
 
-	function renderDemandesList( container, demandes ) {
+	function renderDemandesList( container, demandes, vue ) {
 		if ( ! demandes || ! demandes.length ) {
 			container.innerHTML = '<p>Aucune demande trouvée.</p>';
 			return;
 		}
+
+		if ( 'list' === vue ) {
+			var rows = '<table class="grc-liste-table"><thead><tr><th>N° suivi</th><th>Titre</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>';
+			demandes.forEach( function ( d ) {
+				rows += '<tr>';
+				rows += '<td><code>' + d.numero_suivi + '</code></td>';
+				rows += '<td>' + d.titre + '</td>';
+				rows += '<td><span class="grc-badge grc-badge--' + d.statut + '">' + statutLabel( d.statut ) + '</span></td>';
+				rows += '<td>' + new Date( d.created_at ).toLocaleDateString( 'fr-FR' ) + '</td>';
+				rows += '<td>' + ( d.peut_etre_note ? '<span class="grc-hint">À noter</span>' : '' ) + '</td>';
+				rows += '</tr>';
+			} );
+			rows += '</tbody></table>';
+			container.innerHTML = rows;
+			return;
+		}
+
 		var html = '<div class="grc-demandes-cards">';
 		demandes.forEach( function ( d ) {
 			html += '<div class="grc-demande-card">';
@@ -1059,11 +1076,31 @@
 			return labels[ statut ] || statut;
 		}
 
-		function renderDemarchesList( container, demarches ) {
+		function renderDemarchesList( container, demarches, vue ) {
 			if ( ! demarches || ! demarches.length ) {
 				container.innerHTML = '<p>Aucune démarche trouvée.</p>';
 				return;
 			}
+
+			if ( 'list' === vue ) {
+				var rows = '<table class="grc-liste-table"><thead><tr><th>N° dossier</th><th>Type</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>';
+				demarches.forEach( function ( d ) {
+					var needsAction = 'rejete' === d.statut || 'complement_requis' === d.statut;
+					rows += '<tr>';
+					rows += '<td><code>' + ( d.numero_dossier || ( '#' + d.id ) ) + '</code></td>';
+					rows += '<td>' + ( d.type_nom || d.type_demarche ) + '</td>';
+					rows += '<td><span class="grc-badge grc-badge--' + d.statut + '">' + demarcheStatutLabel( d.statut ) + '</span></td>';
+					rows += '<td>' + new Date( d.created_at ).toLocaleDateString( 'fr-FR' ) + '</td>';
+					rows += '<td><button type="button" class="grc-btn-link grc-demarche-toggle-thread" data-demarche-id="' + d.id + '">' + ( needsAction ? 'Répondre' : 'Échange' ) + '</button>';
+					rows += '<div class="grc-demarche-thread" data-demarche-id="' + d.id + '" style="display:none;"></div></td>';
+					rows += '</tr>';
+				} );
+				rows += '</tbody></table>';
+				container.innerHTML = rows;
+				attachDemarcheThreadHandlers( container );
+				return;
+			}
+
 			var html = '<div class="grc-demandes-cards">';
 			demarches.forEach( function ( d ) {
 				var needsAction = 'rejete' === d.statut || 'complement_requis' === d.statut;
@@ -1185,19 +1222,38 @@
 			return labels[ statut ] || statut;
 		}
 
-		function renderRdvList( container, rdvList ) {
+		function renderRdvList( container, rdvList, vue ) {
 			if ( ! rdvList || ! rdvList.length ) {
 				container.innerHTML = '<p>Aucun rendez-vous trouvé.</p>';
 				return;
 			}
+			var badgeClasses = { en_attente: 'assigne', confirme: 'resolu', refuse: 'rejete', annule: 'cloture' };
+
+			if ( 'list' === vue ) {
+				var rows = '<table class="grc-liste-table"><thead><tr><th>Service</th><th>Date</th><th>Motif</th><th>Statut</th><th></th></tr></thead><tbody>';
+				rdvList.forEach( function ( r ) {
+					var isPast = r.debut && new Date( r.debut ) < new Date();
+					rows += '<tr>';
+					rows += '<td>' + ( r.service_nom || '' ) + ( r.numero_rdv ? ' <code>' + r.numero_rdv + '</code>' : '' ) + '</td>';
+					rows += '<td>' + ( r.debut ? new Date( r.debut ).toLocaleString( 'fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' } ) : '—' ) + '</td>';
+					rows += '<td>' + ( r.motif || '—' ) + '</td>';
+					rows += '<td><span class="grc-badge grc-badge--' + ( badgeClasses[ r.statut ] || 'cloture' ) + '">' + rdvStatutLabel( r.statut ) + '</span></td>';
+					rows += '<td>' + ( ( ( 'confirme' === r.statut || 'en_attente' === r.statut ) && ! isPast ) ? '<button type="button" class="grc-btn-link grc-rdv-cancel" data-id="' + r.id + '">Annuler</button>' : '' ) + '</td>';
+					rows += '</tr>';
+				} );
+				rows += '</tbody></table>';
+				container.innerHTML = rows;
+				attachRdvCancelHandlers( container );
+				return;
+			}
+
 			var html = '<div class="grc-demandes-cards">';
 			rdvList.forEach( function ( r ) {
 				var isPast = r.debut && new Date( r.debut ) < new Date();
 				html += '<div class="grc-demande-card">';
 				html += '<div class="grc-demande-card-header">';
 				html += '<strong>' + ( r.service_nom || '' ) + '</strong>';
-				var badgeClasses = { en_attente: 'assigne', confirme: 'resolu', refuse: 'rejete', annule: 'cloture' };
-			html += '<span class="grc-badge grc-badge--' + ( badgeClasses[ r.statut ] || 'cloture' ) + '">' + rdvStatutLabel( r.statut ) + '</span>';
+				html += '<span class="grc-badge grc-badge--' + ( badgeClasses[ r.statut ] || 'cloture' ) + '">' + rdvStatutLabel( r.statut ) + '</span>';
 				html += '</div>';
 				if ( r.numero_rdv ) {
 					html += '<p class="grc-demande-date"><code>' + r.numero_rdv + '</code></p>';
@@ -1215,7 +1271,10 @@
 			} );
 			html += '</div>';
 			container.innerHTML = html;
+			attachRdvCancelHandlers( container );
+		}
 
+		function attachRdvCancelHandlers( container ) {
 			container.querySelectorAll( '.grc-rdv-cancel' ).forEach( function ( btn ) {
 				btn.addEventListener( 'click', function () {
 					if ( ! window.confirm( 'Annuler ce rendez-vous ?' ) ) {
@@ -1229,24 +1288,68 @@
 			} );
 		}
 
+		var grcListState = {
+			demandes: { data: [] },
+			demarches: { data: [] },
+			rdv: { data: [] }
+		};
+		var grcVueMode = localStorage.getItem( 'grc_vue_mode' ) || 'cards';
+
+		function grcFilterAndRender( type ) {
+			var select = wrapper.querySelector( '.grc-statut-filter[data-target="' + type + '"]' );
+			var statut = select ? select.value : '';
+			var data = grcListState[ type ].data;
+			var filtered = statut ? data.filter( function ( item ) { return item.statut === statut; } ) : data;
+
+			if ( 'demandes' === type ) {
+				renderDemandesList( demandesListe, filtered, grcVueMode );
+			} else if ( 'demarches' === type ) {
+				renderDemarchesList( demarchesListe, filtered, grcVueMode );
+			} else if ( 'rdv' === type && rdvListe ) {
+				renderRdvList( rdvListe, filtered, grcVueMode );
+			}
+		}
+
+		function grcUpdateVueToggleButtons() {
+			wrapper.querySelectorAll( '.grc-vue-toggle' ).forEach( function ( btn ) {
+				btn.textContent = 'list' === grcVueMode ? '🔲 Cartes' : '☰ Liste';
+			} );
+		}
+
+		wrapper.querySelectorAll( '.grc-vue-toggle' ).forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				grcVueMode = 'list' === grcVueMode ? 'cards' : 'list';
+				localStorage.setItem( 'grc_vue_mode', grcVueMode );
+				grcUpdateVueToggleButtons();
+				[ 'demandes', 'demarches', 'rdv' ].forEach( grcFilterAndRender );
+			} );
+		} );
+		grcUpdateVueToggleButtons();
+
+		wrapper.querySelectorAll( '.grc-statut-filter' ).forEach( function ( select ) {
+			select.addEventListener( 'change', function () {
+				grcFilterAndRender( select.dataset.target );
+			} );
+		} );
+
 		function loadMesDemandes() {
 			demandesListe.innerHTML = '<p>Chargement de vos demandes...</p>';
 			authFetch( grcConfig.restUrl + '/mes-demandes' )
 				.then( function ( res ) { return res.ok ? res.json() : []; } )
-				.then( function ( demandes ) { renderDemandesList( demandesListe, demandes ); } )
+				.then( function ( demandes ) { grcListState.demandes.data = demandes || []; grcFilterAndRender( 'demandes' ); } )
 				.catch( function () { demandesListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
 
 			demarchesListe.innerHTML = '<p>Chargement de vos démarches...</p>';
 			authFetch( grcConfig.restUrl + '/mes-demarches' )
 				.then( function ( res ) { return res.ok ? res.json() : []; } )
-				.then( function ( demarches ) { renderDemarchesList( demarchesListe, demarches ); } )
+				.then( function ( demarches ) { grcListState.demarches.data = demarches || []; grcFilterAndRender( 'demarches' ); } )
 				.catch( function () { demarchesListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
 
 			if ( rdvListe ) {
 				rdvListe.innerHTML = '<p>Chargement de vos rendez-vous...</p>';
 				authFetch( grcConfig.restUrl + '/mes-rdv' )
 					.then( function ( res ) { return res.ok ? res.json() : []; } )
-					.then( function ( rdvList ) { renderRdvList( rdvListe, rdvList ); } )
+					.then( function ( rdvList ) { grcListState.rdv.data = rdvList || []; grcFilterAndRender( 'rdv' ); } )
 					.catch( function () { rdvListe.innerHTML = '<p>Erreur lors du chargement.</p>'; } );
 			}
 		}
