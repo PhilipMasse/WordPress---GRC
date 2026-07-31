@@ -96,6 +96,10 @@ class GRC_Admin {
 		}
 		wp_enqueue_style( 'grc-admin', GRC_PLUGIN_URL . 'assets/admin.css', [], GRC_VERSION );
 		wp_enqueue_script( 'grc-admin', GRC_PLUGIN_URL . 'assets/admin.js', [ 'jquery' ], GRC_VERSION, true );
+		wp_localize_script( 'grc-admin', 'grcAdminConfig', [
+			'sessionTimeoutMinutes' => (int) get_option( 'grc_session_timeout_minutes', 30 ),
+			'logoutUrl'             => wp_logout_url( admin_url( 'admin.php?page=grc-dashboard&grc_notice=session_expired' ) ),
+		] );
 		GRC_Admin_Stats::enqueue_assets( $hook );
 	}
 
@@ -166,6 +170,7 @@ class GRC_Admin {
 
 		$delai_validation  = (int) get_option( 'grc_rdv_delai_validation_heures', 48 );
 		$audit_retention   = (int) get_option( 'grc_audit_retention_mois', 12 );
+		$session_timeout   = (int) get_option( 'grc_session_timeout_minutes', 30 );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
@@ -189,6 +194,20 @@ class GRC_Admin {
 						<td>
 							<input type="number" id="grc-delai-validation" name="delai_validation_heures" value="<?php echo esc_attr( $delai_validation ); ?>" min="1" style="width:80px;"> heures
 							<p class="description">Passé ce délai sans validation manuelle par un agent, une demande de rendez-vous en attente est automatiquement refusée (le citoyen est notifié par email).</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>Sécurité des sessions (RGPD)</h2>
+				<table class="form-table">
+					<tr>
+						<th><label for="grc-session-timeout">Déconnexion automatique après inactivité</label></th>
+						<td>
+							<input type="number" id="grc-session-timeout" name="session_timeout_minutes" value="<?php echo esc_attr( $session_timeout ); ?>" min="5" max="60" style="width:80px;"> minutes
+							<p class="description">
+								La CNIL recommande un verrouillage/déconnexion automatique après une période d'inactivité — 10 minutes maximum pour les postes agents traitant des données sensibles, jusqu'à 30 minutes pour des applications standards (guides pratiques RGPD CNIL). S'applique à l'espace citoyen (<code>[grc_mes_demandes]</code> et pages associées) et à l'administration GRC.
+							</p>
+							<p class="description">Une alerte s'affiche 1 minute avant la déconnexion, permettant de prolonger la session en cas d'activité réelle non détectée.</p>
 						</td>
 					</tr>
 				</table>
@@ -228,9 +247,13 @@ class GRC_Admin {
 		$audit_retention = min( 36, max( 1, absint( $_POST['audit_retention_mois'] ?? 12 ) ) );
 		update_option( 'grc_audit_retention_mois', $audit_retention );
 
+		$session_timeout = min( 60, max( 5, absint( $_POST['session_timeout_minutes'] ?? 30 ) ) );
+		update_option( 'grc_session_timeout_minutes', $session_timeout );
+
 		GRC_Audit_Log::log( 'settings_saved', 'settings', 0, [
-			'delai_validation_heures' => $delai,
-			'audit_retention_mois'    => $audit_retention,
+			'delai_validation_heures'   => $delai,
+			'audit_retention_mois'      => $audit_retention,
+			'session_timeout_minutes'   => $session_timeout,
 		] );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=grc-settings&grc_notice=settings_saved' ) );

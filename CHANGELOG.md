@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.0 — Déconnexion automatique après inactivité (recommandation CNIL)
+
+- Nouveau réglage **GRC Citoyenne → Réglages → Sécurité des sessions** : délai d'inactivité avant déconnexion automatique, **30 minutes par défaut**, réglable entre 5 et 60 minutes
+- S'appuie sur les recommandations CNIL (guides pratiques RGPD) : verrouillage/déconnexion automatique après une période d'inactivité — 10 minutes maximum pour les postes agents traitant des données sensibles, jusqu'à 30 minutes pour des applications standards
+- **Côté citoyen** : surveillance de l'activité (souris, clavier, tactile, défilement) sur les pages du portail citoyen ; alerte 1 minute avant expiration avec possibilité de prolonger la session ; déconnexion automatique (nettoyage du token local) si aucune activité n'est détectée
+- **Côté administration** : même mécanisme sur les écrans GRC (Demandes, Démarches, Rendez-vous, Citoyens, Statistiques...), avec redirection vers la déconnexion WordPress à l'expiration
+
 ## 0.21.1 — Mini-carte de prévisualisation lors de la géolocalisation
 
 - Le bouton "Utiliser ma position" sur `[grc_signalement_form]` affiche désormais une **mini-carte** (Leaflet, chargé dynamiquement au premier usage, sans alourdir les autres pages) montrant l'emplacement capturé

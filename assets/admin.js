@@ -112,7 +112,50 @@
 		return champs;
 	}
 
+	/**
+	 * Déconnexion automatique après inactivité sur les écrans GRC (recommandation
+	 * CNIL), configurable dans Réglages GRC. Alerte 1 minute avant expiration.
+	 */
+	function initAdminIdleTimeout() {
+		if ( typeof grcAdminConfig === 'undefined' ) {
+			return;
+		}
+		var timeoutMs = ( grcAdminConfig.sessionTimeoutMinutes || 30 ) * 60 * 1000;
+		var warningMs = Math.max( 0, timeoutMs - 60000 );
+		var warningTimer, logoutTimer, warningShown = false;
+
+		function showWarning() {
+			warningShown = true;
+			if ( window.confirm( 'Votre session administrateur va expirer dans 1 minute pour votre sécurité (délai d\'inactivité). Cliquez sur OK pour rester connecté(e).' ) ) {
+				resetTimers();
+			}
+		}
+
+		function doLogout() {
+			window.location.href = grcAdminConfig.logoutUrl;
+		}
+
+		function resetTimers() {
+			warningShown = false;
+			clearTimeout( warningTimer );
+			clearTimeout( logoutTimer );
+			warningTimer = setTimeout( showWarning, warningMs );
+			logoutTimer = setTimeout( doLogout, timeoutMs );
+		}
+
+		[ 'mousemove', 'keydown', 'click', 'scroll' ].forEach( function ( evt ) {
+			document.addEventListener( evt, function () {
+				if ( ! warningShown ) {
+					resetTimers();
+				}
+			}, { passive: true } );
+		} );
+
+		resetTimers();
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
+		initAdminIdleTimeout();
 		document.querySelectorAll( '.grc-champs-builder' ).forEach( function ( container ) {
 			initChampsBuilder( container );
 		} );

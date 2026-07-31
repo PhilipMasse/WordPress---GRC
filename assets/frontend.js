@@ -589,8 +589,56 @@
 		} );
 	}
 
+	/**
+	 * Déconnexion automatique après inactivité (recommandation CNIL), configurable
+	 * dans Réglages GRC. Une alerte s'affiche 1 minute avant l'expiration.
+	 */
+	function initIdleTimeout() {
+		if ( ! isCitoyenLoggedIn() ) {
+			return;
+		}
+		var timeoutMs = ( grcConfig.sessionTimeoutMinutes || 30 ) * 60 * 1000;
+		var warningMs = Math.max( 0, timeoutMs - 60000 );
+		var warningTimer, logoutTimer, warningShown = false;
+
+		function showWarning() {
+			warningShown = true;
+			if ( window.confirm( 'Votre session va expirer dans 1 minute pour votre sécurité (délai d\'inactivité). Cliquez sur OK pour rester connecté(e).' ) ) {
+				resetTimers();
+			}
+		}
+
+		function doLogout() {
+			clearSession();
+			alert( 'Votre session a expiré après une période d\'inactivité, pour la protection de vos données personnelles. Veuillez vous reconnecter si besoin.' );
+			window.location.reload();
+		}
+
+		function resetTimers() {
+			warningShown = false;
+			clearTimeout( warningTimer );
+			clearTimeout( logoutTimer );
+			if ( ! isCitoyenLoggedIn() ) {
+				return;
+			}
+			warningTimer = setTimeout( showWarning, warningMs );
+			logoutTimer = setTimeout( doLogout, timeoutMs );
+		}
+
+		[ 'mousemove', 'keydown', 'click', 'touchstart', 'scroll' ].forEach( function ( evt ) {
+			document.addEventListener( evt, function () {
+				if ( ! warningShown ) {
+					resetTimers();
+				}
+			}, { passive: true } );
+		} );
+
+		resetTimers();
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		initGlobalCitoyenBar();
+		initIdleTimeout();
 
 		// ================= Formulaire de signalement =================
 		var form = el( '#grc-signalement-form' );

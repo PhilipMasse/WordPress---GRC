@@ -37,6 +37,7 @@ class GRC_Frontend {
 			'restUrl'    => esc_url_raw( rest_url( 'grc/v1' ) ),
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'isLoggedIn' => is_user_logged_in(),
+			'sessionTimeoutMinutes' => (int) get_option( 'grc_session_timeout_minutes', 30 ),
 		] );
 	}
 
