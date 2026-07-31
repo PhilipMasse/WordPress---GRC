@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.24.0 — Navigation dans la bannière citoyenne + icône seule pour la bascule vue
+
+### Bascule Cartes/Liste
+- Les boutons "☰ Liste" / "🔲 Cartes" n'affichent désormais que l'icône, plus le texte — l'info-bulle (survol) précise toujours l'action
+
+### Navigation dans la bannière citoyenne
+- Nouveau réglage **GRC Citoyenne → Réglages → Pages du portail citoyen** : associez chaque shortcode (`[grc_signalement_form]`, `[grc_mes_demandes]`, `[grc_demarche_form]`, `[grc_rdv_form]`) à sa page WordPress
+- La bannière affichée en haut de toutes les pages pour un citoyen connecté affiche désormais des liens de navigation directs vers ces pages ("Signaler un problème", "Mes demandes", "Faire une démarche", "Prendre rendez-vous"), en plus de "Mon profil" et "Se déconnecter"
+- Seuls les liens vers des pages effectivement configurées apparaissent ; la page courante est mise en évidence
+- Version responsive (mobile) : la navigation passe sur une seconde ligne
+
 ## 0.23.0 — Vue Cartes/Liste + filtres par statut dans "Mes demandes"
 
 - Nouveau bouton **☰ Liste / 🔲 Cartes** sur chacune des trois sections (Demandes, Démarches, Rendez-vous) de `[grc_mes_demandes]` : la vue liste affiche un tableau compact, plus économe en espace que les cartes

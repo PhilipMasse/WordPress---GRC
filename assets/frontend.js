@@ -456,6 +456,8 @@
 		bar.innerHTML =
 			'<div class="grc-global-bar-inner">' +
 				'<span id="grc-global-bar-name">Connecté</span>' +
+				'<nav id="grc-global-nav" class="grc-global-nav"></nav>' +
+				'<span class="grc-global-bar-spacer"></span>' +
 				'<button type="button" id="grc-global-profil-btn" class="grc-btn-link">Mon profil</button>' +
 				'<button type="button" id="grc-global-logout-btn" class="grc-btn-link">Se déconnecter</button>' +
 			'</div>' +
@@ -478,6 +480,26 @@
 			'</div>';
 
 		document.body.insertBefore( bar, document.body.firstChild );
+
+		var navEl = el( '#grc-global-nav', bar );
+		var navLinks = [
+			{ url: grcConfig.pages && grcConfig.pages.signalement, label: 'Signaler un problème' },
+			{ url: grcConfig.pages && grcConfig.pages.mesDemandes, label: 'Mes demandes' },
+			{ url: grcConfig.pages && grcConfig.pages.demarche, label: 'Faire une démarche' },
+			{ url: grcConfig.pages && grcConfig.pages.rdv, label: 'Prendre rendez-vous' }
+		];
+		navLinks.forEach( function ( link ) {
+			if ( ! link.url ) {
+				return;
+			}
+			var a = document.createElement( 'a' );
+			a.href = link.url;
+			a.textContent = link.label;
+			if ( window.location.href.split( '?' )[ 0 ].replace( /\/$/, '' ) === link.url.replace( /\/$/, '' ) ) {
+				a.className = 'grc-global-nav-active';
+			}
+			navEl.appendChild( a );
+		} );
 
 		var nameSpan = el( '#grc-global-bar-name', bar );
 		var panel = el( '#grc-global-profil-panel', bar );
@@ -1312,7 +1334,8 @@
 
 		function grcUpdateVueToggleButtons() {
 			wrapper.querySelectorAll( '.grc-vue-toggle' ).forEach( function ( btn ) {
-				btn.textContent = 'list' === grcVueMode ? '🔲 Cartes' : '☰ Liste';
+				btn.textContent = 'list' === grcVueMode ? '🔲' : '☰';
+				btn.title = 'list' === grcVueMode ? 'Afficher en cartes' : 'Afficher en liste';
 			} );
 		}
 

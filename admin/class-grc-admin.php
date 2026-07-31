@@ -212,6 +212,27 @@ class GRC_Admin {
 					</tr>
 				</table>
 
+				<h2>Pages du portail citoyen</h2>
+				<p class="description">Sélectionnez les pages contenant chaque shortcode : ces liens apparaîtront dans la barre de navigation affichée en haut de toutes les pages pour un citoyen connecté.</p>
+				<table class="form-table">
+					<tr>
+						<th><label for="grc-page-signalement">Signalement (<code>[grc_signalement_form]</code>)</label></th>
+						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-signalement', 'name' => 'page_signalement', 'selected' => (int) get_option( 'grc_page_signalement' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+					</tr>
+					<tr>
+						<th><label for="grc-page-mes-demandes">Mes demandes (<code>[grc_mes_demandes]</code>)</label></th>
+						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-mes-demandes', 'name' => 'page_mes_demandes', 'selected' => (int) get_option( 'grc_page_mes_demandes' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+					</tr>
+					<tr>
+						<th><label for="grc-page-demarche">Démarches (<code>[grc_demarche_form]</code>)</label></th>
+						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-demarche', 'name' => 'page_demarche', 'selected' => (int) get_option( 'grc_page_demarche' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+					</tr>
+					<tr>
+						<th><label for="grc-page-rdv">Rendez-vous (<code>[grc_rdv_form]</code>)</label></th>
+						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-rdv', 'name' => 'page_rdv', 'selected' => (int) get_option( 'grc_page_rdv' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+					</tr>
+				</table>
+
 				<h2>Journal d'audit (RGPD)</h2>
 				<table class="form-table">
 					<tr>
@@ -249,6 +270,11 @@ class GRC_Admin {
 
 		$session_timeout = min( 60, max( 5, absint( $_POST['session_timeout_minutes'] ?? 30 ) ) );
 		update_option( 'grc_session_timeout_minutes', $session_timeout );
+
+		update_option( 'grc_page_signalement', absint( $_POST['page_signalement'] ?? 0 ) );
+		update_option( 'grc_page_mes_demandes', absint( $_POST['page_mes_demandes'] ?? 0 ) );
+		update_option( 'grc_page_demarche', absint( $_POST['page_demarche'] ?? 0 ) );
+		update_option( 'grc_page_rdv', absint( $_POST['page_rdv'] ?? 0 ) );
 
 		GRC_Audit_Log::log( 'settings_saved', 'settings', 0, [
 			'delai_validation_heures'   => $delai,

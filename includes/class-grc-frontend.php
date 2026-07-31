@@ -38,7 +38,18 @@ class GRC_Frontend {
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'isLoggedIn' => is_user_logged_in(),
 			'sessionTimeoutMinutes' => (int) get_option( 'grc_session_timeout_minutes', 30 ),
+			'pages'      => [
+				'signalement'  => self::page_url( 'grc_page_signalement' ),
+				'mesDemandes'  => self::page_url( 'grc_page_mes_demandes' ),
+				'demarche'     => self::page_url( 'grc_page_demarche' ),
+				'rdv'          => self::page_url( 'grc_page_rdv' ),
+			],
 		] );
+	}
+
+	private static function page_url( string $option_name ): ?string {
+		$page_id = (int) get_option( $option_name );
+		return $page_id ? get_permalink( $page_id ) : null;
 	}
 
 	// ------------------------------------------------------------------
@@ -205,7 +216,7 @@ class GRC_Frontend {
 							<option value="cloture">Clôturé</option>
 							<option value="reouvert">Réouvert</option>
 						</select>
-						<button type="button" class="grc-vue-toggle" data-target="demandes" title="Changer d'affichage">☰ Liste</button>
+						<button type="button" class="grc-vue-toggle" data-target="demandes" title="Changer d'affichage">☰</button>
 					</div>
 				</div>
 				<div id="grc-demandes-liste" class="grc-demandes-liste"><p>Chargement de vos demandes...</p></div>
@@ -221,7 +232,7 @@ class GRC_Frontend {
 							<option value="rejete">Rejeté</option>
 							<option value="complement_requis">Complément requis</option>
 						</select>
-						<button type="button" class="grc-vue-toggle" data-target="demarches" title="Changer d'affichage">☰ Liste</button>
+						<button type="button" class="grc-vue-toggle" data-target="demarches" title="Changer d'affichage">☰</button>
 					</div>
 				</div>
 				<div id="grc-demarches-liste" class="grc-demandes-liste"><p>Chargement de vos démarches...</p></div>
@@ -236,7 +247,7 @@ class GRC_Frontend {
 							<option value="refuse">Refusé</option>
 							<option value="annule">Annulé</option>
 						</select>
-						<button type="button" class="grc-vue-toggle" data-target="rdv" title="Changer d'affichage">☰ Liste</button>
+						<button type="button" class="grc-vue-toggle" data-target="rdv" title="Changer d'affichage">☰</button>
 					</div>
 				</div>
 				<div id="grc-rdv-liste" class="grc-demandes-liste"><p>Chargement de vos rendez-vous...</p></div>

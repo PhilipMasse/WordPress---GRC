@@ -315,6 +315,50 @@
 	text-decoration: underline;
 }
 
+.grc-global-nav {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.grc-global-nav a {
+	color: #fff;
+	text-decoration: none;
+	opacity: 0.9;
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.grc-global-nav a:hover {
+	text-decoration: underline;
+	opacity: 1;
+}
+
+.grc-global-nav a.grc-global-nav-active {
+	opacity: 1;
+	font-weight: 600;
+	text-decoration: underline;
+}
+
+.grc-global-bar-spacer {
+	flex: 1;
+}
+
+@media (max-width: 780px) {
+	.grc-global-bar-inner {
+		flex-wrap: wrap;
+	}
+	.grc-global-nav {
+		order: 3;
+		width: 100%;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+	.grc-global-bar-spacer {
+		display: none;
+	}
+}
+
 .grc-global-profil-panel {
 	background: #fff;
 	color: #222;
