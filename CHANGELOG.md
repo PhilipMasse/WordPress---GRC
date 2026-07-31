@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.25.0 — Export PDF des signalements (avec carte) + captcha à l'inscription
+
+### Export PDF des signalements
+- Bibliothèque **FPDF** vendorée (fichier autonome, licence libre, ~120 Ko avec les métriques de polices) dans `includes/lib/` — aucune dépendance Composer requise
+- Nouvelle classe `GRC_Static_Map` : génère une carte du lieu du signalement en assemblant des tuiles OpenStreetMap (grille 3×3, zoom 17) avec un marqueur positionné exactement sur les coordonnées GPS — pas de service de carte statique tiers non-officiel, mise en cache sur disque (`wp-content/uploads/grc-maps/`) pour éviter les appels répétés
+- Nouvelle classe `GRC_PDF_Signalement` : génère un PDF complet (informations générales, description, citoyen concerné avec numéro unique, lieu + carte si géolocalisé, historique des échanges non-internes)
+- Bouton **"📄 Télécharger le PDF"** sur la vue détail d'une demande en administration
+
+### Captcha à l'inscription citoyenne
+- Nouvelle classe `GRC_Captcha` : captcha mathématique simple auto-hébergé (aucune donnée transmise à un service tiers, contrairement à Google reCAPTCHA — choix plus cohérent avec une démarche RGPD pour un site institutionnel), défi à usage unique stocké 5 minutes en transient WordPress
+- Nouvel endpoint public `GET /captcha`
+- Formulaire d'inscription (`[grc_mes_demandes]`, onglet "Créer un compte") enrichi d'un champ honeypot invisible (piège à robots) et de la question captcha ; un nouveau défi est généré automatiquement après tout échec
+
 ## 0.24.0 — Navigation dans la bannière citoyenne + icône seule pour la bascule vue
 
 ### Bascule Cartes/Liste

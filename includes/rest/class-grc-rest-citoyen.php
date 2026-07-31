@@ -20,6 +20,12 @@ class GRC_REST_Citoyen {
 			'permission_callback' => '__return_true',
 		] );
 
+		register_rest_route( $ns, '/captcha', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'get_captcha' ],
+			'permission_callback' => '__return_true',
+		] );
+
 		register_rest_route( $ns, '/citoyen/login', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'login' ],
@@ -62,9 +68,22 @@ class GRC_REST_Citoyen {
 	 * fiche invité existante (créée lors d'un signalement précédent) si l'email
 	 * correspond déjà à un citoyen sans mot de passe.
 	 */
+	public static function get_captcha( WP_REST_Request $request ) {
+		return GRC_Captcha::generate();
+	}
+
 	public static function register( WP_REST_Request $request ) {
 		if ( ! GRC_REST_API::check_rate_limit( 'citoyen_register', 10, 3600 ) ) {
 			return new WP_Error( 'grc_rate_limited', 'Trop de tentatives, réessayez plus tard.', [ 'status' => 429 ] );
+		}
+
+		// Honeypot : champ invisible que seuls les robots remplissent habituellement.
+		if ( ! empty( $request->get_param( 'site_web' ) ) ) {
+			return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot invalide.', [ 'status' => 400 ] );
+		}
+
+		if ( ! GRC_Captcha::verify( $request->get_param( 'captcha_token' ), $request->get_param( 'captcha_reponse' ) ) ) {
+			return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot incorrecte ou expirée. Merci de réessayer.', [ 'status' => 400 ] );
 		}
 
 		$email    = sanitize_email( $request->get_param( 'email' ) );

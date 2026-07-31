@@ -15,6 +15,7 @@ class GRC_Admin_Demandes {
 		add_action( 'admin_post_grc_add_message', [ __CLASS__, 'handle_add_message' ] );
 		add_action( 'admin_post_grc_archive_demande', [ __CLASS__, 'handle_archive_demande' ] );
 		add_action( 'admin_post_grc_unarchive_demande', [ __CLASS__, 'handle_unarchive_demande' ] );
+		add_action( 'admin_post_grc_download_pdf', [ __CLASS__, 'handle_download_pdf' ] );
 	}
 
 	public static function render() {
@@ -325,6 +326,9 @@ class GRC_Admin_Demandes {
 				<?php echo esc_html( $demande->titre ); ?>
 				<code style="font-size:14px;font-weight:400;"><?php echo esc_html( $demande->numero_suivi ); ?></code>
 			</h1>
+			<p>
+				<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_download_pdf&id=' . $demande_id ), 'grc_download_pdf_' . $demande_id ) ); ?>">📄 Télécharger le PDF</a>
+			</p>
 
 			<div style="display:flex;gap:24px;margin-top:20px;align-items:flex-start;">
 				<div style="flex:2;">
@@ -579,6 +583,30 @@ class GRC_Admin_Demandes {
 		if ( $email ) {
 			GRC_Notifications::send_statut_change( $demande_id, $email, $statut );
 		}
+	}
+
+	public static function handle_download_pdf() {
+		$id = absint( $_GET['id'] ?? 0 );
+		check_admin_referer( 'grc_download_pdf_' . $id );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		$pdf_content = GRC_PDF_Signalement::generate( $id );
+		if ( ! $pdf_content ) {
+			wp_die( 'Impossible de générer le PDF (demande introuvable).' );
+		}
+
+		global $wpdb;
+		$numero = $wpdb->get_var( $wpdb->prepare(
+			"SELECT numero_suivi FROM {$wpdb->prefix}" . GRC_TABLE_PREFIX . "demandes WHERE id = %d", $id
+		) );
+
+		header( 'Content-Type: application/pdf' );
+		header( 'Content-Disposition: attachment; filename="signalement-' . sanitize_file_name( $numero ?: $id ) . '.pdf"' );
+		header( 'Content-Length: ' . strlen( $pdf_content ) );
+		echo $pdf_content;
+		exit;
 	}
 
 	public static function handle_archive_demande() {

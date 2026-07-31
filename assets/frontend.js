@@ -1442,6 +1442,23 @@
 		// ---- Inscription ----
 		var registerForm = panels.register;
 		if ( registerForm ) {
+			var captchaQuestionEl = el( '#grc-captcha-question', registerForm );
+			var captchaTokenEl = el( '#grc-captcha-token', registerForm );
+			var captchaInputEl = el( '#grc-reg-captcha', registerForm );
+
+			function loadCaptcha() {
+				captchaQuestionEl.textContent = 'Chargement...';
+				captchaInputEl.value = '';
+				fetch( grcConfig.restUrl + '/captcha' )
+					.then( function ( res ) { return res.json(); } )
+					.then( function ( data ) {
+						captchaQuestionEl.textContent = data.question;
+						captchaTokenEl.value = data.token;
+					} )
+					.catch( function () { captchaQuestionEl.textContent = 'Erreur de chargement de la vérification anti-robot.'; } );
+			}
+			loadCaptcha();
+
 			registerForm.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
 				var msgBox = el( '.grc-form-message', registerForm );
@@ -1452,7 +1469,10 @@
 						prenom: el( '#grc-reg-prenom', registerForm ).value,
 						nom: el( '#grc-reg-nom', registerForm ).value,
 						email: el( '#grc-reg-email', registerForm ).value,
-						password: el( '#grc-reg-password', registerForm ).value
+						password: el( '#grc-reg-password', registerForm ).value,
+						site_web: el( '#grc-reg-site-web', registerForm ).value,
+						captcha_token: captchaTokenEl.value,
+						captcha_reponse: captchaInputEl.value
 					} )
 				} )
 					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
@@ -1463,7 +1483,10 @@
 						storeSession( result.data );
 						showConnecteView();
 					} )
-					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+					.catch( function ( err ) {
+						showMessage( msgBox, err.message, 'error' );
+						loadCaptcha(); // Un nouveau défi est requis après tout échec (le précédent a été consommé).
+					} );
 			} );
 		}
 

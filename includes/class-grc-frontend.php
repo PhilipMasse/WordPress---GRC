@@ -185,6 +185,19 @@ class GRC_Frontend {
 						<label for="grc-reg-password">Mot de passe (8 caractères minimum)</label>
 						<input type="password" id="grc-reg-password" name="password" minlength="8" required>
 					</div>
+
+					<div style="position:absolute;left:-9999px;" aria-hidden="true">
+						<label for="grc-reg-site-web">Ne pas remplir ce champ</label>
+						<input type="text" id="grc-reg-site-web" name="site_web" tabindex="-1" autocomplete="off">
+					</div>
+
+					<div class="grc-field">
+						<label for="grc-reg-captcha">Vérification anti-robot</label>
+						<p id="grc-captcha-question" class="grc-hint">Chargement...</p>
+						<input type="text" id="grc-reg-captcha" name="captcha_reponse" required inputmode="numeric" style="max-width:100px;">
+						<input type="hidden" id="grc-captcha-token" name="captcha_token">
+					</div>
+
 					<button type="submit" class="grc-btn-submit">Créer mon compte</button>
 					<div class="grc-form-message" style="display:none;"></div>
 				</form>

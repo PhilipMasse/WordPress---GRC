@@ -61,6 +61,7 @@ class GRC_REST_API {
 			'#^/grc/v1/auth/login$#',
 			'#^/grc/v1/auth/refresh$#',
 			'#^/grc/v1/citoyen/register$#',
+			'#^/grc/v1/captcha$#',
 			'#^/grc/v1/citoyen/login$#',
 			'#^/grc/v1/citoyen/refresh$#',
 			'#^/grc/v1/demandes/guest-lookup$#',

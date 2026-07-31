@@ -47,7 +47,8 @@ Namespace : `/wp-json/grc/v1/`
 | `/auth/login` | POST | Non | Connexion **agent/élu/admin** (comptes WordPress), retourne access_token (JWT type=agent) + refresh_token |
 | `/auth/refresh` | POST | Non | Renouvelle l'access_token agent |
 | `/auth/logout` | POST | JWT agent | Révoque le refresh token agent |
-| `/citoyen/register` | POST | Non | Crée un compte citoyen (indépendant de wp_users) |
+| `/citoyen/register` | POST | Non | Crée un compte citoyen (indépendant de wp_users) — nécessite un token/réponse captcha valides |
+| `/captcha` | GET | Non | Génère un défi anti-robot (mathématique, auto-hébergé) à fournir lors de l'inscription |
 | `/citoyen/login` | POST | Non | Connexion citoyen, retourne access_token (JWT type=citoyen) + refresh_token |
 | `/citoyen/refresh` | POST | Non | Renouvelle l'access_token citoyen |
 | `/citoyen/me` | GET | JWT citoyen | Infos du citoyen connecté |

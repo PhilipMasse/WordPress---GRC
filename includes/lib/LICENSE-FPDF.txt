@@ -1,0 +1,4 @@
+FPDF is released under a permissive free license (no GPL) — free to use,
+modify and redistribute for any purpose, commercial or not.
+Source: http://www.fpdf.org/ (mirrored via https://github.com/Setasign/FPDF)
+Author: Olivier Plathey
