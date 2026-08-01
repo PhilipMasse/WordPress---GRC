@@ -352,6 +352,25 @@ class GRC_Frontend {
 						<label for="grc-demarche-email">Email <span class="required">*</span></label>
 						<input type="email" id="grc-demarche-email" name="email">
 					</div>
+
+					<div style="position:absolute;left:-9999px;" aria-hidden="true">
+						<label for="grc-demarche-site-web">Ne pas remplir ce champ</label>
+						<input type="text" id="grc-demarche-site-web" name="site_web" tabindex="-1" autocomplete="off">
+					</div>
+
+					<?php $demarche_captcha = self::captcha_config(); ?>
+					<?php if ( 'interne' !== $demarche_captcha['provider'] ) : ?>
+						<div class="grc-field">
+							<div class="<?php echo esc_attr( $demarche_captcha['widget_class'] ); ?>" data-sitekey="<?php echo esc_attr( $demarche_captcha['site_key'] ); ?>"></div>
+						</div>
+					<?php else : ?>
+						<div class="grc-field">
+							<label for="grc-demarche-captcha">Vérification anti-robot</label>
+							<p id="grc-demarche-captcha-question" class="grc-hint" role="status" aria-live="polite">Chargement...</p>
+							<input type="text" id="grc-demarche-captcha" required inputmode="numeric" style="max-width:100px;">
+							<input type="hidden" id="grc-demarche-captcha-token">
+						</div>
+					<?php endif; ?>
 				</div>
 
 				<button type="submit" class="grc-btn-submit" disabled>Envoyer le dossier</button>

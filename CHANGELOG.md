@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.31.0 — Captcha anti-robot sur les démarches en mode invité
+
+- Les démarches (`[grc_demarche_form]`) restent accessibles sans compte, contrairement aux signalements et rendez-vous — elles étaient donc une cible pour les robots
+- Application du **même système de captcha configuré dans Réglages** (interne, Cloudflare Turnstile, Google reCAPTCHA v2 ou hCaptcha) que pour l'inscription citoyenne, uniquement pour la soumission en mode invité (les citoyens connectés n'y sont pas soumis)
+- Ajout d'un champ honeypot invisible en complément
+- Contrôle appliqué côté serveur, avec réutilisation de la logique de vérification déjà en place pour l'inscription (aucune duplication)
+
 ## 0.30.1 — Accessibilité RGAA (deuxième vague) : alternative texte aux cartes
 
 - Les trois cartes du plugin (statistiques admin, fiche détail d'un signalement, mini-carte de géolocalisation citoyenne) sont intrinsèquement peu accessibles aux lecteurs d'écran (contenu visuel dynamique). Ajout de `role="img"` + `aria-label` descriptif sur chacune.

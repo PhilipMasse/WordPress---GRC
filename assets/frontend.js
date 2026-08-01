@@ -318,6 +318,30 @@
 			}
 		}
 
+		var demarcheCaptchaProvider = grcConfig.captchaProvider || 'interne';
+		var demarcheUsingProvider = ! isCitoyenLoggedIn() && 'interne' !== demarcheCaptchaProvider;
+		var demarcheCaptchaQuestionEl, demarcheCaptchaTokenEl, demarcheCaptchaInputEl, demarcheLoadCaptcha;
+
+		if ( ! isCitoyenLoggedIn() && 'interne' === demarcheCaptchaProvider ) {
+			demarcheCaptchaQuestionEl = el( '#grc-demarche-captcha-question', wrapper );
+			demarcheCaptchaTokenEl = el( '#grc-demarche-captcha-token', wrapper );
+			demarcheCaptchaInputEl = el( '#grc-demarche-captcha', wrapper );
+
+			demarcheLoadCaptcha = function () {
+				if ( ! demarcheCaptchaQuestionEl ) { return; }
+				demarcheCaptchaQuestionEl.textContent = 'Chargement...';
+				demarcheCaptchaInputEl.value = '';
+				fetch( grcConfig.restUrl + '/captcha' )
+					.then( function ( res ) { return res.json(); } )
+					.then( function ( data ) {
+						demarcheCaptchaQuestionEl.textContent = data.question;
+						demarcheCaptchaTokenEl.value = data.token;
+					} )
+					.catch( function () { demarcheCaptchaQuestionEl.textContent = 'Erreur de chargement de la vérification anti-robot.'; } );
+			};
+			demarcheLoadCaptcha();
+		}
+
 		function renderFieldsForType( type ) {
 			currentChamps = type.champs || [];
 			descriptionEl.style.display = type.description ? 'block' : 'none';
@@ -388,6 +412,15 @@
 			if ( ! isCitoyenLoggedIn() ) {
 				var emailField = el( '#grc-demarche-email', form );
 				payload.email = emailField ? emailField.value : '';
+				payload.site_web = el( '#grc-demarche-site-web', form ) ? el( '#grc-demarche-site-web', form ).value : '';
+
+				if ( demarcheUsingProvider ) {
+					var demarcheResponseField = form.querySelector( '[name="' + grcConfig.captchaResponseField + '"]' );
+					payload.captcha_provider_token = demarcheResponseField ? demarcheResponseField.value : '';
+				} else if ( demarcheCaptchaTokenEl ) {
+					payload.captcha_token = demarcheCaptchaTokenEl.value;
+					payload.captcha_reponse = demarcheCaptchaInputEl.value;
+				}
 			}
 
 			submitBtn.disabled = true;
@@ -440,6 +473,9 @@
 				} )
 				.catch( function ( err ) {
 					showMessage( msgBox, err.message, 'error' );
+					if ( demarcheLoadCaptcha ) {
+						demarcheLoadCaptcha(); // Nouveau défi requis après tout échec (le précédent a été consommé).
+					}
 				} )
 				.finally( function () {
 					submitBtn.disabled = false;

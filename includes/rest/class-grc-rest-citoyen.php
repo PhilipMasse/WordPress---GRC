@@ -72,7 +72,7 @@ class GRC_REST_Citoyen {
 		return GRC_Captcha::generate();
 	}
 
-	private static function verify_captcha_provider( string $provider, ?string $token ): bool {
+	public static function verify_captcha_provider( string $provider, ?string $token ): bool {
 		if ( ! $token ) {
 			return false;
 		}

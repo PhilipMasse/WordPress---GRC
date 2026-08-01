@@ -137,6 +137,20 @@ class GRC_REST_Demarches {
 
 		$citoyen_id = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
 		if ( ! $citoyen_id ) {
+			// Honeypot : champ invisible que seuls les robots remplissent habituellement.
+			if ( ! empty( $params['site_web'] ) ) {
+				return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot invalide.', [ 'status' => 400 ] );
+			}
+
+			$captcha_provider = get_option( 'grc_captcha_provider', 'interne' );
+			if ( 'interne' !== $captcha_provider ) {
+				if ( ! GRC_REST_Citoyen::verify_captcha_provider( $captcha_provider, $params['captcha_provider_token'] ?? null ) ) {
+					return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot incorrecte ou expirée. Merci de réessayer.', [ 'status' => 400 ] );
+				}
+			} elseif ( ! GRC_Captcha::verify( $params['captcha_token'] ?? null, $params['captcha_reponse'] ?? null ) ) {
+				return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot incorrecte ou expirée. Merci de réessayer.', [ 'status' => 400 ] );
+			}
+
 			$email = sanitize_email( $params['email'] ?? '' );
 			if ( ! $email ) {
 				return new WP_Error( 'grc_missing_email', 'Email obligatoire pour une démarche en mode invité.', [ 'status' => 400 ] );
