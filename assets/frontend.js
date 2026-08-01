@@ -684,6 +684,8 @@
 			updateFields( grcGeolocMarker.getLatLng() );
 		} );
 
+		updateFields( { lat: lat, lng: lng } ); // Déclenche aussi la recherche d'adresse dès la position initiale.
+
 		// Permet aussi de cliquer n'importe où sur la carte pour déplacer le repère
 		// (plus intuitif que le seul glisser-déposer sur une petite carte).
 		grcGeolocMapInstance.on( 'click', function ( e ) {

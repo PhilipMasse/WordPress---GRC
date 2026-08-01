@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.2 — Correctif : adresse non récupérée à la géolocalisation initiale
+
+- La recherche automatique d'adresse n'était déclenchée qu'après un ajustement du repère (glisser-déposer ou clic), pas lors de la géolocalisation initiale à l'ouverture de la page. Corrigé : l'adresse se recherche désormais dès la première position détectée, sans action du citoyen.
+
 ## 0.28.1 — Géolocalisation automatique à l'ouverture + repère sans aucune dépendance d'icône
 
 - Le repère sur la mini-carte du signalement est désormais une **pastille dessinée en CSS pur** (identique visuellement à celle de la carte admin) au lieu d'une icône image — élimine toute possibilité de décalage lié au chargement d'assets externes, centrage pixel-parfait garanti
