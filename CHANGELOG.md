@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.30.0 — Accessibilité RGAA (première vague)
+
+Début de la mise en conformité RGAA du portail citoyen (obligation légale pour un site de collectivité publique).
+
+### Navigation clavier
+- **Calendrier de rendez-vous** : les jours étaient des `<span>` cliquables uniquement à la souris — remplacés par des `<button>` réellement focusables et activables au clavier, avec `aria-label` décrivant la date et la disponibilité en texte (pas seulement par la couleur)
+- Liens d'évitement ("Aller au formulaire") ajoutés en tête des 4 formulaires citoyens, visibles au focus clavier
+
+### Lecteurs d'écran
+- Notation par étoiles : `role="radiogroup"`, `aria-label` par étoile, `aria-checked` synchronisé
+- Boutons icône seule (bascule Liste/Cartes, téléchargement PDF) : `aria-label` explicites
+- Messages dynamiques (erreurs de formulaire, statut de géolocalisation, question du captcha) : `role="status"` + `aria-live="polite"` pour être annoncés automatiquement
+
+### Contrastes de couleur (WCAG AA)
+- Audit systématique des couleurs de la charte graphique ; correction du texte blanc sur fond doré (#DEA128), qui ne passait qu'à un ratio de 2.27 contre 4.5 requis — corrigé sur les badges de statut (front et admin)
+
+### À poursuivre
+Alternative textuelle pour les cartes Leaflet, vérification complète des autres contrastes, navigation clavier du panneau profil, structure des titres.
+
 ## 0.29.0 — Compte citoyen obligatoire pour signalements et rendez-vous
 
 - Le **mode invité est supprimé** pour les signalements (`[grc_signalement_form]`) et les rendez-vous (`[grc_rdv_form]`) : un compte citoyen connecté est désormais requis

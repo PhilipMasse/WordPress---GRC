@@ -167,7 +167,7 @@ class GRC_Admin_RDV {
 						( $r->c_nom ? GRC_Encryption::decrypt( $r->c_nom ) : '' )
 					);
 					$badges = [
-						'en_attente' => '<span style="color:#DEA128;font-weight:600;">En attente</span>',
+						'en_attente' => '<span style="color:#8a6414;font-weight:600;">En attente</span>',
 						'confirme'   => '<span style="color:#587526;">Confirmé</span>',
 						'refuse'     => '<span style="color:#b32d2e;">Refusé</span>',
 						'annule'     => '<span style="color:#888;">Annulé</span>',

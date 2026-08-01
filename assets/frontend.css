@@ -123,6 +123,23 @@
 	border: 1px solid #b32d2e;
 }
 
+.grc-skip-link {
+	position: absolute;
+	left: -9999px;
+	top: 0;
+	background: #2D6AB0;
+	color: #fff;
+	padding: 10px 16px;
+	z-index: 10000;
+	border-radius: 0 0 6px 0;
+	font-size: 14px;
+	text-decoration: none;
+}
+
+.grc-skip-link:focus {
+	left: 0;
+}
+
 .grc-demandes-cards {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -230,14 +247,14 @@
 
 .grc-badge--nouveau { background: #2D6AB0; }
 .grc-badge--en_cours,
-.grc-badge--assigne { background: #DEA128; }
+.grc-badge--assigne { background: #DEA128; color: #4a3200; }
 .grc-badge--resolu { background: #587526; }
 .grc-badge--cloture { background: #777; }
 .grc-badge--reouvert { background: #b32d2e; }
 .grc-badge--en_attente { background: #2D6AB0; }
 .grc-badge--valide { background: #587526; }
 .grc-badge--rejete { background: #b32d2e; }
-.grc-badge--complement_requis { background: #DEA128; }
+.grc-badge--complement_requis { background: #DEA128; color: #4a3200; }
 
 .grc-mes-demandes-wrapper {
 	max-width: 640px;
@@ -547,6 +564,19 @@ input[type="file"].grc-thread-reply-files {
 	border-radius: 6px;
 	font-size: 13px;
 	cursor: default;
+}
+
+button.grc-cal-day {
+	border: none;
+	background: none;
+	font-family: inherit;
+	width: 100%;
+	padding: 0;
+}
+
+button.grc-cal-day:focus-visible {
+	outline: 2px solid #2D6AB0;
+	outline-offset: 2px;
 }
 
 .grc-cal-day--empty {

@@ -167,9 +167,9 @@
 			if ( d.peut_etre_note ) {
 				html += '<div class="grc-satisfaction-form" data-demande-id="' + d.id + '">';
 				html += '<p class="grc-hint">Cette demande est résolue, donnez votre avis :</p>';
-				html += '<div class="grc-stars">';
+				html += '<div class="grc-stars" role="radiogroup" aria-label="Note de satisfaction sur 5 étoiles">';
 				for ( var n = 1; n <= 5; n++ ) {
-					html += '<button type="button" class="grc-star" data-note="' + n + '">★</button>';
+					html += '<button type="button" class="grc-star" data-note="' + n + '" role="radio" aria-checked="false" aria-label="' + n + ' étoile' + ( n > 1 ? 's' : '' ) + ' sur 5">★</button>';
 				}
 				html += '</div>';
 				html += '<textarea class="grc-satisfaction-comment" placeholder="Commentaire (facultatif)" rows="2"></textarea>';
@@ -193,7 +193,9 @@
 				star.addEventListener( 'click', function () {
 					selectedNote = parseInt( star.dataset.note, 10 );
 					stars.forEach( function ( s ) {
-						s.classList.toggle( 'grc-star--active', parseInt( s.dataset.note, 10 ) <= selectedNote );
+						var active = parseInt( s.dataset.note, 10 ) <= selectedNote;
+						s.classList.toggle( 'grc-star--active', active );
+						s.setAttribute( 'aria-checked', parseInt( s.dataset.note, 10 ) === selectedNote ? 'true' : 'false' );
 					} );
 					submitBtn.disabled = false;
 				} );
@@ -963,12 +965,14 @@
 				today.setHours( 0, 0, 0, 0 );
 
 				var html = '<div class="grc-calendar-weekdays">';
-				[ 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim' ].forEach( function ( d ) { html += '<span>' + d + '</span>'; } );
-				html += '</div><div class="grc-calendar-days">';
+				[ 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim' ].forEach( function ( d ) { html += '<span aria-hidden="true">' + d + '</span>'; } );
+				html += '</div><div class="grc-calendar-days" role="grid" aria-label="Calendrier des jours disponibles pour la prise de rendez-vous">';
 
 				for ( var i = 0; i < startOffset; i++ ) {
-					html += '<span class="grc-cal-day grc-cal-day--empty"></span>';
+					html += '<span class="grc-cal-day grc-cal-day--empty" aria-hidden="true"></span>';
 				}
+
+				var moisLabels = [ 'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre' ];
 
 				for ( var day = 1; day <= daysInMonth; day++ ) {
 					var thisDate = new Date( year, month, day );
@@ -976,15 +980,20 @@
 					var info = parJour[ key ];
 					var isPast = thisDate < today;
 					var cssClass = 'grc-cal-day';
+					var statutTexte = '';
 
 					if ( isPast || ! info ) {
 						cssClass += ' grc-cal-day--none';
+						statutTexte = isPast ? 'jour passé' : 'aucun créneau';
 					} else if ( 0 === info.restantes ) {
 						cssClass += ' grc-cal-day--full';
+						statutTexte = 'complet';
 					} else if ( info.restantes <= 2 || info.restantes <= info.total * 0.2 ) {
 						cssClass += ' grc-cal-day--few';
+						statutTexte = 'dernières places';
 					} else {
 						cssClass += ' grc-cal-day--available';
+						statutTexte = 'places disponibles';
 					}
 
 					if ( selectedDay === key ) {
@@ -992,7 +1001,13 @@
 					}
 
 					var clickable = ! isPast && info && info.restantes > 0;
-					html += '<span class="' + cssClass + '" ' + ( clickable ? 'data-day="' + key + '"' : '' ) + '>' + day + '</span>';
+					var libelle = day + ' ' + moisLabels[ month ] + ', ' + statutTexte;
+
+					if ( clickable ) {
+						html += '<button type="button" class="' + cssClass + '" data-day="' + key + '" aria-label="' + libelle + '" aria-pressed="' + ( selectedDay === key ) + '">' + day + '</button>';
+					} else {
+						html += '<span class="' + cssClass + '" aria-label="' + libelle + '">' + day + '</span>';
+					}
 				}
 
 				html += '</div>';
@@ -1003,6 +1018,8 @@
 						selectedDay = el2.dataset.day;
 						renderCalendar();
 						renderCreneauxForDay( selectedDay );
+						var focusTarget = calendarGrid.querySelector( '[data-day="' + selectedDay + '"]' );
+						if ( focusTarget ) { focusTarget.focus(); }
 					} );
 				} );
 			}
@@ -1406,7 +1423,9 @@
 		function grcUpdateVueToggleButtons() {
 			wrapper.querySelectorAll( '.grc-vue-toggle' ).forEach( function ( btn ) {
 				btn.textContent = 'list' === grcVueMode ? '🔲' : '☰';
-				btn.title = 'list' === grcVueMode ? 'Afficher en cartes' : 'Afficher en liste';
+				var label = 'list' === grcVueMode ? 'Afficher en cartes' : 'Afficher en liste';
+				btn.title = label;
+				btn.setAttribute( 'aria-label', label );
 			} );
 		}
 

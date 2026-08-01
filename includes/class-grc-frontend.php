@@ -108,6 +108,7 @@ class GRC_Frontend {
 		ob_start();
 		?>
 		<div class="grc-form-wrapper">
+			<a href="#grc-titre" class="grc-skip-link">Aller au formulaire de signalement</a>
 			<div id="grc-connected-banner" class="grc-connected-banner" style="display:none;">
 				Connecté en tant que <strong id="grc-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce signalement.
 			</div>
@@ -144,9 +145,9 @@ class GRC_Frontend {
 					<label for="grc-adresse">Adresse / lieu concerné</label>
 					<input type="text" id="grc-adresse" name="adresse_lieu" placeholder="Ex: 12 rue de la Mairie">
 					<button type="button" id="grc-geoloc-btn" class="grc-btn-link" style="margin-top:4px;">📍 Actualiser ma position</button>
-					<span id="grc-geoloc-status" class="grc-hint"></span>
+					<span id="grc-geoloc-status" class="grc-hint" role="status" aria-live="polite"></span>
 					<div id="grc-geoloc-map" style="display:none;height:260px;border-radius:8px;margin-top:8px;"></div>
-					<p id="grc-geoloc-coords" class="grc-hint" style="display:none;"></p>
+					<p id="grc-geoloc-coords" class="grc-hint" role="status" aria-live="polite" style="display:none;"></p>
 					<input type="hidden" id="grc-latitude" name="latitude">
 					<input type="hidden" id="grc-longitude" name="longitude">
 				</div>
@@ -165,7 +166,7 @@ class GRC_Frontend {
 
 				<button type="submit" class="grc-btn-submit">Envoyer le signalement</button>
 
-				<div id="grc-form-message" class="grc-form-message" style="display:none;"></div>
+				<div id="grc-form-message" class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 			</form>
 		</div>
 		<?php
@@ -180,10 +181,11 @@ class GRC_Frontend {
 		ob_start();
 		?>
 		<div class="grc-mes-demandes-wrapper">
+			<a href="#grc-auth-tabs-first" class="grc-skip-link">Aller au formulaire de connexion</a>
 
 			<div id="grc-auth-forms" class="grc-auth-forms">
 				<div class="grc-auth-tabs">
-					<button type="button" class="grc-auth-tab grc-auth-tab--active" data-tab="login">Se connecter</button>
+					<button type="button" id="grc-auth-tabs-first" class="grc-auth-tab grc-auth-tab--active" data-tab="login">Se connecter</button>
 					<button type="button" class="grc-auth-tab" data-tab="register">Créer un compte</button>
 					<button type="button" class="grc-auth-tab" data-tab="guest">Suivi invité</button>
 				</div>
@@ -198,7 +200,7 @@ class GRC_Frontend {
 						<input type="password" id="grc-login-password" name="password" required>
 					</div>
 					<button type="submit" class="grc-btn-submit">Se connecter</button>
-					<div class="grc-form-message" style="display:none;"></div>
+					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 				</form>
 
 				<form id="grc-citoyen-register-form" class="grc-form grc-auth-panel" style="display:none;">
@@ -232,14 +234,14 @@ class GRC_Frontend {
 					<?php else : ?>
 						<div class="grc-field">
 							<label for="grc-reg-captcha">Vérification anti-robot</label>
-							<p id="grc-captcha-question" class="grc-hint">Chargement...</p>
+							<p id="grc-captcha-question" class="grc-hint" role="status" aria-live="polite">Chargement...</p>
 							<input type="text" id="grc-reg-captcha" name="captcha_reponse" required inputmode="numeric" style="max-width:100px;">
 							<input type="hidden" id="grc-captcha-token" name="captcha_token">
 						</div>
 					<?php endif; ?>
 
 					<button type="submit" class="grc-btn-submit">Créer mon compte</button>
-					<div class="grc-form-message" style="display:none;"></div>
+					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 				</form>
 
 				<form id="grc-guest-lookup-form" class="grc-form grc-auth-panel" style="display:none;">
@@ -269,7 +271,7 @@ class GRC_Frontend {
 							<option value="cloture">Clôturé</option>
 							<option value="reouvert">Réouvert</option>
 						</select>
-						<button type="button" class="grc-vue-toggle" data-target="demandes" title="Changer d'affichage">☰</button>
+						<button type="button" class="grc-vue-toggle" data-target="demandes" title="Changer d'affichage" aria-label="Changer l'affichage des demandes en liste ou en cartes">☰</button>
 					</div>
 				</div>
 				<div id="grc-demandes-liste" class="grc-demandes-liste"><p>Chargement de vos demandes...</p></div>
@@ -285,7 +287,7 @@ class GRC_Frontend {
 							<option value="rejete">Rejeté</option>
 							<option value="complement_requis">Complément requis</option>
 						</select>
-						<button type="button" class="grc-vue-toggle" data-target="demarches" title="Changer d'affichage">☰</button>
+						<button type="button" class="grc-vue-toggle" data-target="demarches" title="Changer d'affichage" aria-label="Changer l'affichage des démarches en liste ou en cartes">☰</button>
 					</div>
 				</div>
 				<div id="grc-demarches-liste" class="grc-demandes-liste"><p>Chargement de vos démarches...</p></div>
@@ -300,7 +302,7 @@ class GRC_Frontend {
 							<option value="refuse">Refusé</option>
 							<option value="annule">Annulé</option>
 						</select>
-						<button type="button" class="grc-vue-toggle" data-target="rdv" title="Changer d'affichage">☰</button>
+						<button type="button" class="grc-vue-toggle" data-target="rdv" title="Changer d'affichage" aria-label="Changer l'affichage des rendez-vous en liste ou en cartes">☰</button>
 					</div>
 				</div>
 				<div id="grc-rdv-liste" class="grc-demandes-liste"><p>Chargement de vos rendez-vous...</p></div>
@@ -327,6 +329,7 @@ class GRC_Frontend {
 		ob_start();
 		?>
 		<div class="grc-demarche-form-wrapper" data-preselect-type="<?php echo esc_attr( $atts['type'] ); ?>">
+			<a href="#grc-demarche-type-select" class="grc-skip-link">Aller au formulaire de démarche</a>
 			<div id="grc-demarche-connected-banner" class="grc-connected-banner" style="display:none;">
 				Connecté en tant que <strong id="grc-demarche-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce dossier.
 			</div>
@@ -352,7 +355,7 @@ class GRC_Frontend {
 				</div>
 
 				<button type="submit" class="grc-btn-submit" disabled>Envoyer le dossier</button>
-				<div class="grc-form-message" style="display:none;"></div>
+				<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 			</form>
 		</div>
 		<?php
@@ -371,6 +374,7 @@ class GRC_Frontend {
 		ob_start();
 		?>
 		<div class="grc-form-wrapper grc-rdv-wrapper">
+			<a href="#grc-rdv-service" class="grc-skip-link">Aller au formulaire de rendez-vous</a>
 			<div id="grc-rdv-connected-banner" class="grc-connected-banner" style="display:none;">
 				Connecté en tant que <strong id="grc-rdv-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce rendez-vous.
 			</div>
@@ -424,7 +428,7 @@ class GRC_Frontend {
 				</div>
 
 				<button type="submit" class="grc-btn-submit" disabled>Confirmer le rendez-vous</button>
-				<div class="grc-form-message" style="display:none;"></div>
+				<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 			</form>
 		</div>
 		<?php

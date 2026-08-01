@@ -218,7 +218,7 @@ class GRC_Admin_Stats {
 					<div class="description">Taux confirmation : <?php echo $taux_confirmation; ?>%</div>
 				</div>
 				<div class="card" style="padding:14px 20px;max-width:none;">
-					<strong style="font-size:24px;color:#DEA128;"><?php echo $satisfaction_kpi->moyenne ? round( (float) $satisfaction_kpi->moyenne, 1 ) : '—'; ?> / 5</strong><br>Satisfaction
+					<strong style="font-size:24px;color:#8a6414;"><?php echo $satisfaction_kpi->moyenne ? round( (float) $satisfaction_kpi->moyenne, 1 ) : '—'; ?> / 5</strong><br>Satisfaction
 					<div class="description"><?php echo (int) $satisfaction_kpi->total; ?> évaluation(s)</div>
 				</div>
 			</div>

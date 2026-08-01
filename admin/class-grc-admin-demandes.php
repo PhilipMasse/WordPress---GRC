@@ -213,7 +213,7 @@ class GRC_Admin_Demandes {
 							<td><?php echo $en_retard ? '<span style="color:#b32d2e;font-weight:600;">En retard</span>' : '—'; ?></td>
 							<td style="white-space:nowrap;">
 								<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-demandes&demande_id=' . $row->id ) ); ?>">Voir</a>
-								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_download_pdf&id=' . $row->id ), 'grc_download_pdf_' . $row->id ) ); ?>" title="Télécharger le PDF">📄</a>
+								<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_download_pdf&id=' . $row->id ), 'grc_download_pdf_' . $row->id ) ); ?>" title="Télécharger le PDF" aria-label="Télécharger le PDF du signalement <?php echo esc_attr( $row->numero_suivi ); ?>">📄</a>
 								<?php if ( $row->archive ) : ?>
 									<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_unarchive_demande&id=' . $row->id ), 'grc_archive_demande_' . $row->id ) ); ?>">Désarchiver</a>
 								<?php else : ?>
