@@ -607,24 +607,40 @@
 		}
 		mapEl.style.display = 'block';
 
+		function updateFields( latlng ) {
+			el( '#grc-latitude', form ).value = latlng.lat;
+			el( '#grc-longitude', form ).value = latlng.lng;
+			var coordsEl = el( '#grc-geoloc-coords', form );
+			if ( coordsEl ) {
+				coordsEl.style.display = 'block';
+				coordsEl.textContent = 'Position retenue : ' + Number( latlng.lat ).toFixed( 6 ) + ', ' + Number( latlng.lng ).toFixed( 6 );
+			}
+		}
+
 		if ( grcGeolocMapInstance ) {
-			grcGeolocMapInstance.setView( [ lat, lng ], 16 );
+			grcGeolocMapInstance.setView( [ lat, lng ], 18 );
 			grcGeolocMarker.setLatLng( [ lat, lng ] );
+			updateFields( { lat: lat, lng: lng } );
 			return;
 		}
 
-		grcGeolocMapInstance = L.map( mapEl ).setView( [ lat, lng ], 16 );
+		grcGeolocMapInstance = L.map( mapEl ).setView( [ lat, lng ], 18 );
 		L.tileLayer( 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© OpenStreetMap contributors',
 			maxZoom: 19
 		} ).addTo( grcGeolocMapInstance );
 
 		grcGeolocMarker = L.marker( [ lat, lng ], { draggable: true } ).addTo( grcGeolocMapInstance );
-		grcGeolocMarker.bindPopup( 'Faites glisser ce repère pour ajuster l\'emplacement exact.' ).openPopup();
+		grcGeolocMarker.bindPopup( 'Faites glisser ce repère, ou cliquez ailleurs sur la carte, pour ajuster l\'emplacement exact.' ).openPopup();
 		grcGeolocMarker.on( 'dragend', function () {
-			var pos = grcGeolocMarker.getLatLng();
-			el( '#grc-latitude', form ).value = pos.lat;
-			el( '#grc-longitude', form ).value = pos.lng;
+			updateFields( grcGeolocMarker.getLatLng() );
+		} );
+
+		// Permet aussi de cliquer n'importe où sur la carte pour déplacer le repère
+		// (plus intuitif que le seul glisser-déposer sur une petite carte).
+		grcGeolocMapInstance.on( 'click', function ( e ) {
+			grcGeolocMarker.setLatLng( e.latlng );
+			updateFields( e.latlng );
 		} );
 	}
 

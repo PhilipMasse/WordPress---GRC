@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.27.1 — Précision du repère GPS lors du signalement
+
+- La mini-carte de géolocalisation du formulaire de signalement passe en zoom 18 (plus précis qu'avant) et permet désormais de **cliquer n'importe où sur la carte** pour repositionner le repère, en plus du glisser-déposer — plus intuitif et précis sur une petite carte que le glisser-déposer seul
+- Affichage en direct des coordonnées retenues (latitude/longitude à 6 décimales) sous la carte, pour vérification avant envoi du signalement
+
 ## 0.27.0 — Renommage "Demandes" → "Signalements" + carte visible en fiche admin
 
 ### Renommage
