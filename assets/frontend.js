@@ -603,7 +603,11 @@
 				L.Icon.Default.mergeOptions( {
 					iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
 					iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-					shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
+					shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+					iconSize: [ 25, 41 ],
+					iconAnchor: [ 12, 41 ],
+					popupAnchor: [ 1, -34 ],
+					shadowSize: [ 41, 41 ]
 				} );
 				showGeolocMap( form, lat, lng );
 			};
@@ -666,7 +670,15 @@
 			maxZoom: 19
 		} ).addTo( grcGeolocMapInstance );
 
-		grcGeolocMarker = L.marker( [ lat, lng ], { draggable: true } ).addTo( grcGeolocMapInstance );
+		grcGeolocMarker = L.marker( [ lat, lng ], {
+			draggable: true,
+			icon: L.divIcon( {
+				className: 'grc-geoloc-pin',
+				html: '<div style="width:20px;height:20px;border-radius:50%;background:#b32d2e;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
+				iconSize: [ 20, 20 ],
+				iconAnchor: [ 10, 10 ] // Centre exact de la pastille = coordonnée réelle (pas de décalage possible).
+			} )
+		} ).addTo( grcGeolocMapInstance );
 		grcGeolocMarker.bindPopup( 'Faites glisser ce repère, ou cliquez ailleurs sur la carte, pour ajuster l\'emplacement exact.' ).openPopup();
 		grcGeolocMarker.on( 'dragend', function () {
 			updateFields( grcGeolocMarker.getLatLng() );
@@ -736,27 +748,34 @@
 		if ( form ) {
 			var geolocBtn = el( '#grc-geoloc-btn', form );
 			var geolocStatus = el( '#grc-geoloc-status', form );
-			if ( geolocBtn ) {
-				geolocBtn.addEventListener( 'click', function () {
-					if ( ! navigator.geolocation ) {
-						geolocStatus.textContent = 'La géolocalisation n\'est pas disponible sur ce navigateur.';
-						return;
+
+			function triggerGeolocation() {
+				if ( ! navigator.geolocation ) {
+					geolocStatus.textContent = 'La géolocalisation n\'est pas disponible sur ce navigateur.';
+					return;
+				}
+				geolocStatus.textContent = 'Localisation en cours...';
+				navigator.geolocation.getCurrentPosition(
+					function ( position ) {
+						var lat = position.coords.latitude;
+						var lng = position.coords.longitude;
+						el( '#grc-latitude', form ).value = lat;
+						el( '#grc-longitude', form ).value = lng;
+						geolocStatus.textContent = '✅ Position enregistrée — vous pouvez ajuster le repère si besoin.';
+						loadLeafletThenShowMap( form, lat, lng );
+					},
+					function () {
+						geolocStatus.textContent = 'Position non détectée automatiquement — vous pouvez réessayer ou saisir l\'adresse manuellement.';
 					}
-					geolocStatus.textContent = 'Localisation en cours...';
-					navigator.geolocation.getCurrentPosition(
-						function ( position ) {
-							var lat = position.coords.latitude;
-							var lng = position.coords.longitude;
-							el( '#grc-latitude', form ).value = lat;
-							el( '#grc-longitude', form ).value = lng;
-							geolocStatus.textContent = '✅ Position enregistrée — vous pouvez ajuster le repère si besoin.';
-							loadLeafletThenShowMap( form, lat, lng );
-						},
-						function () {
-							geolocStatus.textContent = 'Impossible de récupérer votre position (autorisation refusée ou indisponible).';
-						}
-					);
-				} );
+				);
+			}
+
+			if ( geolocBtn ) {
+				geolocBtn.addEventListener( 'click', triggerGeolocation );
+				// Tentative automatique à l'ouverture du formulaire : le navigateur
+				// affichera sa propre demande d'autorisation si nécessaire. En cas de
+				// refus ou d'indisponibilité, le citoyen garde la main via le bouton.
+				triggerGeolocation();
 			}
 			var guestFields = el( '#grc-guest-fields', form );
 			var banner = el( '#grc-connected-banner' );

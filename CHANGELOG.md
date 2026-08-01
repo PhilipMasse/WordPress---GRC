@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.28.1 — Géolocalisation automatique à l'ouverture + repère sans aucune dépendance d'icône
+
+- Le repère sur la mini-carte du signalement est désormais une **pastille dessinée en CSS pur** (identique visuellement à celle de la carte admin) au lieu d'une icône image — élimine toute possibilité de décalage lié au chargement d'assets externes, centrage pixel-parfait garanti
+- **Géolocalisation déclenchée automatiquement** à l'ouverture du formulaire de signalement (le navigateur demande l'autorisation comme d'habitude) : la carte, le repère et l'adresse se remplissent sans action du citoyen. Le bouton devient "Actualiser ma position" pour les cas où l'autorisation a été refusée ou pour recalculer la position
+
 ## 0.28.0 — Correctif décalage visuel du repère + adresse automatique
 
 ### Correctif décalage visuel
