@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.30.1 — Accessibilité RGAA (deuxième vague) : alternative texte aux cartes
+
+- Les trois cartes du plugin (statistiques admin, fiche détail d'un signalement, mini-carte de géolocalisation citoyenne) sont intrinsèquement peu accessibles aux lecteurs d'écran (contenu visuel dynamique). Ajout de `role="img"` + `aria-label` descriptif sur chacune.
+- **Carte des statistiques** : ajout d'une **liste équivalente au format texte** (tableau dépliable) juste en dessous, avec numéro de suivi, titre, statut et coordonnées de chaque signalement géolocalisé — véritable alternative fonctionnelle, pas seulement décorative
+- **Mini-carte de géolocalisation** (formulaire de signalement) : rappel explicite que le champ adresse en texte reste le moyen pleinement accessible de préciser un lieu, la carte n'étant qu'un outil d'ajustement complémentaire
+
 ## 0.30.0 — Accessibilité RGAA (première vague)
 
 Début de la mise en conformité RGAA du portail citoyen (obligation légale pour un site de collectivité publique).

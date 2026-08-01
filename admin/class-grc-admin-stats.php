@@ -261,7 +261,24 @@ class GRC_Admin_Stats {
 				<?php if ( empty( $points_carte ) ) : ?>
 					<p class="description">Aucun signalement géolocalisé sur cette période. Les citoyens peuvent activer la géolocalisation depuis le formulaire de signalement (bouton "Utiliser ma position").</p>
 				<?php else : ?>
-					<div id="grc-map" style="height:450px;border-radius:8px;"></div>
+					<div id="grc-map" role="img" aria-label="Carte des signalements géolocalisés. Une liste équivalente au format texte se trouve juste en dessous." style="height:450px;border-radius:8px;"></div>
+					<details style="margin-top:12px;">
+						<summary style="cursor:pointer;font-weight:600;">Voir la liste des signalements géolocalisés (équivalent texte de la carte)</summary>
+						<table class="wp-list-table widefat fixed striped" style="margin-top:10px;">
+							<thead><tr><th>N° suivi</th><th>Titre</th><th>Statut</th><th>Coordonnées</th><th></th></tr></thead>
+							<tbody>
+								<?php foreach ( $points_carte as $p ) : ?>
+									<tr>
+										<td><code><?php echo esc_html( $p['numero'] ); ?></code></td>
+										<td><?php echo esc_html( $p['titre'] ); ?></td>
+										<td><?php echo esc_html( $p['statut'] ); ?></td>
+										<td><?php echo esc_html( round( $p['lat'], 5 ) . ', ' . round( $p['lng'], 5 ) ); ?></td>
+										<td><a href="<?php echo esc_url( $p['url'] ); ?>">Voir la demande</a></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</details>
 				<?php endif; ?>
 			</div>
 		</div>

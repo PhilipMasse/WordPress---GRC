@@ -146,7 +146,7 @@ class GRC_Frontend {
 					<input type="text" id="grc-adresse" name="adresse_lieu" placeholder="Ex: 12 rue de la Mairie">
 					<button type="button" id="grc-geoloc-btn" class="grc-btn-link" style="margin-top:4px;">📍 Actualiser ma position</button>
 					<span id="grc-geoloc-status" class="grc-hint" role="status" aria-live="polite"></span>
-					<div id="grc-geoloc-map" style="display:none;height:260px;border-radius:8px;margin-top:8px;"></div>
+					<div id="grc-geoloc-map" role="img" aria-label="Carte permettant d'ajuster précisément l'emplacement du signalement. Vous pouvez aussi indiquer l'adresse directement dans le champ ci-dessus si vous ne pouvez pas utiliser la carte." style="display:none;height:260px;border-radius:8px;margin-top:8px;"></div>
 					<p id="grc-geoloc-coords" class="grc-hint" role="status" aria-live="polite" style="display:none;"></p>
 					<input type="hidden" id="grc-latitude" name="latitude">
 					<input type="hidden" id="grc-longitude" name="longitude">

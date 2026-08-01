@@ -340,7 +340,7 @@ class GRC_Admin_Demandes {
 							<p><strong>Lieu :</strong> <?php echo esc_html( $demande->adresse_lieu ); ?></p>
 						<?php endif; ?>
 						<?php if ( $demande->latitude && $demande->longitude ) : ?>
-							<div id="grc-demande-map" style="height:300px;border-radius:8px;margin-top:10px;"></div>
+							<div id="grc-demande-map" role="img" aria-label="Emplacement du signalement sur une carte. Les coordonnées exactes sont indiquées juste en dessous." style="height:300px;border-radius:8px;margin-top:10px;"></div>
 							<p class="description" style="margin-top:6px;">
 								<?php echo esc_html( round( (float) $demande->latitude, 6 ) . ', ' . round( (float) $demande->longitude, 6 ) ); ?>
 								— <a href="https://www.openstreetmap.org/?mlat=<?php echo esc_attr( $demande->latitude ); ?>&mlon=<?php echo esc_attr( $demande->longitude ); ?>#map=18/<?php echo esc_attr( $demande->latitude ); ?>/<?php echo esc_attr( $demande->longitude ); ?>" target="_blank" rel="noopener">Ouvrir en plein écran →</a>
