@@ -111,7 +111,15 @@ class GRC_Frontend {
 			<div id="grc-connected-banner" class="grc-connected-banner" style="display:none;">
 				Connecté en tant que <strong id="grc-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce signalement.
 			</div>
-			<form id="grc-signalement-form" class="grc-form">
+
+			<div id="grc-login-required-notice" class="grc-connected-banner" style="display:none;background:#fff3cd;color:#664d03;border:1px solid #ffe69c;">
+				Vous devez être connecté(e) à votre espace citoyen pour signaler un problème.
+				<?php if ( self::page_url( 'grc_page_mes_demandes' ) ) : ?>
+					<a href="<?php echo esc_url( self::page_url( 'grc_page_mes_demandes' ) ); ?>">Se connecter ou créer un compte →</a>
+				<?php endif; ?>
+			</div>
+
+			<form id="grc-signalement-form" class="grc-form" style="display:none;">
 				<div class="grc-field">
 					<label for="grc-titre">Objet du signalement <span class="required">*</span></label>
 					<input type="text" id="grc-titre" name="titre" required maxlength="191">
@@ -146,26 +154,6 @@ class GRC_Frontend {
 				<div class="grc-field">
 					<label for="grc-photo">Photo (facultatif)</label>
 					<input type="file" id="grc-photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif">
-				</div>
-
-				<div id="grc-guest-fields" class="grc-guest-fields">
-					<p class="grc-hint">Vous n'êtes pas connecté(e) : renseignez votre email pour suivre votre demande.</p>
-					<div class="grc-field">
-						<label for="grc-prenom">Prénom</label>
-						<input type="text" id="grc-prenom" name="prenom">
-					</div>
-					<div class="grc-field">
-						<label for="grc-nom">Nom</label>
-						<input type="text" id="grc-nom" name="nom">
-					</div>
-					<div class="grc-field">
-						<label for="grc-email">Email <span class="required">*</span></label>
-						<input type="email" id="grc-email" name="email">
-					</div>
-					<div class="grc-field">
-						<label for="grc-telephone">Téléphone</label>
-						<input type="tel" id="grc-telephone" name="telephone">
-					</div>
 				</div>
 
 				<div class="grc-field grc-consent">
@@ -387,7 +375,14 @@ class GRC_Frontend {
 				Connecté en tant que <strong id="grc-rdv-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce rendez-vous.
 			</div>
 
-			<form id="grc-rdv-form" class="grc-form">
+			<div id="grc-rdv-login-required-notice" class="grc-connected-banner" style="display:none;background:#fff3cd;color:#664d03;border:1px solid #ffe69c;">
+				Vous devez être connecté(e) à votre espace citoyen pour prendre rendez-vous.
+				<?php if ( self::page_url( 'grc_page_mes_demandes' ) ) : ?>
+					<a href="<?php echo esc_url( self::page_url( 'grc_page_mes_demandes' ) ); ?>">Se connecter ou créer un compte →</a>
+				<?php endif; ?>
+			</div>
+
+			<form id="grc-rdv-form" class="grc-form" style="display:none;">
 				<div class="grc-field">
 					<label for="grc-rdv-service">Service concerné <span class="required">*</span></label>
 					<select id="grc-rdv-service" required>
@@ -426,22 +421,6 @@ class GRC_Frontend {
 				<div class="grc-field">
 					<label for="grc-rdv-motif">Motif du rendez-vous</label>
 					<input type="text" id="grc-rdv-motif" placeholder="Ex : renouvellement de carte d'identité">
-				</div>
-
-				<div id="grc-rdv-guest-fields" class="grc-guest-fields">
-					<p class="grc-hint">Vous n'êtes pas connecté(e) : renseignez vos coordonnées pour confirmer le rendez-vous.</p>
-					<div class="grc-field">
-						<label for="grc-rdv-prenom">Prénom</label>
-						<input type="text" id="grc-rdv-prenom">
-					</div>
-					<div class="grc-field">
-						<label for="grc-rdv-nom">Nom</label>
-						<input type="text" id="grc-rdv-nom">
-					</div>
-					<div class="grc-field">
-						<label for="grc-rdv-email">Email <span class="required">*</span></label>
-						<input type="email" id="grc-rdv-email">
-					</div>
 				</div>
 
 				<button type="submit" class="grc-btn-submit" disabled>Confirmer le rendez-vous</button>

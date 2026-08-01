@@ -67,6 +67,11 @@ class GRC_REST_Demandes {
 	 * Création d'une demande — compte connecté OU invité (email fourni, pas de compte requis).
 	 */
 	public static function public_submit( WP_REST_Request $request ) {
+		$citoyen_id_authentifie = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
+		if ( ! $citoyen_id_authentifie ) {
+			return new WP_Error( 'grc_login_required', 'Vous devez être connecté(e) à votre espace citoyen pour signaler un problème.', [ 'status' => 401 ] );
+		}
+
 		if ( ! GRC_REST_API::check_rate_limit( 'submit', 20, 3600 ) ) {
 			return new WP_Error( 'grc_rate_limited', 'Trop de signalements envoyés, réessayez plus tard.', [ 'status' => 429 ] );
 		}
@@ -76,30 +81,15 @@ class GRC_REST_Demandes {
 		$titre       = sanitize_text_field( $params['titre'] ?? '' );
 		$description = wp_kses_post( $params['description'] ?? '' );
 		$categorie_id = absint( $params['categorie_id'] ?? 0 );
-		$email       = sanitize_email( $params['email'] ?? '' );
-		$nom         = sanitize_text_field( $params['nom'] ?? '' );
-		$prenom      = sanitize_text_field( $params['prenom'] ?? '' );
-		$telephone   = sanitize_text_field( $params['telephone'] ?? '' );
-
-		$citoyen_id_authentifie = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
 
 		if ( empty( $titre ) ) {
 			return new WP_Error( 'grc_missing_titre', 'Le titre est obligatoire.', [ 'status' => 400 ] );
-		}
-		if ( ! $citoyen_id_authentifie && empty( $email ) ) {
-			return new WP_Error( 'grc_missing_email', 'Email obligatoire pour un signalement en mode invité.', [ 'status' => 400 ] );
 		}
 
 		global $wpdb;
 		$demandes_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
 
-		$citoyen_id = $citoyen_id_authentifie ?: self::find_or_create_citoyen( [
-			'nom'       => $nom,
-			'prenom'    => $prenom,
-			'email'     => $email,
-			'telephone' => $telephone,
-			'is_guest'  => 1,
-		] );
+		$citoyen_id = $citoyen_id_authentifie;
 
 		$numero_suivi = self::generate_numero_suivi();
 
@@ -131,6 +121,10 @@ class GRC_REST_Demandes {
 		$demande_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'demande_created', 'demande', $demande_id );
+
+		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+		$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $citoyen_id ) );
+		$email = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : '';
 
 		if ( ! empty( $email ) ) {
 			GRC_Notifications::send_demande_created( $demande_id, $email, $numero_suivi );
@@ -251,32 +245,6 @@ class GRC_REST_Demandes {
 	}
 
 	// -- Helpers -------------------------------------------------------------
-
-	private static function find_or_create_citoyen( array $data ): int {
-		global $wpdb;
-		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
-
-		if ( ! empty( $data['email'] ) ) {
-			$hash = GRC_Encryption::search_hash( $data['email'] );
-			$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE email_hash = %s", $hash ) );
-			if ( $existing ) {
-				return (int) $existing;
-			}
-		}
-
-		$wpdb->insert( $table, [
-			'nom'             => GRC_Encryption::encrypt( $data['nom'] ),
-			'prenom'          => GRC_Encryption::encrypt( $data['prenom'] ),
-			'email'           => GRC_Encryption::encrypt( $data['email'] ),
-			'email_hash'      => ! empty( $data['email'] ) ? GRC_Encryption::search_hash( $data['email'] ) : null,
-			'telephone'       => GRC_Encryption::encrypt( $data['telephone'] ),
-			'telephone_hash'  => ! empty( $data['telephone'] ) ? GRC_Encryption::search_hash( $data['telephone'] ) : null,
-			'is_guest'        => $data['is_guest'] ? 1 : 0,
-			'created_at'      => current_time( 'mysql' ),
-		] );
-
-		return (int) $wpdb->insert_id;
-	}
 
 	private static function generate_numero_suivi(): string {
 		return 'GRC-' . gmdate( 'Y' ) . '-' . strtoupper( substr( bin2hex( random_bytes( 4 ) ), 0, 6 ) );

@@ -779,14 +779,14 @@
 				// refus ou d'indisponibilité, le citoyen garde la main via le bouton.
 				triggerGeolocation();
 			}
-			var guestFields = el( '#grc-guest-fields', form );
 			var banner = el( '#grc-connected-banner' );
 			var bannerName = el( '#grc-connected-name' );
+			var loginNotice = el( '#grc-login-required-notice' );
 
 			if ( isCitoyenLoggedIn() ) {
-				if ( guestFields ) {
-					guestFields.style.display = 'none';
-					guestFields.querySelectorAll( 'input' ).forEach( function ( i ) { i.required = false; } );
+				form.style.display = 'block';
+				if ( loginNotice ) {
+					loginNotice.style.display = 'none';
 				}
 				if ( banner ) {
 					banner.style.display = 'block';
@@ -797,6 +797,11 @@
 								bannerName.textContent = ( me.prenom || me.email || 'vous' ) + ( me.nom ? ' ' + me.nom : '' );
 							}
 						} );
+				}
+			} else {
+				form.style.display = 'none';
+				if ( loginNotice ) {
+					loginNotice.style.display = 'block';
 				}
 			}
 
@@ -819,13 +824,6 @@
 				if ( latField && latField.value ) {
 					payload.latitude = latField.value;
 					payload.longitude = lonField.value;
-				}
-
-				if ( ! isCitoyenLoggedIn() ) {
-					payload.prenom = el( '#grc-prenom', form ).value;
-					payload.nom = el( '#grc-nom', form ).value;
-					payload.email = el( '#grc-email', form ).value;
-					payload.telephone = el( '#grc-telephone', form ).value;
 				}
 
 				authFetch( grcConfig.restUrl + '/demandes/public-submit', {
@@ -877,9 +875,9 @@
 		// ================= Formulaire de prise de rendez-vous (calendrier) =================
 		var rdvForm = el( '#grc-rdv-form' );
 		if ( rdvForm ) {
-			var rdvGuestFields = el( '#grc-rdv-guest-fields', rdvForm );
 			var rdvBanner = el( '#grc-rdv-connected-banner' );
 			var rdvBannerName = el( '#grc-rdv-connected-name' );
+			var rdvLoginNotice = el( '#grc-rdv-login-required-notice' );
 			var rdvServiceSelect = el( '#grc-rdv-service', rdvForm );
 			var rdvDureeField = el( '#grc-rdv-duree-field', rdvForm );
 			var rdvDureeToggle = el( '#grc-rdv-duree-toggle', rdvForm );
@@ -898,9 +896,9 @@
 			var selectedDay = null;
 
 			if ( isCitoyenLoggedIn() ) {
-				if ( rdvGuestFields ) {
-					rdvGuestFields.style.display = 'none';
-					rdvGuestFields.querySelectorAll( 'input' ).forEach( function ( i ) { i.required = false; } );
+				rdvForm.style.display = 'block';
+				if ( rdvLoginNotice ) {
+					rdvLoginNotice.style.display = 'none';
 				}
 				if ( rdvBanner ) {
 					rdvBanner.style.display = 'block';
@@ -911,6 +909,11 @@
 								rdvBannerName.textContent = ( me.prenom || me.email || 'vous' ) + ( me.nom ? ' ' + me.nom : '' );
 							}
 						} );
+				}
+			} else {
+				rdvForm.style.display = 'none';
+				if ( rdvLoginNotice ) {
+					rdvLoginNotice.style.display = 'block';
 				}
 			}
 
@@ -1118,11 +1121,6 @@
 					creneau_id: selectedCreneauId,
 					motif: el( '#grc-rdv-motif', rdvForm ).value
 				};
-				if ( ! isCitoyenLoggedIn() ) {
-					payload.prenom = el( '#grc-rdv-prenom', rdvForm ).value;
-					payload.nom = el( '#grc-rdv-nom', rdvForm ).value;
-					payload.email = el( '#grc-rdv-email', rdvForm ).value;
-				}
 
 				authFetch( grcConfig.restUrl + '/rdv', {
 					method: 'POST',

@@ -184,6 +184,11 @@ class GRC_REST_RDV {
 	}
 
 	public static function book( WP_REST_Request $request ) {
+		$citoyen_id = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
+		if ( ! $citoyen_id ) {
+			return new WP_Error( 'grc_login_required', 'Vous devez être connecté(e) à votre espace citoyen pour prendre rendez-vous.', [ 'status' => 401 ] );
+		}
+
 		if ( ! GRC_REST_API::check_rate_limit( 'rdv_book', 10, 3600 ) ) {
 			return new WP_Error( 'grc_rate_limited', 'Trop de tentatives, réessayez plus tard.', [ 'status' => 429 ] );
 		}
@@ -195,39 +200,6 @@ class GRC_REST_RDV {
 
 		$creneau_id = absint( $request->get_param( 'creneau_id' ) );
 		$motif      = sanitize_text_field( $request->get_param( 'motif' ) ?? '' );
-
-		$citoyen_id = GRC_REST_Citoyen::get_authenticated_citoyen_id( $request );
-		$email      = null;
-
-		if ( ! $citoyen_id ) {
-			$email = sanitize_email( $request->get_param( 'email' ) ?? '' );
-			$nom       = sanitize_text_field( $request->get_param( 'nom' ) ?? '' );
-			$prenom    = sanitize_text_field( $request->get_param( 'prenom' ) ?? '' );
-			$telephone = sanitize_text_field( $request->get_param( 'telephone' ) ?? '' );
-
-			if ( ! $email ) {
-				return new WP_Error( 'grc_missing_email', 'Email obligatoire pour une prise de rendez-vous en mode invité.', [ 'status' => 400 ] );
-			}
-
-			$hash     = GRC_Encryption::search_hash( $email );
-			$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$citoyens_table} WHERE email_hash = %s", $hash ) );
-
-			if ( $existing ) {
-				$citoyen_id = (int) $existing;
-			} else {
-				$wpdb->insert( $citoyens_table, [
-					'nom'            => $nom ? GRC_Encryption::encrypt( $nom ) : null,
-					'prenom'         => $prenom ? GRC_Encryption::encrypt( $prenom ) : null,
-					'email'          => GRC_Encryption::encrypt( $email ),
-					'email_hash'     => $hash,
-					'telephone'      => $telephone ? GRC_Encryption::encrypt( $telephone ) : null,
-					'telephone_hash' => $telephone ? GRC_Encryption::search_hash( $telephone ) : null,
-					'is_guest'       => 1,
-					'created_at'     => current_time( 'mysql' ),
-				] );
-				$citoyen_id = (int) $wpdb->insert_id;
-			}
-		}
 
 		// Verrouillage optimiste : on ne réserve que si une place reste disponible.
 		$updated = $wpdb->query( $wpdb->prepare(
@@ -256,11 +228,9 @@ class GRC_REST_RDV {
 
 		GRC_Audit_Log::log( 'rdv_created', 'rdv', $rdv_id );
 
-		// Email si on connaît l'email (citoyen ou invité) : la demande est en attente de validation.
-		if ( ! $email && $citoyen_id ) {
-			$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $citoyen_id ) );
-			$email = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : null;
-		}
+		$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $citoyen_id ) );
+		$email = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : null;
+
 		if ( $email ) {
 			GRC_Notifications::send_rdv_pending( $email, $creneau->debut );
 		}

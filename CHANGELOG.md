@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.29.0 — Compte citoyen obligatoire pour signalements et rendez-vous
+
+- Le **mode invité est supprimé** pour les signalements (`[grc_signalement_form]`) et les rendez-vous (`[grc_rdv_form]`) : un compte citoyen connecté est désormais requis
+- Contrôle appliqué **côté serveur** (`POST /demandes/public-submit` et `POST /rdv` renvoient une erreur 401 si non authentifié) — impossible à contourner en modifiant le formulaire
+- Côté citoyen non connecté : le formulaire est masqué et remplacé par un message clair avec lien direct vers la connexion/inscription (utilise la page "Mes demandes" configurée dans Réglages)
+- Les démarches (`[grc_demarche_form]`) conservent le mode invité, non concernées par cette demande
+
 ## 0.28.2 — Correctif : adresse non récupérée à la géolocalisation initiale
 
 - La recherche automatique d'adresse n'était déclenchée qu'après un ajustement du repère (glisser-déposer ou clic), pas lors de la géolocalisation initiale à l'ouverture de la page. Corrigé : l'adresse se recherche désormais dès la première position détectée, sans action du citoyen.
