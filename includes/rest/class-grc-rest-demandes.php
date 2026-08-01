@@ -121,6 +121,7 @@ class GRC_REST_Demandes {
 		$demande_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'demande_created', 'demande', $demande_id );
+		GRC_Notifications::notify_agents_nouvelle_demande( $demande_id );
 
 		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
 		$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $citoyen_id ) );

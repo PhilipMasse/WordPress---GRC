@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.32.0 — Envoi d'emails fiabilisé (SMTP) + notifications aux agents
+
+### Le problème résolu
+Aucun email ne partait jamais vers les citoyens, alors que le code appelait bien `wp_mail()` aux bons endroits. Cause la plus probable : WordPress utilise par défaut la fonction `mail()` du serveur, souvent bloquée ou mal configurée sur l'hébergement mutualisé — sans qu'aucune erreur ne remonte.
+
+### Configuration SMTP (Réglages GRC → Email)
+- Nouvel onglet dédié : serveur, port, chiffrement (TLS/SSL/aucun), identifiant, mot de passe (**chiffré au repos**, jamais réaffiché en clair), adresse et nom d'expéditeur
+- **Bouton "Envoyer un email de test"** avec retour immédiat (succès ou message d'erreur), pour vérifier la configuration sans attendre un vrai signalement
+- Se branche via le hook `phpmailer_init` : n'affecte que l'envoi, aucun changement de comportement si non activé
+
+### Notifications aux agents (nouveau)
+- Réglage **"Email(s) de notification générale"** (Réglages → Email), notifiés pour tout nouveau signalement, démarche ou rendez-vous — complété automatiquement par l'adresse de contact du service concerné si elle existe (**GRC Citoyenne → Services**)
+- **Agent assigné** à une demande : email automatique à son adresse WordPress
+- **Nouveau message citoyen** sur un dossier de démarche : notifie les agents
+
+### Notifications citoyennes complétées
+- **Réponse d'un agent** sur un dossier de démarche : le citoyen est désormais notifié par email (symétrique à la notification agent déjà en place)
+- **Nouveau message d'un agent** sur un signalement (hors notes internes) : le citoyen est désormais notifié par email — ce cas n'était pas couvert jusqu'ici
+
 ## 0.31.0 — Captcha anti-robot sur les démarches en mode invité
 
 - Les démarches (`[grc_demarche_form]`) restent accessibles sans compte, contrairement aux signalements et rendez-vous — elles étaient donc une cible pour les robots

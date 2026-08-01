@@ -227,6 +227,7 @@ class GRC_REST_RDV {
 		$rdv_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'rdv_created', 'rdv', $rdv_id );
+		GRC_Notifications::notify_agents_nouveau_rdv( $rdv_id );
 
 		$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $citoyen_id ) );
 		$email = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : null;

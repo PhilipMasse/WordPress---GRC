@@ -500,6 +500,10 @@ class GRC_Admin_Demandes {
 
 		$agent_nom = $agent_id ? get_userdata( $agent_id )->display_name ?? null : null;
 
+		if ( $agent_id ) {
+			GRC_Notifications::notify_agent_assignation( $demande_id, $agent_id );
+		}
+
 		GRC_Audit_Log::log( 'demande_assigned', 'demande', $demande_id, [
 			'numero_suivi' => $numero_suivi,
 			'agent_id'     => $agent_id,
@@ -582,6 +586,20 @@ class GRC_Admin_Demandes {
 		] );
 
 		GRC_Audit_Log::log( 'message_added', 'demande', $demande_id, [ 'interne' => $interne ] );
+
+		if ( ! $interne ) {
+			$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+			$citoyen_id = $wpdb->get_var( $wpdb->prepare(
+				"SELECT citoyen_id FROM {$wpdb->prefix}" . GRC_TABLE_PREFIX . "demandes WHERE id = %d", $demande_id
+			) );
+			if ( $citoyen_id ) {
+				$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $citoyen_id ) );
+				$email = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : null;
+				if ( $email ) {
+					GRC_Notifications::send_nouveau_message_demande( $demande_id, $email );
+				}
+			}
+		}
 
 		wp_safe_redirect( admin_url( "admin.php?page=grc-demandes&demande_id={$demande_id}&grc_notice=message_added" ) );
 		exit;

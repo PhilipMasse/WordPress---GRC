@@ -184,6 +184,7 @@ class GRC_REST_Demarches {
 		$demarche_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'demarche_created', 'demarche', $demarche_id, [ 'type' => $slug ] );
+		GRC_Notifications::notify_agents_nouvelle_demarche( $demarche_id );
 
 		return [ 'id' => $demarche_id, 'numero_dossier' => $numero_dossier, 'statut' => 'en_attente' ];
 	}
@@ -312,6 +313,12 @@ class GRC_REST_Demarches {
 		$message_id = (int) $wpdb->insert_id;
 
 		GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => $auteur_type ] );
+
+		if ( 'citoyen' === $auteur_type ) {
+			GRC_Notifications::notify_agents_nouveau_message_demarche( $id );
+		} else {
+			GRC_Notifications::notify_citoyen_nouveau_message_demarche( $id );
+		}
 
 		$pieces_resultats = [];
 		if ( $has_files ) {

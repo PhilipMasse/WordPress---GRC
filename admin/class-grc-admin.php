@@ -10,6 +10,7 @@ class GRC_Admin {
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
 		add_action( 'admin_post_grc_download_piece', [ __CLASS__, 'handle_download_piece' ] );
 		add_action( 'admin_post_grc_save_settings', [ __CLASS__, 'handle_save_settings' ] );
+		add_action( 'wp_ajax_grc_send_test_email', [ __CLASS__, 'handle_send_test_email' ] );
 		GRC_Admin_Demandes::init();
 		GRC_Admin_Services::init();
 		GRC_Admin_Demarches::init();
@@ -183,6 +184,16 @@ class GRC_Admin {
 		$recaptcha_secret  = get_option( 'grc_recaptcha_secret_key', '' );
 		$hcaptcha_site     = get_option( 'grc_hcaptcha_site_key', '' );
 		$hcaptcha_secret   = get_option( 'grc_hcaptcha_secret_key', '' );
+
+		$smtp_enabled     = (bool) get_option( 'grc_smtp_enabled' );
+		$smtp_host        = get_option( 'grc_smtp_host', '' );
+		$smtp_port        = get_option( 'grc_smtp_port', 587 );
+		$smtp_encryption  = get_option( 'grc_smtp_encryption', 'tls' );
+		$smtp_username    = get_option( 'grc_smtp_username', '' );
+		$smtp_password    = get_option( 'grc_smtp_password', '' );
+		$smtp_from_email  = get_option( 'grc_smtp_from_email', '' );
+		$smtp_from_name   = get_option( 'grc_smtp_from_name', 'Mairie de Berre-les-Alpes' );
+		$email_agents     = get_option( 'grc_email_agents_notifications', '' );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
@@ -198,6 +209,7 @@ class GRC_Admin {
 
 			<h2 class="nav-tab-wrapper" id="grc-settings-tabs">
 				<a href="#" class="nav-tab nav-tab-active" data-tab="rdv">Rendez-vous</a>
+				<a href="#" class="nav-tab" data-tab="email">Email</a>
 				<a href="#" class="nav-tab" data-tab="securite">Sécurité des sessions</a>
 				<a href="#" class="nav-tab" data-tab="antirobot">Anti-robot</a>
 				<a href="#" class="nav-tab" data-tab="pages">Pages du portail citoyen</a>
@@ -215,6 +227,72 @@ class GRC_Admin {
 							<td>
 								<input type="number" id="grc-delai-validation" name="delai_validation_heures" value="<?php echo esc_attr( $delai_validation ); ?>" min="1" style="width:80px;"> heures
 								<p class="description">Passé ce délai sans validation manuelle par un agent, une demande de rendez-vous en attente est automatiquement refusée (le citoyen est notifié par email).</p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="grc-settings-panel" data-panel="email" style="display:none;">
+					<h2>Envoi des emails (SMTP)</h2>
+					<p class="description">
+						Par défaut, WordPress envoie les emails via la fonction <code>mail()</code> du serveur — souvent mal configurée ou bloquée sur les hébergements mutualisés, ce qui empêche silencieusement l'envoi (aucune erreur visible, l'email n'arrive simplement jamais). Activez et configurez un serveur SMTP ci-dessous pour un envoi fiable.
+					</p>
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-smtp-enabled">Activer l'envoi via SMTP</label></th>
+							<td><label><input type="checkbox" id="grc-smtp-enabled" name="smtp_enabled" value="1" <?php checked( $smtp_enabled ); ?>> Utiliser les réglages SMTP ci-dessous au lieu de la fonction <code>mail()</code> native</label></td>
+						</tr>
+						<tr>
+							<th><label for="grc-smtp-host">Serveur SMTP (Host)</label></th>
+							<td><input type="text" id="grc-smtp-host" name="smtp_host" value="<?php echo esc_attr( $smtp_host ); ?>" style="width:320px;" placeholder="ex : ssl0.ovh.net, smtp.gmail.com..."></td>
+						</tr>
+						<tr>
+							<th><label for="grc-smtp-port">Port</label></th>
+							<td>
+								<input type="number" id="grc-smtp-port" name="smtp_port" value="<?php echo esc_attr( $smtp_port ); ?>" style="width:100px;">
+								<select name="smtp_encryption">
+									<option value="tls" <?php selected( $smtp_encryption, 'tls' ); ?>>TLS (port 587 généralement)</option>
+									<option value="ssl" <?php selected( $smtp_encryption, 'ssl' ); ?>>SSL (port 465 généralement)</option>
+									<option value="none" <?php selected( $smtp_encryption, 'none' ); ?>>Aucun chiffrement</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="grc-smtp-username">Identifiant</label></th>
+							<td><input type="text" id="grc-smtp-username" name="smtp_username" value="<?php echo esc_attr( $smtp_username ); ?>" style="width:320px;" autocomplete="off"></td>
+						</tr>
+						<tr>
+							<th><label for="grc-smtp-password">Mot de passe</label></th>
+								<td><input type="password" id="grc-smtp-password" name="smtp_password" value="" style="width:320px;" autocomplete="new-password" placeholder="<?php echo $smtp_password ? '••••••••• (laisser vide pour conserver)' : ''; ?>"></td>
+						</tr>
+						<tr>
+							<th><label for="grc-smtp-from-email">Adresse d'expédition</label></th>
+							<td><input type="email" id="grc-smtp-from-email" name="smtp_from_email" value="<?php echo esc_attr( $smtp_from_email ); ?>" style="width:320px;" placeholder="contact@berrelesalpes.fr"></td>
+						</tr>
+						<tr>
+							<th><label for="grc-smtp-from-name">Nom d'expéditeur</label></th>
+							<td><input type="text" id="grc-smtp-from-name" name="smtp_from_name" value="<?php echo esc_attr( $smtp_from_name ); ?>" style="width:320px;"></td>
+						</tr>
+					</table>
+
+					<h3>Tester l'envoi</h3>
+					<p class="description">Enregistrez d'abord vos réglages ci-dessus, puis testez avec une adresse email de votre choix.</p>
+					<p>
+						<input type="email" id="grc-test-email-to" placeholder="votre-email@exemple.fr" style="width:280px;">
+						<button type="button" id="grc-test-email-btn" class="button">Envoyer un email de test</button>
+						<span id="grc-test-email-result" role="status" aria-live="polite"></span>
+					</p>
+
+					<h2>Notifications aux agents</h2>
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-email-agents">Email(s) de notification générale</label></th>
+							<td>
+								<textarea id="grc-email-agents" name="email_agents_notifications" rows="2" style="width:400px;" placeholder="accueil@berrelesalpes.fr, urbanisme@berrelesalpes.fr"><?php echo esc_textarea( $email_agents ); ?></textarea>
+								<p class="description">
+									Une ou plusieurs adresses (séparées par des virgules), notifiées pour tout nouveau signalement, démarche ou rendez-vous. Si un service concerné a sa propre adresse de contact configurée (<strong>GRC Citoyenne → Services</strong>), elle est utilisée en complément.
+								</p>
+								<p class="description">L'agent auquel une demande est assignée reçoit également un email automatique à son adresse WordPress, indépendamment de ce réglage.</p>
 							</td>
 						</tr>
 					</table>
@@ -337,6 +415,40 @@ class GRC_Admin {
 					} );
 				} );
 			} );
+
+			var testBtn = document.getElementById( 'grc-test-email-btn' );
+			if ( testBtn ) {
+				testBtn.addEventListener( 'click', function () {
+					var toField = document.getElementById( 'grc-test-email-to' );
+					var resultEl = document.getElementById( 'grc-test-email-result' );
+					var to = toField.value.trim();
+					if ( ! to ) {
+						resultEl.textContent = 'Renseignez une adresse email.';
+						resultEl.style.color = '#b32d2e';
+						return;
+					}
+					testBtn.disabled = true;
+					resultEl.style.color = '';
+					resultEl.textContent = 'Envoi en cours...';
+
+					var data = new FormData();
+					data.append( 'action', 'grc_send_test_email' );
+					data.append( 'to', to );
+					data.append( '_wpnonce', '<?php echo esc_js( wp_create_nonce( 'grc_test_email' ) ); ?>' );
+
+					fetch( ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' } )
+						.then( function ( res ) { return res.json(); } )
+						.then( function ( result ) {
+							resultEl.textContent = result.data.message;
+							resultEl.style.color = result.success ? '#587526' : '#b32d2e';
+						} )
+						.catch( function () {
+							resultEl.textContent = 'Erreur lors de la requête.';
+							resultEl.style.color = '#b32d2e';
+						} )
+						.finally( function () { testBtn.disabled = false; } );
+				} );
+			}
 		} );
 		</script>
 		<?php
@@ -362,6 +474,19 @@ class GRC_Admin {
 		update_option( 'grc_page_demarche', absint( $_POST['page_demarche'] ?? 0 ) );
 		update_option( 'grc_page_rdv', absint( $_POST['page_rdv'] ?? 0 ) );
 
+		update_option( 'grc_smtp_enabled', ! empty( $_POST['smtp_enabled'] ) ? 1 : 0 );
+		update_option( 'grc_smtp_host', sanitize_text_field( wp_unslash( $_POST['smtp_host'] ?? '' ) ) );
+		update_option( 'grc_smtp_port', absint( $_POST['smtp_port'] ?? 587 ) );
+		$smtp_encryption = sanitize_key( $_POST['smtp_encryption'] ?? 'tls' );
+		update_option( 'grc_smtp_encryption', in_array( $smtp_encryption, [ 'tls', 'ssl', 'none' ], true ) ? $smtp_encryption : 'tls' );
+		update_option( 'grc_smtp_username', sanitize_text_field( wp_unslash( $_POST['smtp_username'] ?? '' ) ) );
+		if ( ! empty( $_POST['smtp_password'] ) ) {
+			update_option( 'grc_smtp_password', GRC_Encryption::encrypt( wp_unslash( $_POST['smtp_password'] ) ) );
+		}
+		update_option( 'grc_smtp_from_email', sanitize_email( $_POST['smtp_from_email'] ?? '' ) );
+		update_option( 'grc_smtp_from_name', sanitize_text_field( wp_unslash( $_POST['smtp_from_name'] ?? '' ) ) );
+		update_option( 'grc_email_agents_notifications', sanitize_textarea_field( wp_unslash( $_POST['email_agents_notifications'] ?? '' ) ) );
+
 		update_option( 'grc_turnstile_site_key', sanitize_text_field( wp_unslash( $_POST['turnstile_site_key'] ?? '' ) ) );
 		update_option( 'grc_turnstile_secret_key', sanitize_text_field( wp_unslash( $_POST['turnstile_secret_key'] ?? '' ) ) );
 		update_option( 'grc_recaptcha_site_key', sanitize_text_field( wp_unslash( $_POST['recaptcha_site_key'] ?? '' ) ) );
@@ -384,5 +509,26 @@ class GRC_Admin {
 
 		wp_safe_redirect( admin_url( 'admin.php?page=grc-settings&grc_notice=settings_saved' ) );
 		exit;
+	}
+
+	public static function handle_send_test_email() {
+		check_ajax_referer( 'grc_test_email' );
+		if ( ! current_user_can( 'grc_manage_settings' ) ) {
+			wp_send_json_error( [ 'message' => 'Permission refusée.' ] );
+		}
+
+		$to = sanitize_email( wp_unslash( $_POST['to'] ?? '' ) );
+		if ( ! $to ) {
+			wp_send_json_error( [ 'message' => 'Adresse email invalide.' ] );
+		}
+
+		$sent = GRC_Notifications::send_test_email( $to );
+
+		if ( $sent ) {
+			GRC_Audit_Log::log( 'test_email_sent', 'settings', 0, [ 'destinataire' => $to ] );
+			wp_send_json_success( [ 'message' => 'Email envoyé avec succès à ' . $to . '.' ] );
+		}
+
+		wp_send_json_error( [ 'message' => 'Échec de l\'envoi. Vérifiez vos réglages SMTP ci-dessus.' ] );
 	}
 }
