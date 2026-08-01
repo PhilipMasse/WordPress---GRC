@@ -171,8 +171,13 @@ class GRC_Admin {
 		$delai_validation  = (int) get_option( 'grc_rdv_delai_validation_heures', 48 );
 		$audit_retention   = (int) get_option( 'grc_audit_retention_mois', 12 );
 		$session_timeout   = (int) get_option( 'grc_session_timeout_minutes', 30 );
+		$captcha_provider  = get_option( 'grc_captcha_provider', 'interne' );
 		$turnstile_site    = get_option( 'grc_turnstile_site_key', '' );
 		$turnstile_secret  = get_option( 'grc_turnstile_secret_key', '' );
+		$recaptcha_site    = get_option( 'grc_recaptcha_site_key', '' );
+		$recaptcha_secret  = get_option( 'grc_recaptcha_secret_key', '' );
+		$hcaptcha_site     = get_option( 'grc_hcaptcha_site_key', '' );
+		$hcaptcha_secret   = get_option( 'grc_hcaptcha_secret_key', '' );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
@@ -214,19 +219,46 @@ class GRC_Admin {
 					</tr>
 				</table>
 
-					<h2>Anti-robot à l'inscription (Cloudflare Turnstile)</h2>
+					<h2>Anti-robot à l'inscription</h2>
 				<p class="description">
-					Facultatif. Par défaut, un simple captcha mathématique auto-hébergé protège l'inscription (aucune donnée transmise à un tiers, mais protection limitée face à un robot ciblé). En renseignant les clés ci-dessous, l'inscription utilisera <strong>Cloudflare Turnstile</strong> à la place : gratuit, quasi invisible pour l'utilisateur, et nettement plus robuste — mais il s'agit d'un service tiers (Cloudflare, États-Unis) : le navigateur du citoyen communique avec Cloudflare lors de la vérification. À mentionner dans votre politique de confidentialité si activé.
-					Clés à obtenir gratuitement sur <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener">dash.cloudflare.com → Turnstile</a>.
+					Par défaut, un simple captcha mathématique auto-hébergé protège l'inscription citoyenne (aucune donnée transmise à un tiers, mais protection limitée face à un robot ciblé, puisque la réponse transite en clair). Vous pouvez choisir un fournisseur tiers plus robuste ci-dessous — tous fonctionnent de façon quasi invisible pour le citoyen.
 				</p>
 				<table class="form-table">
 					<tr>
-						<th><label for="grc-turnstile-site">Clé de site (Site Key)</label></th>
-						<td><input type="text" id="grc-turnstile-site" name="turnstile_site_key" value="<?php echo esc_attr( $turnstile_site ); ?>" style="width:400px;"></td>
+						<th><label for="grc-captcha-provider">Fournisseur</label></th>
+						<td>
+							<select id="grc-captcha-provider" name="captcha_provider">
+								<option value="interne" <?php selected( $captcha_provider, 'interne' ); ?>>Interne (captcha mathématique, aucun tiers)</option>
+								<option value="turnstile" <?php selected( $captcha_provider, 'turnstile' ); ?>>Cloudflare Turnstile</option>
+								<option value="recaptcha" <?php selected( $captcha_provider, 'recaptcha' ); ?>>Google reCAPTCHA v2</option>
+								<option value="hcaptcha" <?php selected( $captcha_provider, 'hcaptcha' ); ?>>hCaptcha</option>
+							</select>
+							<p class="description">Service tiers (Turnstile : Cloudflare / États-Unis, reCAPTCHA : Google / États-Unis, hCaptcha : Intuition Machines) : le navigateur du citoyen communique avec ce service lors de la vérification. À mentionner dans votre politique de confidentialité si l'un de ces fournisseurs est sélectionné.</p>
+						</td>
 					</tr>
 					<tr>
-						<th><label for="grc-turnstile-secret">Clé secrète (Secret Key)</label></th>
-						<td><input type="text" id="grc-turnstile-secret" name="turnstile_secret_key" value="<?php echo esc_attr( $turnstile_secret ); ?>" style="width:400px;"></td>
+						<th>Cloudflare Turnstile</th>
+						<td>
+							<label>Clé de site <input type="text" name="turnstile_site_key" value="<?php echo esc_attr( $turnstile_site ); ?>" style="width:380px;"></label><br>
+							<label>Clé secrète <input type="text" name="turnstile_secret_key" value="<?php echo esc_attr( $turnstile_secret ); ?>" style="width:380px;"></label>
+							<p class="description">Gratuit, à obtenir sur <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener">dash.cloudflare.com → Turnstile</a>.</p>
+						</td>
+					</tr>
+					<tr>
+						<th>Google reCAPTCHA v2</th>
+						<td>
+							<label>Clé de site <input type="text" name="recaptcha_site_key" value="<?php echo esc_attr( $recaptcha_site ); ?>" style="width:380px;"></label><br>
+							<label>Clé secrète <input type="text" name="recaptcha_secret_key" value="<?php echo esc_attr( $recaptcha_secret ); ?>" style="width:380px;"></label>
+							<p class="description">Gratuit, à obtenir sur <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener">google.com/recaptcha/admin</a> (choisir "Case à cocher reCAPTCHA v2").</p>
+						</td>
+					</tr>
+					<tr>
+						<th>hCaptcha</th>
+						<td>
+							<label>Clé de site <input type="text" name="hcaptcha_site_key" value="<?php echo esc_attr( $hcaptcha_site ); ?>" style="width:380px;"></label><br>
+							<label>Clé secrète <input type="text" name="hcaptcha_secret_key" value="<?php echo esc_attr( $hcaptcha_secret ); ?>" style="width:380px;"></label>
+							<p class="description">Gratuit, à obtenir sur <a href="https://dashboard.hcaptcha.com/signup" target="_blank" rel="noopener">dashboard.hcaptcha.com</a>.</p>
+						</td>
 					</tr>
 				</table>
 
@@ -296,11 +328,22 @@ class GRC_Admin {
 
 		update_option( 'grc_turnstile_site_key', sanitize_text_field( wp_unslash( $_POST['turnstile_site_key'] ?? '' ) ) );
 		update_option( 'grc_turnstile_secret_key', sanitize_text_field( wp_unslash( $_POST['turnstile_secret_key'] ?? '' ) ) );
+		update_option( 'grc_recaptcha_site_key', sanitize_text_field( wp_unslash( $_POST['recaptcha_site_key'] ?? '' ) ) );
+		update_option( 'grc_recaptcha_secret_key', sanitize_text_field( wp_unslash( $_POST['recaptcha_secret_key'] ?? '' ) ) );
+		update_option( 'grc_hcaptcha_site_key', sanitize_text_field( wp_unslash( $_POST['hcaptcha_site_key'] ?? '' ) ) );
+		update_option( 'grc_hcaptcha_secret_key', sanitize_text_field( wp_unslash( $_POST['hcaptcha_secret_key'] ?? '' ) ) );
+
+		$captcha_provider = sanitize_key( $_POST['captcha_provider'] ?? 'interne' );
+		if ( ! in_array( $captcha_provider, [ 'interne', 'turnstile', 'recaptcha', 'hcaptcha' ], true ) ) {
+			$captcha_provider = 'interne';
+		}
+		update_option( 'grc_captcha_provider', $captcha_provider );
 
 		GRC_Audit_Log::log( 'settings_saved', 'settings', 0, [
 			'delai_validation_heures'   => $delai,
 			'audit_retention_mois'      => $audit_retention,
 			'session_timeout_minutes'   => $session_timeout,
+			'captcha_provider'          => $captcha_provider,
 		] );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=grc-settings&grc_notice=settings_saved' ) );

@@ -72,15 +72,34 @@ class GRC_REST_Citoyen {
 		return GRC_Captcha::generate();
 	}
 
-	private static function verify_turnstile( string $secret, ?string $token, WP_REST_Request $request ): bool {
+	private static function verify_captcha_provider( string $provider, ?string $token ): bool {
 		if ( ! $token ) {
 			return false;
 		}
 
-		$response = wp_remote_post( 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+		$config = [
+			'turnstile' => [
+				'url'    => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+				'secret' => get_option( 'grc_turnstile_secret_key', '' ),
+			],
+			'recaptcha' => [
+				'url'    => 'https://www.google.com/recaptcha/api/siteverify',
+				'secret' => get_option( 'grc_recaptcha_secret_key', '' ),
+			],
+			'hcaptcha' => [
+				'url'    => 'https://hcaptcha.com/siteverify',
+				'secret' => get_option( 'grc_hcaptcha_secret_key', '' ),
+			],
+		];
+
+		if ( ! isset( $config[ $provider ] ) || ! $config[ $provider ]['secret'] ) {
+			return false;
+		}
+
+		$response = wp_remote_post( $config[ $provider ]['url'], [
 			'timeout' => 8,
 			'body'    => [
-				'secret'   => $secret,
+				'secret'   => $config[ $provider ]['secret'],
 				'response' => $token,
 				'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
 			],
@@ -104,9 +123,9 @@ class GRC_REST_Citoyen {
 			return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot invalide.', [ 'status' => 400 ] );
 		}
 
-		$turnstile_secret = get_option( 'grc_turnstile_secret_key', '' );
-		if ( $turnstile_secret ) {
-			if ( ! self::verify_turnstile( $turnstile_secret, $request->get_param( 'turnstile_token' ), $request ) ) {
+		$captcha_provider = get_option( 'grc_captcha_provider', 'interne' );
+		if ( 'interne' !== $captcha_provider ) {
+			if ( ! self::verify_captcha_provider( $captcha_provider, $request->get_param( 'captcha_provider_token' ) ) ) {
 				return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot incorrecte ou expirée. Merci de réessayer.', [ 'status' => 400 ] );
 			}
 		} elseif ( ! GRC_Captcha::verify( $request->get_param( 'captcha_token' ), $request->get_param( 'captcha_reponse' ) ) ) {

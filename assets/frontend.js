@@ -1442,10 +1442,11 @@
 		// ---- Inscription ----
 		var registerForm = panels.register;
 		if ( registerForm ) {
-			var usingTurnstile = !! ( grcConfig.turnstileEnabled );
+			var provider = grcConfig.captchaProvider || 'interne';
+			var usingProvider = 'interne' !== provider;
 			var captchaQuestionEl, captchaTokenEl, captchaInputEl;
 
-			if ( ! usingTurnstile ) {
+			if ( ! usingProvider ) {
 				captchaQuestionEl = el( '#grc-captcha-question', registerForm );
 				captchaTokenEl = el( '#grc-captcha-token', registerForm );
 				captchaInputEl = el( '#grc-reg-captcha', registerForm );
@@ -1464,6 +1465,12 @@
 				loadCaptcha();
 			}
 
+			function resetProviderWidget() {
+				if ( 'turnstile' === provider && window.turnstile ) { window.turnstile.reset(); }
+				else if ( 'recaptcha' === provider && window.grecaptcha ) { window.grecaptcha.reset(); }
+				else if ( 'hcaptcha' === provider && window.hcaptcha ) { window.hcaptcha.reset(); }
+			}
+
 			registerForm.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
 				var msgBox = el( '.grc-form-message', registerForm );
@@ -1476,9 +1483,9 @@
 					site_web: el( '#grc-reg-site-web', registerForm ).value
 				};
 
-				if ( usingTurnstile ) {
-					var turnstileField = registerForm.querySelector( '[name="cf-turnstile-response"]' );
-					payload.turnstile_token = turnstileField ? turnstileField.value : '';
+				if ( usingProvider ) {
+					var responseField = registerForm.querySelector( '[name="' + grcConfig.captchaResponseField + '"]' );
+					payload.captcha_provider_token = responseField ? responseField.value : '';
 				} else {
 					payload.captcha_token = captchaTokenEl.value;
 					payload.captcha_reponse = captchaInputEl.value;
@@ -1499,10 +1506,10 @@
 					} )
 					.catch( function ( err ) {
 						showMessage( msgBox, err.message, 'error' );
-						if ( ! usingTurnstile ) {
+						if ( ! usingProvider ) {
 							loadCaptcha(); // Un nouveau défi est requis après tout échec (le précédent a été consommé).
-						} else if ( window.turnstile ) {
-							window.turnstile.reset();
+						} else {
+							resetProviderWidget();
 						}
 					} );
 			} );

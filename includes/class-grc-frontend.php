@@ -25,6 +25,43 @@ class GRC_Frontend {
 	 * contenu stocké autrement que dans post_content, timing de $post...).
 	 * Le coût de charger ces deux petits fichiers partout est négligeable.
 	 */
+	/**
+	 * Configuration du fournisseur de captcha actuellement sélectionné
+	 * (Réglages GRC → Anti-robot à l'inscription). Centralise les paramètres
+	 * propres à chaque fournisseur pour éviter la duplication entre le rendu
+	 * du widget et son chargement de script.
+	 */
+	public static function captcha_config(): array {
+		$provider = get_option( 'grc_captcha_provider', 'interne' );
+
+		$providers = [
+			'turnstile' => [
+				'site_key'   => get_option( 'grc_turnstile_site_key', '' ),
+				'script_url' => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
+				'widget_class' => 'cf-turnstile',
+				'response_field' => 'cf-turnstile-response',
+			],
+			'recaptcha' => [
+				'site_key'   => get_option( 'grc_recaptcha_site_key', '' ),
+				'script_url' => 'https://www.google.com/recaptcha/api.js',
+				'widget_class' => 'g-recaptcha',
+				'response_field' => 'g-recaptcha-response',
+			],
+			'hcaptcha' => [
+				'site_key'   => get_option( 'grc_hcaptcha_site_key', '' ),
+				'script_url' => 'https://js.hcaptcha.com/1/api.js',
+				'widget_class' => 'h-captcha',
+				'response_field' => 'h-captcha-response',
+			],
+		];
+
+		if ( 'interne' === $provider || empty( $providers[ $provider ]['site_key'] ) ) {
+			return [ 'provider' => 'interne' ];
+		}
+
+		return array_merge( [ 'provider' => $provider ], $providers[ $provider ] );
+	}
+
 	public static function maybe_enqueue_assets() {
 		if ( is_admin() ) {
 			return;
@@ -33,9 +70,9 @@ class GRC_Frontend {
 		wp_enqueue_style( 'grc-frontend', GRC_PLUGIN_URL . 'assets/frontend.css', [], GRC_VERSION );
 		wp_enqueue_script( 'grc-frontend', GRC_PLUGIN_URL . 'assets/frontend.js', [], GRC_VERSION, true );
 
-		$turnstile_site_key = get_option( 'grc_turnstile_site_key', '' );
-		if ( $turnstile_site_key ) {
-			wp_enqueue_script( 'grc-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', [], null, true );
+		$captcha = self::captcha_config();
+		if ( 'interne' !== $captcha['provider'] ) {
+			wp_enqueue_script( 'grc-captcha-provider', $captcha['script_url'], [], null, true );
 		}
 
 		wp_localize_script( 'grc-frontend', 'grcConfig', [
@@ -43,7 +80,8 @@ class GRC_Frontend {
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'isLoggedIn' => is_user_logged_in(),
 			'sessionTimeoutMinutes' => (int) get_option( 'grc_session_timeout_minutes', 30 ),
-			'turnstileEnabled' => ! empty( $turnstile_site_key ),
+			'captchaProvider' => $captcha['provider'],
+			'captchaResponseField' => $captcha['response_field'] ?? null,
 			'pages'      => [
 				'signalement'  => self::page_url( 'grc_page_signalement' ),
 				'mesDemandes'  => self::page_url( 'grc_page_mes_demandes' ),
@@ -197,10 +235,10 @@ class GRC_Frontend {
 						<input type="text" id="grc-reg-site-web" name="site_web" tabindex="-1" autocomplete="off">
 					</div>
 
-					<?php $turnstile_site_key = get_option( 'grc_turnstile_site_key', '' ); ?>
-					<?php if ( $turnstile_site_key ) : ?>
+					<?php $captcha = self::captcha_config(); ?>
+					<?php if ( 'interne' !== $captcha['provider'] ) : ?>
 						<div class="grc-field">
-							<div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $turnstile_site_key ); ?>"></div>
+							<div class="<?php echo esc_attr( $captcha['widget_class'] ); ?>" data-sitekey="<?php echo esc_attr( $captcha['site_key'] ); ?>"></div>
 						</div>
 					<?php else : ?>
 						<div class="grc-field">

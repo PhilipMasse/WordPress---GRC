@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.0 — Choix du fournisseur anti-robot (interne, Turnstile, reCAPTCHA, hCaptcha)
+
+- **GRC Citoyenne → Réglages → Anti-robot à l'inscription** : sélecteur de fournisseur remplaçant le réglage Turnstile-only précédent
+- Quatre options : **Interne** (captcha mathématique auto-hébergé, aucun tiers — par défaut), **Cloudflare Turnstile**, **Google reCAPTCHA v2**, **hCaptcha**
+- Les clés des trois fournisseurs tiers peuvent être renseignées à l'avance ; seul le fournisseur sélectionné dans le menu déroulant est actif
+- Rendu du bon widget côté citoyen et vérification côté serveur généralisés à tous les fournisseurs (même mécanique d'appel `siteverify`, propre à chacun)
+- Note RGPD affichée directement dans les réglages, rappelant que les trois fournisseurs tiers impliquent une communication du navigateur du citoyen avec un service externe
+
 ## 0.25.1 — Cloudflare Turnstile (protection anti-robot renforcée, optionnelle)
 
 - Nouveau réglage **GRC Citoyenne → Réglages → Anti-robot à l'inscription** : clés Cloudflare Turnstile (site + secrète), facultatives
