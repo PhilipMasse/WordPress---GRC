@@ -575,6 +575,7 @@
 
 	var grcGeolocMapInstance = null;
 	var grcGeolocMarker = null;
+	var grcGeocodeTimer = null;
 
 	function loadLeafletThenShowMap( form, lat, lng ) {
 		if ( typeof L !== 'undefined' ) {
@@ -595,7 +596,17 @@
 			var script = document.createElement( 'script' );
 			script.id = 'grc-leaflet-js';
 			script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
-			script.onload = function () { showGeolocMap( form, lat, lng ); };
+			script.onload = function () {
+				// Les images de l'icône par défaut ne se chargent pas automatiquement
+				// depuis ce CDN (chemins relatifs cassés) : ceci causait un décalage
+				// visuel entre la pointe du repère affichée et les coordonnées réelles.
+				L.Icon.Default.mergeOptions( {
+					iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+					iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+					shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
+				} );
+				showGeolocMap( form, lat, lng );
+			};
 			document.body.appendChild( script );
 		}
 	}
@@ -615,6 +626,31 @@
 				coordsEl.style.display = 'block';
 				coordsEl.textContent = 'Position retenue : ' + Number( latlng.lat ).toFixed( 6 ) + ', ' + Number( latlng.lng ).toFixed( 6 );
 			}
+
+			// Récupération automatique de l'adresse (anti-rebond : évite un appel
+			// à chaque pixel lors d'un glisser-déposer, un seul appel après une
+			// courte pause d'inactivité sur la position).
+			clearTimeout( grcGeocodeTimer );
+			grcGeocodeTimer = setTimeout( function () {
+				var adresseField = el( '#grc-adresse', form );
+				if ( ! adresseField ) {
+					return;
+				}
+				if ( coordsEl ) {
+					coordsEl.textContent += ' — recherche de l\'adresse...';
+				}
+				fetch( grcConfig.restUrl + '/geocode/reverse?lat=' + latlng.lat + '&lng=' + latlng.lng )
+					.then( function ( res ) { return res.ok ? res.json() : null; } )
+					.then( function ( data ) {
+						if ( data && data.adresse ) {
+							adresseField.value = data.adresse;
+						}
+						if ( coordsEl ) {
+							coordsEl.textContent = 'Position retenue : ' + Number( latlng.lat ).toFixed( 6 ) + ', ' + Number( latlng.lng ).toFixed( 6 );
+						}
+					} )
+					.catch( function () { /* Adresse non trouvée : le citoyen peut la saisir manuellement. */ } );
+			}, 600 );
 		}
 
 		if ( grcGeolocMapInstance ) {

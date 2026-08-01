@@ -10,6 +10,7 @@ require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-rdv.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-attachments.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-demarches.php';
 require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-satisfaction.php';
+require_once GRC_PLUGIN_DIR . 'includes/rest/class-grc-rest-geocode.php';
 
 class GRC_REST_API {
 
@@ -42,6 +43,7 @@ class GRC_REST_API {
 		GRC_REST_Attachments::register_routes();
 		GRC_REST_Demarches::register_routes();
 		GRC_REST_Satisfaction::register_routes();
+		GRC_REST_Geocode::register_routes();
 	}
 
 	/**
@@ -72,6 +74,7 @@ class GRC_REST_API {
 			'#^/grc/v1/rdv/creneaux$#',
 			'#^/grc/v1/rdv/disponibilites$#',
 			'#^/grc/v1/rdv/durees$#',
+			'#^/grc/v1/geocode/reverse$#',
 			'#^/grc/v1/demarches/types$#',
 			'#^/grc/v1/demarches$#',
 			'#^/grc/v1/rdv$#',

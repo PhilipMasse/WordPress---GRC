@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.28.0 — Correctif décalage visuel du repère + adresse automatique
+
+### Correctif décalage visuel
+- Cause identifiée : les images de l'icône de repère par défaut de Leaflet ne se chargeaient pas depuis le CDN (chemins relatifs cassés), ce qui décalait visuellement la pointe du repère affiché par rapport aux coordonnées réellement enregistrées — alors que les coordonnées elles-mêmes étaient toujours correctes. La carte admin (qui utilise un simple cercle sans icône) n'était pas concernée, d'où l'écart apparent entre les deux vues.
+- Correctif : chargement explicite des images d'icône depuis le CDN.
+
+### Adresse automatique
+- Nouvel endpoint `GET /geocode/reverse` : géocodage inversé (coordonnées → adresse) via Nominatim/OpenStreetMap, proxifié côté serveur (respect de la politique d'usage Nominatim : User-Agent identifiant, limitation de débit)
+- Le champ "Adresse / lieu concerné" du formulaire de signalement se remplit désormais **automatiquement** après géolocalisation ou ajustement du repère (avec anti-rebond pour éviter les appels excessifs pendant un glisser-déposer) — le citoyen peut toujours corriger manuellement si besoin
+
 ## 0.27.1 — Précision du repère GPS lors du signalement
 
 - La mini-carte de géolocalisation du formulaire de signalement passe en zoom 18 (plus précis qu'avant) et permet désormais de **cliquer n'importe où sur la carte** pour repositionner le repère, en plus du glisser-déposer — plus intuitif et précis sur une petite carte que le glisser-déposer seul
