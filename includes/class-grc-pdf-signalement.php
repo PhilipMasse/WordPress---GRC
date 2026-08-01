@@ -19,10 +19,10 @@ class GRC_PDF_Signalement extends FPDF {
 		$this->SetTextColor( 255, 255, 255 );
 		$this->SetFont( 'Helvetica', 'B', 14 );
 		$this->SetXY( 10, 6 );
-		$this->Cell( 0, 10, utf8_decode( 'Mairie de Berre-les-Alpes' ), 0, 1 );
+		$this->Cell( 0, 10, self::txt( 'Mairie de Berre-les-Alpes' ), 0, 1 );
 		$this->SetFont( 'Helvetica', '', 10 );
 		$this->SetXY( 10, 14 );
-		$this->Cell( 0, 6, utf8_decode( $this->titre_document ), 0, 1 );
+		$this->Cell( 0, 6, self::txt( $this->titre_document ), 0, 1 );
 		$this->SetTextColor( 0, 0, 0 );
 		$this->SetY( 28 );
 	}
@@ -31,7 +31,7 @@ class GRC_PDF_Signalement extends FPDF {
 		$this->SetY( -15 );
 		$this->SetFont( 'Helvetica', 'I', 8 );
 		$this->SetTextColor( 130, 130, 130 );
-		$this->Cell( 0, 10, utf8_decode( 'Document généré le ' . date_i18n( 'd/m/Y à H:i' ) . ' — Page ' . $this->PageNo() ), 0, 0, 'C' );
+		$this->Cell( 0, 10, self::txt( 'Document généré le ' . date_i18n( 'd/m/Y à H:i' ) . ' — Page ' . $this->PageNo() ), 0, 0, 'C' );
 	}
 
 	public static function generate( int $demande_id ) {
@@ -90,7 +90,7 @@ class GRC_PDF_Signalement extends FPDF {
 		$pdf->Ln( 3 );
 		$pdf->section_titre( 'Description' );
 		$pdf->SetFont( 'Helvetica', '', 10 );
-		$pdf->MultiCell( 0, 6, utf8_decode( $demande->description ?: '—' ) );
+		$pdf->MultiCell( 0, 6, self::txt( $demande->description ?: '—' ) );
 
 		// --- Citoyen ---------------------------------------------------------
 		$pdf->Ln( 3 );
@@ -148,9 +148,9 @@ class GRC_PDF_Signalement extends FPDF {
 				}
 				$auteur = 'agent' === $m->auteur_type ? 'Agent municipal' : 'Citoyen';
 				$pdf->SetFont( 'Helvetica', 'B', 9 );
-				$pdf->Cell( 0, 5, utf8_decode( $auteur . ' — ' . mysql2date( 'd/m/Y H:i', $m->created_at ) ), 0, 1 );
+				$pdf->Cell( 0, 5, self::txt( $auteur . ' — ' . mysql2date( 'd/m/Y H:i', $m->created_at ) ), 0, 1 );
 				$pdf->SetFont( 'Helvetica', '', 9 );
-				$pdf->MultiCell( 0, 5, utf8_decode( $m->contenu ) );
+				$pdf->MultiCell( 0, 5, self::txt( $m->contenu ) );
 				$pdf->Ln( 1 );
 			}
 		}
@@ -160,10 +160,19 @@ class GRC_PDF_Signalement extends FPDF {
 		return $pdf->Output( 'S' ); // Retourne le contenu binaire du PDF.
 	}
 
+	/**
+	 * Convertit une chaîne UTF-8 vers ISO-8859-1 (Latin-1), requis par les
+	 * polices standard de FPDF. Remplace utf8_decode(), déprécié depuis
+	 * PHP 8.2, par l'équivalent recommandé mb_convert_encoding().
+	 */
+	protected static function txt( ?string $str ): string {
+		return mb_convert_encoding( (string) $str, 'ISO-8859-1', 'UTF-8' );
+	}
+
 	protected function section_titre( string $titre ) {
 		$this->SetFont( 'Helvetica', 'B', 12 );
 		$this->SetTextColor( 0x2D, 0x6A, 0xB0 );
-		$this->Cell( 0, 8, utf8_decode( $titre ), 0, 1 );
+		$this->Cell( 0, 8, self::txt( $titre ), 0, 1 );
 		$this->SetTextColor( 0, 0, 0 );
 		$this->SetDrawColor( 0xDE, 0xA1, 0x28 );
 		$this->SetLineWidth( 0.5 );
@@ -173,8 +182,8 @@ class GRC_PDF_Signalement extends FPDF {
 
 	protected function ligne_champ( string $label, string $valeur ) {
 		$this->SetFont( 'Helvetica', 'B', 10 );
-		$this->Cell( 45, 6, utf8_decode( $label . ' :' ), 0, 0 );
+		$this->Cell( 45, 6, self::txt( $label . ' :' ), 0, 0 );
 		$this->SetFont( 'Helvetica', '', 10 );
-		$this->Cell( 0, 6, utf8_decode( $valeur ), 0, 1 );
+		$this->Cell( 0, 6, self::txt( $valeur ), 0, 1 );
 	}
 }

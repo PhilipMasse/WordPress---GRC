@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.26.1 — Réglages en onglets + correctif PDF (PHP 8.2+) + bouton PDF dans la liste
+
+- **Correctif** : `utf8_decode()` (utilisé pour la génération PDF) est déprécié depuis PHP 8.2 et déclenchait un avertissement à chaque téléchargement. Remplacé par `mb_convert_encoding()`, l'équivalent recommandé — plus aucun avertissement.
+- **Réglages GRC** réorganisés en 5 onglets (Rendez-vous, Sécurité des sessions, Anti-robot, Pages du portail citoyen, Journal d'audit) pour plus de clarté — un seul formulaire, navigation instantanée sans rechargement de page, aucune perte de saisie en changeant d'onglet
+- Bouton PDF (icône 📄 seule, sans texte) ajouté directement dans la liste des demandes, en plus de la vue détail
+
 ## 0.26.0 — Choix du fournisseur anti-robot (interne, Turnstile, reCAPTCHA, hCaptcha)
 
 - **GRC Citoyenne → Réglages → Anti-robot à l'inscription** : sélecteur de fournisseur remplaçant le réglage Turnstile-only précédent

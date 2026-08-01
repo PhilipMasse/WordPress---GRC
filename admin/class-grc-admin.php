@@ -191,118 +191,149 @@ class GRC_Admin {
 				<div class="notice notice-success"><p>Clés de sécurité correctement configurées et chargées.</p></div>
 			<?php endif; ?>
 
-			<h2>Rendez-vous</h2>
+			<h2 class="nav-tab-wrapper" id="grc-settings-tabs">
+				<a href="#" class="nav-tab nav-tab-active" data-tab="rdv">Rendez-vous</a>
+				<a href="#" class="nav-tab" data-tab="securite">Sécurité des sessions</a>
+				<a href="#" class="nav-tab" data-tab="antirobot">Anti-robot</a>
+				<a href="#" class="nav-tab" data-tab="pages">Pages du portail citoyen</a>
+				<a href="#" class="nav-tab" data-tab="audit">Journal d'audit</a>
+			</h2>
+
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="grc_save_settings">
 				<?php wp_nonce_field( 'grc_save_settings' ); ?>
-				<table class="form-table">
-					<tr>
-						<th><label for="grc-delai-validation">Délai de validation avant refus automatique</label></th>
-						<td>
-							<input type="number" id="grc-delai-validation" name="delai_validation_heures" value="<?php echo esc_attr( $delai_validation ); ?>" min="1" style="width:80px;"> heures
-							<p class="description">Passé ce délai sans validation manuelle par un agent, une demande de rendez-vous en attente est automatiquement refusée (le citoyen est notifié par email).</p>
-						</td>
-					</tr>
-				</table>
 
-				<h2>Sécurité des sessions (RGPD)</h2>
-				<table class="form-table">
-					<tr>
-						<th><label for="grc-session-timeout">Déconnexion automatique après inactivité</label></th>
-						<td>
-							<input type="number" id="grc-session-timeout" name="session_timeout_minutes" value="<?php echo esc_attr( $session_timeout ); ?>" min="5" max="60" style="width:80px;"> minutes
-							<p class="description">
-								La CNIL recommande un verrouillage/déconnexion automatique après une période d'inactivité — 10 minutes maximum pour les postes agents traitant des données sensibles, jusqu'à 30 minutes pour des applications standards (guides pratiques RGPD CNIL). S'applique à l'espace citoyen (<code>[grc_mes_demandes]</code> et pages associées) et à l'administration GRC.
-							</p>
-							<p class="description">Une alerte s'affiche 1 minute avant la déconnexion, permettant de prolonger la session en cas d'activité réelle non détectée.</p>
-						</td>
-					</tr>
-				</table>
+				<div class="grc-settings-panel" data-panel="rdv">
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-delai-validation">Délai de validation avant refus automatique</label></th>
+							<td>
+								<input type="number" id="grc-delai-validation" name="delai_validation_heures" value="<?php echo esc_attr( $delai_validation ); ?>" min="1" style="width:80px;"> heures
+								<p class="description">Passé ce délai sans validation manuelle par un agent, une demande de rendez-vous en attente est automatiquement refusée (le citoyen est notifié par email).</p>
+							</td>
+						</tr>
+					</table>
+				</div>
 
-					<h2>Anti-robot à l'inscription</h2>
-				<p class="description">
-					Par défaut, un simple captcha mathématique auto-hébergé protège l'inscription citoyenne (aucune donnée transmise à un tiers, mais protection limitée face à un robot ciblé, puisque la réponse transite en clair). Vous pouvez choisir un fournisseur tiers plus robuste ci-dessous — tous fonctionnent de façon quasi invisible pour le citoyen.
-				</p>
-				<table class="form-table">
-					<tr>
-						<th><label for="grc-captcha-provider">Fournisseur</label></th>
-						<td>
-							<select id="grc-captcha-provider" name="captcha_provider">
-								<option value="interne" <?php selected( $captcha_provider, 'interne' ); ?>>Interne (captcha mathématique, aucun tiers)</option>
-								<option value="turnstile" <?php selected( $captcha_provider, 'turnstile' ); ?>>Cloudflare Turnstile</option>
-								<option value="recaptcha" <?php selected( $captcha_provider, 'recaptcha' ); ?>>Google reCAPTCHA v2</option>
-								<option value="hcaptcha" <?php selected( $captcha_provider, 'hcaptcha' ); ?>>hCaptcha</option>
-							</select>
-							<p class="description">Service tiers (Turnstile : Cloudflare / États-Unis, reCAPTCHA : Google / États-Unis, hCaptcha : Intuition Machines) : le navigateur du citoyen communique avec ce service lors de la vérification. À mentionner dans votre politique de confidentialité si l'un de ces fournisseurs est sélectionné.</p>
-						</td>
-					</tr>
-					<tr>
-						<th>Cloudflare Turnstile</th>
-						<td>
-							<label>Clé de site <input type="text" name="turnstile_site_key" value="<?php echo esc_attr( $turnstile_site ); ?>" style="width:380px;"></label><br>
-							<label>Clé secrète <input type="text" name="turnstile_secret_key" value="<?php echo esc_attr( $turnstile_secret ); ?>" style="width:380px;"></label>
-							<p class="description">Gratuit, à obtenir sur <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener">dash.cloudflare.com → Turnstile</a>.</p>
-						</td>
-					</tr>
-					<tr>
-						<th>Google reCAPTCHA v2</th>
-						<td>
-							<label>Clé de site <input type="text" name="recaptcha_site_key" value="<?php echo esc_attr( $recaptcha_site ); ?>" style="width:380px;"></label><br>
-							<label>Clé secrète <input type="text" name="recaptcha_secret_key" value="<?php echo esc_attr( $recaptcha_secret ); ?>" style="width:380px;"></label>
-							<p class="description">Gratuit, à obtenir sur <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener">google.com/recaptcha/admin</a> (choisir "Case à cocher reCAPTCHA v2").</p>
-						</td>
-					</tr>
-					<tr>
-						<th>hCaptcha</th>
-						<td>
-							<label>Clé de site <input type="text" name="hcaptcha_site_key" value="<?php echo esc_attr( $hcaptcha_site ); ?>" style="width:380px;"></label><br>
-							<label>Clé secrète <input type="text" name="hcaptcha_secret_key" value="<?php echo esc_attr( $hcaptcha_secret ); ?>" style="width:380px;"></label>
-							<p class="description">Gratuit, à obtenir sur <a href="https://dashboard.hcaptcha.com/signup" target="_blank" rel="noopener">dashboard.hcaptcha.com</a>.</p>
-						</td>
-					</tr>
-				</table>
+				<div class="grc-settings-panel" data-panel="securite" style="display:none;">
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-session-timeout">Déconnexion automatique après inactivité</label></th>
+							<td>
+								<input type="number" id="grc-session-timeout" name="session_timeout_minutes" value="<?php echo esc_attr( $session_timeout ); ?>" min="5" max="60" style="width:80px;"> minutes
+								<p class="description">
+									La CNIL recommande un verrouillage/déconnexion automatique après une période d'inactivité — 10 minutes maximum pour les postes agents traitant des données sensibles, jusqu'à 30 minutes pour des applications standards (guides pratiques RGPD CNIL). S'applique à l'espace citoyen (<code>[grc_mes_demandes]</code> et pages associées) et à l'administration GRC.
+								</p>
+								<p class="description">Une alerte s'affiche 1 minute avant la déconnexion, permettant de prolonger la session en cas d'activité réelle non détectée.</p>
+							</td>
+						</tr>
+					</table>
+				</div>
 
-				<h2>Pages du portail citoyen</h2>
-				<p class="description">Sélectionnez les pages contenant chaque shortcode : ces liens apparaîtront dans la barre de navigation affichée en haut de toutes les pages pour un citoyen connecté.</p>
-				<table class="form-table">
-					<tr>
-						<th><label for="grc-page-signalement">Signalement (<code>[grc_signalement_form]</code>)</label></th>
-						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-signalement', 'name' => 'page_signalement', 'selected' => (int) get_option( 'grc_page_signalement' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
-					</tr>
-					<tr>
-						<th><label for="grc-page-mes-demandes">Mes demandes (<code>[grc_mes_demandes]</code>)</label></th>
-						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-mes-demandes', 'name' => 'page_mes_demandes', 'selected' => (int) get_option( 'grc_page_mes_demandes' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
-					</tr>
-					<tr>
-						<th><label for="grc-page-demarche">Démarches (<code>[grc_demarche_form]</code>)</label></th>
-						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-demarche', 'name' => 'page_demarche', 'selected' => (int) get_option( 'grc_page_demarche' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
-					</tr>
-					<tr>
-						<th><label for="grc-page-rdv">Rendez-vous (<code>[grc_rdv_form]</code>)</label></th>
-						<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-rdv', 'name' => 'page_rdv', 'selected' => (int) get_option( 'grc_page_rdv' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
-					</tr>
-				</table>
+				<div class="grc-settings-panel" data-panel="antirobot" style="display:none;">
+					<p class="description">
+						Par défaut, un simple captcha mathématique auto-hébergé protège l'inscription citoyenne (aucune donnée transmise à un tiers, mais protection limitée face à un robot ciblé, puisque la réponse transite en clair). Vous pouvez choisir un fournisseur tiers plus robuste ci-dessous — tous fonctionnent de façon quasi invisible pour le citoyen.
+					</p>
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-captcha-provider">Fournisseur</label></th>
+							<td>
+								<select id="grc-captcha-provider" name="captcha_provider">
+									<option value="interne" <?php selected( $captcha_provider, 'interne' ); ?>>Interne (captcha mathématique, aucun tiers)</option>
+									<option value="turnstile" <?php selected( $captcha_provider, 'turnstile' ); ?>>Cloudflare Turnstile</option>
+									<option value="recaptcha" <?php selected( $captcha_provider, 'recaptcha' ); ?>>Google reCAPTCHA v2</option>
+									<option value="hcaptcha" <?php selected( $captcha_provider, 'hcaptcha' ); ?>>hCaptcha</option>
+								</select>
+								<p class="description">Service tiers (Turnstile : Cloudflare / États-Unis, reCAPTCHA : Google / États-Unis, hCaptcha : Intuition Machines) : le navigateur du citoyen communique avec ce service lors de la vérification. À mentionner dans votre politique de confidentialité si l'un de ces fournisseurs est sélectionné.</p>
+							</td>
+						</tr>
+						<tr>
+							<th>Cloudflare Turnstile</th>
+							<td>
+								<label>Clé de site <input type="text" name="turnstile_site_key" value="<?php echo esc_attr( $turnstile_site ); ?>" style="width:380px;"></label><br>
+								<label>Clé secrète <input type="text" name="turnstile_secret_key" value="<?php echo esc_attr( $turnstile_secret ); ?>" style="width:380px;"></label>
+								<p class="description">Gratuit, à obtenir sur <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener">dash.cloudflare.com → Turnstile</a>.</p>
+							</td>
+						</tr>
+						<tr>
+							<th>Google reCAPTCHA v2</th>
+							<td>
+								<label>Clé de site <input type="text" name="recaptcha_site_key" value="<?php echo esc_attr( $recaptcha_site ); ?>" style="width:380px;"></label><br>
+								<label>Clé secrète <input type="text" name="recaptcha_secret_key" value="<?php echo esc_attr( $recaptcha_secret ); ?>" style="width:380px;"></label>
+								<p class="description">Gratuit, à obtenir sur <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener">google.com/recaptcha/admin</a> (choisir "Case à cocher reCAPTCHA v2").</p>
+							</td>
+						</tr>
+						<tr>
+							<th>hCaptcha</th>
+							<td>
+								<label>Clé de site <input type="text" name="hcaptcha_site_key" value="<?php echo esc_attr( $hcaptcha_site ); ?>" style="width:380px;"></label><br>
+								<label>Clé secrète <input type="text" name="hcaptcha_secret_key" value="<?php echo esc_attr( $hcaptcha_secret ); ?>" style="width:380px;"></label>
+								<p class="description">Gratuit, à obtenir sur <a href="https://dashboard.hcaptcha.com/signup" target="_blank" rel="noopener">dashboard.hcaptcha.com</a>.</p>
+							</td>
+						</tr>
+					</table>
+				</div>
 
-				<h2>Journal d'audit (RGPD)</h2>
-				<table class="form-table">
-					<tr>
-						<th><label for="grc-audit-retention">Durée de conservation du journal d'audit</label></th>
-						<td>
-							<input type="number" id="grc-audit-retention" name="audit_retention_mois" value="<?php echo esc_attr( $audit_retention ); ?>" min="1" max="36" style="width:80px;" onchange="document.getElementById('grc-audit-warning').style.display = (this.value > 12) ? 'block' : 'none';"> mois
-							<p class="description">
-								La CNIL recommande une conservation des journaux techniques comprise entre <strong>6 mois et 1 an</strong> (recommandation du 8 octobre 2021). Un dépassement au-delà de 12 mois n'est toléré qu'en cas de justification documentée (obligation légale, contentieux en cours, menace de sécurité avérée) — ce n'est pas la règle par défaut.
-							</p>
-							<p id="grc-audit-warning" class="description" style="color:#b32d2e;<?php echo $audit_retention > 12 ? '' : 'display:none;'; ?>">
-								⚠️ Vous dépassez la durée recommandée par la CNIL (12 mois). Assurez-vous de documenter la justification de ce choix dans votre registre des traitements.
-							</p>
-							<p class="description">Une purge automatique quotidienne supprime les entrées plus anciennes que cette durée. Elle ne s'applique jamais rétroactivement de façon brutale : les entrées sont supprimées progressivement au fur et à mesure qu'elles dépassent le seuil.</p>
-						</td>
-					</tr>
-				</table>
+				<div class="grc-settings-panel" data-panel="pages" style="display:none;">
+					<p class="description">Sélectionnez les pages contenant chaque shortcode : ces liens apparaîtront dans la barre de navigation affichée en haut de toutes les pages pour un citoyen connecté.</p>
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-page-signalement">Signalement (<code>[grc_signalement_form]</code>)</label></th>
+							<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-signalement', 'name' => 'page_signalement', 'selected' => (int) get_option( 'grc_page_signalement' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+						</tr>
+						<tr>
+							<th><label for="grc-page-mes-demandes">Mes demandes (<code>[grc_mes_demandes]</code>)</label></th>
+							<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-mes-demandes', 'name' => 'page_mes_demandes', 'selected' => (int) get_option( 'grc_page_mes_demandes' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+						</tr>
+						<tr>
+							<th><label for="grc-page-demarche">Démarches (<code>[grc_demarche_form]</code>)</label></th>
+							<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-demarche', 'name' => 'page_demarche', 'selected' => (int) get_option( 'grc_page_demarche' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+						</tr>
+						<tr>
+							<th><label for="grc-page-rdv">Rendez-vous (<code>[grc_rdv_form]</code>)</label></th>
+							<td><?php wp_dropdown_pages( [ 'id' => 'grc-page-rdv', 'name' => 'page_rdv', 'selected' => (int) get_option( 'grc_page_rdv' ), 'show_option_none' => '— Aucune —' ] ); ?></td>
+						</tr>
+					</table>
+				</div>
 
-				<button type="submit" class="button button-primary">Enregistrer</button>
+				<div class="grc-settings-panel" data-panel="audit" style="display:none;">
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-audit-retention">Durée de conservation du journal d'audit</label></th>
+							<td>
+								<input type="number" id="grc-audit-retention" name="audit_retention_mois" value="<?php echo esc_attr( $audit_retention ); ?>" min="1" max="36" style="width:80px;" onchange="document.getElementById('grc-audit-warning').style.display = (this.value > 12) ? 'block' : 'none';"> mois
+								<p class="description">
+									La CNIL recommande une conservation des journaux techniques comprise entre <strong>6 mois et 1 an</strong> (recommandation du 8 octobre 2021). Un dépassement au-delà de 12 mois n'est toléré qu'en cas de justification documentée (obligation légale, contentieux en cours, menace de sécurité avérée) — ce n'est pas la règle par défaut.
+								</p>
+								<p id="grc-audit-warning" class="description" style="color:#b32d2e;<?php echo $audit_retention > 12 ? '' : 'display:none;'; ?>">
+									⚠️ Vous dépassez la durée recommandée par la CNIL (12 mois). Assurez-vous de documenter la justification de ce choix dans votre registre des traitements.
+								</p>
+								<p class="description">Une purge automatique quotidienne supprime les entrées plus anciennes que cette durée. Elle ne s'applique jamais rétroactivement de façon brutale : les entrées sont supprimées progressivement au fur et à mesure qu'elles dépassent le seuil.</p>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<p class="submit"><button type="submit" class="button button-primary">Enregistrer</button></p>
 			</form>
 		</div>
+
+		<script>
+		document.addEventListener( 'DOMContentLoaded', function () {
+			var tabs = document.querySelectorAll( '#grc-settings-tabs .nav-tab' );
+			var panels = document.querySelectorAll( '.grc-settings-panel' );
+			tabs.forEach( function ( tab ) {
+				tab.addEventListener( 'click', function ( e ) {
+					e.preventDefault();
+					tabs.forEach( function ( t ) { t.classList.remove( 'nav-tab-active' ); } );
+					tab.classList.add( 'nav-tab-active' );
+					panels.forEach( function ( p ) {
+						p.style.display = p.dataset.panel === tab.dataset.tab ? 'block' : 'none';
+					} );
+				} );
+			} );
+		} );
+		</script>
 		<?php
 	}
 
