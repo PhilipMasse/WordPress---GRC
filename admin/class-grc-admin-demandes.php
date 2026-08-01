@@ -131,7 +131,7 @@ class GRC_Admin_Demandes {
 
 		?>
 		<div class="wrap">
-			<h1>Demandes</h1>
+			<h1>Signalements</h1>
 
 			<form method="get" style="margin:16px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
 				<input type="hidden" name="page" value="grc-demandes">
@@ -338,6 +338,26 @@ class GRC_Admin_Demandes {
 						<p><?php echo wp_kses_post( wpautop( $demande->description ) ); ?></p>
 						<?php if ( $demande->adresse_lieu ) : ?>
 							<p><strong>Lieu :</strong> <?php echo esc_html( $demande->adresse_lieu ); ?></p>
+						<?php endif; ?>
+						<?php if ( $demande->latitude && $demande->longitude ) : ?>
+							<div id="grc-demande-map" style="height:300px;border-radius:8px;margin-top:10px;"></div>
+							<p class="description" style="margin-top:6px;">
+								<?php echo esc_html( round( (float) $demande->latitude, 6 ) . ', ' . round( (float) $demande->longitude, 6 ) ); ?>
+								— <a href="https://www.openstreetmap.org/?mlat=<?php echo esc_attr( $demande->latitude ); ?>&mlon=<?php echo esc_attr( $demande->longitude ); ?>#map=18/<?php echo esc_attr( $demande->latitude ); ?>/<?php echo esc_attr( $demande->longitude ); ?>" target="_blank" rel="noopener">Ouvrir en plein écran →</a>
+							</p>
+							<script>
+							document.addEventListener( 'DOMContentLoaded', function () {
+								if ( typeof L === 'undefined' ) { return; }
+								var map = L.map( 'grc-demande-map' ).setView( [<?php echo esc_js( $demande->latitude ); ?>, <?php echo esc_js( $demande->longitude ); ?>], 17 );
+								L.tileLayer( 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+									attribution: '© OpenStreetMap contributors',
+									maxZoom: 19
+								} ).addTo( map );
+								L.circleMarker( [<?php echo esc_js( $demande->latitude ); ?>, <?php echo esc_js( $demande->longitude ); ?>], {
+									radius: 9, fillColor: '#b32d2e', color: '#fff', weight: 2, fillOpacity: 0.9
+								} ).addTo( map );
+							} );
+							</script>
 						<?php endif; ?>
 					</div>
 

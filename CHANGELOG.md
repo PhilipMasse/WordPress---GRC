@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.27.0 — Renommage "Demandes" → "Signalements" + carte visible en fiche admin
+
+### Renommage
+- Le libellé "Demandes" devient **"Signalements"** dans tout l'affichage admin (menu, titres, statistiques) — les URLs, tables et code internes restent inchangés pour ne rien casser
+
+### Carte dans la fiche admin
+- La fiche détaillée d'un signalement géolocalisé (**GRC Citoyenne → Signalements**) affiche désormais une **vraie carte** (Leaflet + OpenStreetMap) directement dans l'interface, avec les coordonnées GPS et un lien "Ouvrir en plein écran" vers OpenStreetMap — indépendant du PDF, ne nécessite pas l'extension GD côté serveur
+
 ## 0.26.1 — Réglages en onglets + correctif PDF (PHP 8.2+) + bouton PDF dans la liste
 
 - **Correctif** : `utf8_decode()` (utilisé pour la génération PDF) est déprécié depuis PHP 8.2 et déclenchait un avertissement à chaque téléchargement. Remplacé par `mb_convert_encoding()`, l'équivalent recommandé — plus aucun avertissement.

@@ -79,7 +79,7 @@ class GRC_Admin {
 		);
 
 		add_submenu_page( 'grc-dashboard', 'Tableau de bord', 'Tableau de bord', 'grc_manage_demandes', 'grc-dashboard', [ __CLASS__, 'render_dashboard' ] );
-		add_submenu_page( 'grc-dashboard', 'Demandes', 'Demandes', 'grc_manage_demandes', 'grc-demandes', [ __CLASS__, 'render_demandes' ] );
+		add_submenu_page( 'grc-dashboard', 'Signalements', 'Signalements', 'grc_manage_demandes', 'grc-demandes', [ __CLASS__, 'render_demandes' ] );
 		add_submenu_page( 'grc-dashboard', 'Citoyens', 'Citoyens', 'grc_manage_demandes', 'grc-citoyens', [ __CLASS__, 'render_citoyens' ] );
 		add_submenu_page( 'grc-dashboard', 'Rendez-vous', 'Rendez-vous', 'grc_manage_demandes', 'grc-rdv', [ __CLASS__, 'render_rdv' ] );
 		add_submenu_page( 'grc-dashboard', 'Services & Catégories', 'Services & Catégories', 'grc_manage_settings', 'grc-services', [ __CLASS__, 'render_services' ] );
@@ -101,6 +101,11 @@ class GRC_Admin {
 			'logoutUrl'             => wp_logout_url( admin_url( 'admin.php?page=grc-dashboard&grc_notice=session_expired' ) ),
 		] );
 		GRC_Admin_Stats::enqueue_assets( $hook );
+
+		if ( false !== strpos( $hook, 'grc-demandes' ) && isset( $_GET['demande_id'] ) ) {
+			wp_enqueue_script( 'grc-leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js', [], '1.9.4', true );
+			wp_enqueue_style( 'grc-leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css', [], '1.9.4' );
+		}
 	}
 
 	public static function render_dashboard() {
@@ -118,7 +123,7 @@ class GRC_Admin {
 		<div class="wrap">
 			<h1>Tableau de bord GRC</h1>
 			<div class="grc-stats-cards" style="display:flex;gap:16px;margin-top:20px;">
-				<div class="card" style="padding:16px 24px;"><strong><?php echo esc_html( $stats->total ?? 0 ); ?></strong><br>Total demandes</div>
+				<div class="card" style="padding:16px 24px;"><strong><?php echo esc_html( $stats->total ?? 0 ); ?></strong><br>Total signalements</div>
 				<div class="card" style="padding:16px 24px;"><strong><?php echo esc_html( $stats->nouveau ?? 0 ); ?></strong><br>Nouvelles</div>
 				<div class="card" style="padding:16px 24px;"><strong><?php echo esc_html( $stats->en_cours ?? 0 ); ?></strong><br>En cours</div>
 				<div class="card" style="padding:16px 24px;"><strong><?php echo esc_html( $stats->resolu ?? 0 ); ?></strong><br>Résolues</div>

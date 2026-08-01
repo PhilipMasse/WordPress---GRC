@@ -250,7 +250,7 @@ class GRC_Admin_Citoyens {
 
 				<div style="flex:1;min-width:0;">
 					<div class="card" style="padding:16px;margin-bottom:16px;max-width:none;">
-						<h2>Demandes / Signalements</h2>
+						<h2>Signalements</h2>
 						<?php if ( empty( $demandes ) ) : ?>
 							<p><em>Aucune demande.</em></p>
 						<?php else : ?>

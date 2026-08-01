@@ -15,10 +15,13 @@ class GRC_Admin_Stats {
 	}
 
 	public static function enqueue_assets( string $hook ) {
-		if ( false === strpos( $hook, 'grc-stats' ) ) {
+		$needs_leaflet = false !== strpos( $hook, 'grc-stats' ) || false !== strpos( $hook, 'grc-demandes' );
+		if ( ! $needs_leaflet ) {
 			return;
 		}
-		wp_enqueue_script( 'grc-chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js', [], '4.4.0', true );
+		if ( false !== strpos( $hook, 'grc-stats' ) ) {
+			wp_enqueue_script( 'grc-chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js', [], '4.4.0', true );
+		}
 		wp_enqueue_script( 'grc-leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js', [], '1.9.4', true );
 		wp_enqueue_style( 'grc-leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css', [], '1.9.4' );
 	}
@@ -203,7 +206,7 @@ class GRC_Admin_Stats {
 
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
 				<div class="card" style="padding:14px 20px;max-width:none;">
-					<strong style="font-size:24px;"><?php echo (int) $demandes_kpi->total; ?></strong><br>Demandes
+					<strong style="font-size:24px;"><?php echo (int) $demandes_kpi->total; ?></strong><br>Signalements
 					<div class="description">Taux résolution : <?php echo $taux_resolution; ?>%<?php echo $delai_moyen_jours ? ' · Délai moyen : ' . $delai_moyen_jours . ' j' : ''; ?></div>
 				</div>
 				<div class="card" style="padding:14px 20px;max-width:none;">
@@ -232,11 +235,11 @@ class GRC_Admin_Stats {
 					<canvas id="grc-chart-evolution" height="220"></canvas>
 				</div>
 				<div class="card" style="padding:16px;max-width:none;">
-					<h2>Demandes par catégorie</h2>
+					<h2>Signalements par catégorie</h2>
 					<canvas id="grc-chart-categories" height="220"></canvas>
 				</div>
 				<div class="card" style="padding:16px;max-width:none;">
-					<h2>Demandes par statut</h2>
+					<h2>Signalements par statut</h2>
 					<canvas id="grc-chart-demandes-statut" height="220"></canvas>
 				</div>
 				<div class="card" style="padding:16px;max-width:none;">
