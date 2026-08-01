@@ -72,6 +72,28 @@ class GRC_REST_Citoyen {
 		return GRC_Captcha::generate();
 	}
 
+	private static function verify_turnstile( string $secret, ?string $token, WP_REST_Request $request ): bool {
+		if ( ! $token ) {
+			return false;
+		}
+
+		$response = wp_remote_post( 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+			'timeout' => 8,
+			'body'    => [
+				'secret'   => $secret,
+				'response' => $token,
+				'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
+			],
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			return false;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		return ! empty( $body['success'] );
+	}
+
 	public static function register( WP_REST_Request $request ) {
 		if ( ! GRC_REST_API::check_rate_limit( 'citoyen_register', 10, 3600 ) ) {
 			return new WP_Error( 'grc_rate_limited', 'Trop de tentatives, réessayez plus tard.', [ 'status' => 429 ] );
@@ -82,7 +104,12 @@ class GRC_REST_Citoyen {
 			return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot invalide.', [ 'status' => 400 ] );
 		}
 
-		if ( ! GRC_Captcha::verify( $request->get_param( 'captcha_token' ), $request->get_param( 'captcha_reponse' ) ) ) {
+		$turnstile_secret = get_option( 'grc_turnstile_secret_key', '' );
+		if ( $turnstile_secret ) {
+			if ( ! self::verify_turnstile( $turnstile_secret, $request->get_param( 'turnstile_token' ), $request ) ) {
+				return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot incorrecte ou expirée. Merci de réessayer.', [ 'status' => 400 ] );
+			}
+		} elseif ( ! GRC_Captcha::verify( $request->get_param( 'captcha_token' ), $request->get_param( 'captcha_reponse' ) ) ) {
 			return new WP_Error( 'grc_invalid_captcha', 'Vérification anti-robot incorrecte ou expirée. Merci de réessayer.', [ 'status' => 400 ] );
 		}
 

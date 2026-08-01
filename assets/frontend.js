@@ -1442,38 +1442,52 @@
 		// ---- Inscription ----
 		var registerForm = panels.register;
 		if ( registerForm ) {
-			var captchaQuestionEl = el( '#grc-captcha-question', registerForm );
-			var captchaTokenEl = el( '#grc-captcha-token', registerForm );
-			var captchaInputEl = el( '#grc-reg-captcha', registerForm );
+			var usingTurnstile = !! ( grcConfig.turnstileEnabled );
+			var captchaQuestionEl, captchaTokenEl, captchaInputEl;
 
-			function loadCaptcha() {
-				captchaQuestionEl.textContent = 'Chargement...';
-				captchaInputEl.value = '';
-				fetch( grcConfig.restUrl + '/captcha' )
-					.then( function ( res ) { return res.json(); } )
-					.then( function ( data ) {
-						captchaQuestionEl.textContent = data.question;
-						captchaTokenEl.value = data.token;
-					} )
-					.catch( function () { captchaQuestionEl.textContent = 'Erreur de chargement de la vérification anti-robot.'; } );
+			if ( ! usingTurnstile ) {
+				captchaQuestionEl = el( '#grc-captcha-question', registerForm );
+				captchaTokenEl = el( '#grc-captcha-token', registerForm );
+				captchaInputEl = el( '#grc-reg-captcha', registerForm );
+
+				var loadCaptcha = function () {
+					captchaQuestionEl.textContent = 'Chargement...';
+					captchaInputEl.value = '';
+					fetch( grcConfig.restUrl + '/captcha' )
+						.then( function ( res ) { return res.json(); } )
+						.then( function ( data ) {
+							captchaQuestionEl.textContent = data.question;
+							captchaTokenEl.value = data.token;
+						} )
+						.catch( function () { captchaQuestionEl.textContent = 'Erreur de chargement de la vérification anti-robot.'; } );
+				};
+				loadCaptcha();
 			}
-			loadCaptcha();
 
 			registerForm.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
 				var msgBox = el( '.grc-form-message', registerForm );
+
+				var payload = {
+					prenom: el( '#grc-reg-prenom', registerForm ).value,
+					nom: el( '#grc-reg-nom', registerForm ).value,
+					email: el( '#grc-reg-email', registerForm ).value,
+					password: el( '#grc-reg-password', registerForm ).value,
+					site_web: el( '#grc-reg-site-web', registerForm ).value
+				};
+
+				if ( usingTurnstile ) {
+					var turnstileField = registerForm.querySelector( '[name="cf-turnstile-response"]' );
+					payload.turnstile_token = turnstileField ? turnstileField.value : '';
+				} else {
+					payload.captcha_token = captchaTokenEl.value;
+					payload.captcha_reponse = captchaInputEl.value;
+				}
+
 				fetch( grcConfig.restUrl + '/citoyen/register', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify( {
-						prenom: el( '#grc-reg-prenom', registerForm ).value,
-						nom: el( '#grc-reg-nom', registerForm ).value,
-						email: el( '#grc-reg-email', registerForm ).value,
-						password: el( '#grc-reg-password', registerForm ).value,
-						site_web: el( '#grc-reg-site-web', registerForm ).value,
-						captcha_token: captchaTokenEl.value,
-						captcha_reponse: captchaInputEl.value
-					} )
+					body: JSON.stringify( payload )
 				} )
 					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
 					.then( function ( result ) {
@@ -1485,7 +1499,11 @@
 					} )
 					.catch( function ( err ) {
 						showMessage( msgBox, err.message, 'error' );
-						loadCaptcha(); // Un nouveau défi est requis après tout échec (le précédent a été consommé).
+						if ( ! usingTurnstile ) {
+							loadCaptcha(); // Un nouveau défi est requis après tout échec (le précédent a été consommé).
+						} else if ( window.turnstile ) {
+							window.turnstile.reset();
+						}
 					} );
 			} );
 		}

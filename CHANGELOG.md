@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.25.1 — Cloudflare Turnstile (protection anti-robot renforcée, optionnelle)
+
+- Nouveau réglage **GRC Citoyenne → Réglages → Anti-robot à l'inscription** : clés Cloudflare Turnstile (site + secrète), facultatives
+- Si configurées, l'inscription citoyenne utilise **Turnstile** à la place du captcha mathématique auto-hébergé : gratuit, quasi invisible pour l'utilisateur, et beaucoup plus robuste face à des robots ciblés (le captcha mathématique en texte brut, bien qu'utile contre les robots génériques avec le honeypot, reste trivialement contournable par un robot inspectant directement l'API)
+- Sans clés configurées, le comportement précédent (captcha maths + honeypot) reste actif automatiquement — aucune rupture
+- Vérification côté serveur du jeton Turnstile auprès de Cloudflare avant toute création de compte
+- Note RGPD affichée dans les réglages : Turnstile étant un service tiers (Cloudflare, États-Unis), son activation implique une communication du navigateur du citoyen avec Cloudflare, à mentionner dans la politique de confidentialité du site
+
 ## 0.25.0 — Export PDF des signalements (avec carte) + captcha à l'inscription
 
 ### Export PDF des signalements

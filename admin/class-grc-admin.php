@@ -171,6 +171,8 @@ class GRC_Admin {
 		$delai_validation  = (int) get_option( 'grc_rdv_delai_validation_heures', 48 );
 		$audit_retention   = (int) get_option( 'grc_audit_retention_mois', 12 );
 		$session_timeout   = (int) get_option( 'grc_session_timeout_minutes', 30 );
+		$turnstile_site    = get_option( 'grc_turnstile_site_key', '' );
+		$turnstile_secret  = get_option( 'grc_turnstile_secret_key', '' );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
@@ -209,6 +211,22 @@ class GRC_Admin {
 							</p>
 							<p class="description">Une alerte s'affiche 1 minute avant la déconnexion, permettant de prolonger la session en cas d'activité réelle non détectée.</p>
 						</td>
+					</tr>
+				</table>
+
+					<h2>Anti-robot à l'inscription (Cloudflare Turnstile)</h2>
+				<p class="description">
+					Facultatif. Par défaut, un simple captcha mathématique auto-hébergé protège l'inscription (aucune donnée transmise à un tiers, mais protection limitée face à un robot ciblé). En renseignant les clés ci-dessous, l'inscription utilisera <strong>Cloudflare Turnstile</strong> à la place : gratuit, quasi invisible pour l'utilisateur, et nettement plus robuste — mais il s'agit d'un service tiers (Cloudflare, États-Unis) : le navigateur du citoyen communique avec Cloudflare lors de la vérification. À mentionner dans votre politique de confidentialité si activé.
+					Clés à obtenir gratuitement sur <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener">dash.cloudflare.com → Turnstile</a>.
+				</p>
+				<table class="form-table">
+					<tr>
+						<th><label for="grc-turnstile-site">Clé de site (Site Key)</label></th>
+						<td><input type="text" id="grc-turnstile-site" name="turnstile_site_key" value="<?php echo esc_attr( $turnstile_site ); ?>" style="width:400px;"></td>
+					</tr>
+					<tr>
+						<th><label for="grc-turnstile-secret">Clé secrète (Secret Key)</label></th>
+						<td><input type="text" id="grc-turnstile-secret" name="turnstile_secret_key" value="<?php echo esc_attr( $turnstile_secret ); ?>" style="width:400px;"></td>
 					</tr>
 				</table>
 
@@ -275,6 +293,9 @@ class GRC_Admin {
 		update_option( 'grc_page_mes_demandes', absint( $_POST['page_mes_demandes'] ?? 0 ) );
 		update_option( 'grc_page_demarche', absint( $_POST['page_demarche'] ?? 0 ) );
 		update_option( 'grc_page_rdv', absint( $_POST['page_rdv'] ?? 0 ) );
+
+		update_option( 'grc_turnstile_site_key', sanitize_text_field( wp_unslash( $_POST['turnstile_site_key'] ?? '' ) ) );
+		update_option( 'grc_turnstile_secret_key', sanitize_text_field( wp_unslash( $_POST['turnstile_secret_key'] ?? '' ) ) );
 
 		GRC_Audit_Log::log( 'settings_saved', 'settings', 0, [
 			'delai_validation_heures'   => $delai,

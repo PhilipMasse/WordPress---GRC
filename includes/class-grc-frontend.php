@@ -33,11 +33,17 @@ class GRC_Frontend {
 		wp_enqueue_style( 'grc-frontend', GRC_PLUGIN_URL . 'assets/frontend.css', [], GRC_VERSION );
 		wp_enqueue_script( 'grc-frontend', GRC_PLUGIN_URL . 'assets/frontend.js', [], GRC_VERSION, true );
 
+		$turnstile_site_key = get_option( 'grc_turnstile_site_key', '' );
+		if ( $turnstile_site_key ) {
+			wp_enqueue_script( 'grc-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', [], null, true );
+		}
+
 		wp_localize_script( 'grc-frontend', 'grcConfig', [
 			'restUrl'    => esc_url_raw( rest_url( 'grc/v1' ) ),
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'isLoggedIn' => is_user_logged_in(),
 			'sessionTimeoutMinutes' => (int) get_option( 'grc_session_timeout_minutes', 30 ),
+			'turnstileEnabled' => ! empty( $turnstile_site_key ),
 			'pages'      => [
 				'signalement'  => self::page_url( 'grc_page_signalement' ),
 				'mesDemandes'  => self::page_url( 'grc_page_mes_demandes' ),
@@ -191,12 +197,19 @@ class GRC_Frontend {
 						<input type="text" id="grc-reg-site-web" name="site_web" tabindex="-1" autocomplete="off">
 					</div>
 
-					<div class="grc-field">
-						<label for="grc-reg-captcha">Vérification anti-robot</label>
-						<p id="grc-captcha-question" class="grc-hint">Chargement...</p>
-						<input type="text" id="grc-reg-captcha" name="captcha_reponse" required inputmode="numeric" style="max-width:100px;">
-						<input type="hidden" id="grc-captcha-token" name="captcha_token">
-					</div>
+					<?php $turnstile_site_key = get_option( 'grc_turnstile_site_key', '' ); ?>
+					<?php if ( $turnstile_site_key ) : ?>
+						<div class="grc-field">
+							<div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $turnstile_site_key ); ?>"></div>
+						</div>
+					<?php else : ?>
+						<div class="grc-field">
+							<label for="grc-reg-captcha">Vérification anti-robot</label>
+							<p id="grc-captcha-question" class="grc-hint">Chargement...</p>
+							<input type="text" id="grc-reg-captcha" name="captcha_reponse" required inputmode="numeric" style="max-width:100px;">
+							<input type="hidden" id="grc-captcha-token" name="captcha_token">
+						</div>
+					<?php endif; ?>
 
 					<button type="submit" class="grc-btn-submit">Créer mon compte</button>
 					<div class="grc-form-message" style="display:none;"></div>
