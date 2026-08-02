@@ -466,7 +466,16 @@ class GRC_Admin_Demarches {
 					<input type="hidden" name="action" value="grc_demarche_message">
 					<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>">
 					<?php wp_nonce_field( 'grc_demarche_message_' . $id ); ?>
-					<textarea name="contenu" rows="3" style="width:100%;" placeholder="Écrire un message au citoyen..."></textarea>
+					<?php $modeles_demarche = GRC_Admin_Modeles::get_modeles_pour( 'demarche' ); ?>
+					<?php if ( ! empty( $modeles_demarche ) ) : ?>
+						<select style="margin-bottom:6px;" onchange="var m=this.options[this.selectedIndex]; if(m.dataset.contenu){document.getElementById('grc-demarche-contenu-<?php echo esc_attr( $id ); ?>').value = m.dataset.contenu;} this.selectedIndex=0;">
+							<option value="">Insérer un modèle de message...</option>
+							<?php foreach ( $modeles_demarche as $mod ) : ?>
+								<option value="<?php echo esc_attr( $mod->id ); ?>" data-contenu="<?php echo esc_attr( $mod->contenu ); ?>"><?php echo esc_html( $mod->titre ); ?></option>
+							<?php endforeach; ?>
+						</select><br>
+					<?php endif; ?>
+					<textarea name="contenu" id="grc-demarche-contenu-<?php echo esc_attr( $id ); ?>" rows="3" style="width:100%;" placeholder="Écrire un message au citoyen..."></textarea>
 					<p><label>Joindre un ou plusieurs documents (PDF/.docx) : <input type="file" name="files[]" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label></p>
 					<button type="submit" class="button button-primary" style="margin-top:8px;">Envoyer</button>
 				</form>

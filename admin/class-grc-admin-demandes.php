@@ -394,11 +394,20 @@ class GRC_Admin_Demandes {
 						<?php endforeach; ?>
 
 						<?php if ( current_user_can( 'grc_manage_demandes' ) ) : ?>
+							<?php $modeles_demande = GRC_Admin_Modeles::get_modeles_pour( 'demande' ); ?>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:16px;">
 								<input type="hidden" name="action" value="grc_add_message">
 								<input type="hidden" name="demande_id" value="<?php echo esc_attr( $demande_id ); ?>">
 								<?php wp_nonce_field( 'grc_add_message_' . $demande_id ); ?>
-								<textarea name="contenu" rows="3" style="width:100%;" placeholder="Écrire un message ou une note interne..."></textarea>
+								<?php if ( ! empty( $modeles_demande ) ) : ?>
+									<select id="grc-modele-select-<?php echo esc_attr( $demande_id ); ?>" style="margin-bottom:6px;" onchange="var m=this.options[this.selectedIndex]; if(m.dataset.contenu){document.getElementById('grc-contenu-<?php echo esc_attr( $demande_id ); ?>').value = m.dataset.contenu;} this.selectedIndex=0;">
+										<option value="">Insérer un modèle de message...</option>
+										<?php foreach ( $modeles_demande as $mod ) : ?>
+											<option value="<?php echo esc_attr( $mod->id ); ?>" data-contenu="<?php echo esc_attr( $mod->contenu ); ?>"><?php echo esc_html( $mod->titre ); ?></option>
+										<?php endforeach; ?>
+									</select><br>
+								<?php endif; ?>
+								<textarea name="contenu" id="grc-contenu-<?php echo esc_attr( $demande_id ); ?>" rows="3" style="width:100%;" placeholder="Écrire un message ou une note interne..."></textarea>
 								<label style="display:block;margin:8px 0;">
 									<input type="checkbox" name="interne" value="1"> Note interne (non visible du citoyen)
 								</label>

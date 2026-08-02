@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.33.0 — Modèles de messages types pour les agents
+
+- Nouvel écran **GRC Citoyenne → Modèles de messages** : créez des réponses pré-rédigées (accusé de réception, demande de complément, information...), avec un contexte (signalements, démarches, ou les deux) et un ordre d'affichage
+- Sélecteur d'insertion rapide ajouté directement dans les formulaires de réponse des signalements et des démarches : un menu déroulant "Insérer un modèle de message..." remplit instantanément la zone de texte, modifiable ensuite avant envoi
+- Nouvelle table `wp_grc_modeles_messages`
+
 ## 0.32.0 — Envoi d'emails fiabilisé (SMTP) + notifications aux agents
 
 ### Le problème résolu

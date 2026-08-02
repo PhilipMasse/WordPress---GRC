@@ -273,6 +273,17 @@ class GRC_Activator {
 			KEY demande_id (demande_id)
 		) $charset_collate;";
 
+		// --- Modèles de messages (réponses types pour les agents) -----------
+		$sql[] = "CREATE TABLE {$p}modeles_messages (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			titre VARCHAR(191) NOT NULL,
+			contenu TEXT NOT NULL,
+			contexte VARCHAR(20) NOT NULL DEFAULT 'tous',
+			ordre INT UNSIGNED NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id)
+		) $charset_collate;";
+
 		// --- Audit log (RGPD, traçabilité) -----------------------------------
 		$sql[] = "CREATE TABLE {$p}audit_log (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

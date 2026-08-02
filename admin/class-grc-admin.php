@@ -17,6 +17,7 @@ class GRC_Admin {
 		GRC_Admin_RDV::init();
 		GRC_Admin_Citoyens::init();
 		GRC_Admin_Stats::init();
+		GRC_Admin_Modeles::init();
 	}
 
 	/**
@@ -88,6 +89,7 @@ class GRC_Admin {
 		add_submenu_page( 'grc-dashboard', 'Démarches', 'Démarches', 'grc_manage_demandes', 'grc-demarches', [ __CLASS__, 'render_demarches' ] );
 		add_submenu_page( 'grc-dashboard', 'Statistiques', 'Statistiques', 'grc_view_stats', 'grc-stats', [ __CLASS__, 'render_stats' ] );
 		add_submenu_page( 'grc-dashboard', 'Réglages', 'Réglages', 'grc_manage_settings', 'grc-settings', [ __CLASS__, 'render_settings' ] );
+		add_submenu_page( 'grc-dashboard', 'Modèles de messages', 'Modèles de messages', 'grc_manage_demandes', 'grc-modeles', [ __CLASS__, 'render_modeles' ] );
 		add_submenu_page( 'grc-dashboard', 'Journal d\'audit', 'Journal d\'audit', 'grc_view_all', 'grc-audit', [ __CLASS__, 'render_audit' ] );
 	}
 
@@ -145,6 +147,10 @@ class GRC_Admin {
 
 	public static function render_audit() {
 		GRC_Admin_Audit::render();
+	}
+
+	public static function render_modeles() {
+		GRC_Admin_Modeles::render();
 	}
 
 	public static function render_rdv() {
