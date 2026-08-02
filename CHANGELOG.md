@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.35.1 — Balises prénom/nom de l'agent
+
+- Nouvelles balises `{agent_prenom}` et `{agent_nom}` : résolues avec le prénom/nom de l'agent WordPress connecté qui déclenche l'action (utile pour signer un message, ex : "Cordialement, {agent_prenom}")
+- Disponibles à la fois pour l'insertion manuelle d'un modèle (réponse sur un signalement ou une démarche) et pour les emails automatiques déclenchés par un agent (changement de statut, validation/refus de RDV)
+- Vides pour les emails générés sans intervention d'un agent (accusé de réception à la création, rappel automatique) — comportement normal, pas une erreur
+
 ## 0.35.0 — Modèles personnalisables pour les emails automatiques
 
 - Dans **GRC Citoyenne → Modèles de messages**, un modèle peut désormais être associé à un **email automatique précis** (accusé de réception signalement, accusé de réception démarche, changement de statut, validation/refus de rendez-vous, rappel...) via un nouveau champ "Utiliser comme contenu d'un email automatique"

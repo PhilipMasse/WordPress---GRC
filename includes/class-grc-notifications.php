@@ -44,6 +44,33 @@ class GRC_Notifications {
 	}
 
 	/**
+	 * Prénom/nom de l'agent WordPress actuellement connecté (celui qui
+	 * déclenche l'action), pour signer les emails déclenchés manuellement
+	 * (changement de statut, assignation...). Vide pour les emails générés
+	 * automatiquement sans intervention d'un agent (ex: accusé de réception
+	 * à la création, ou depuis une tâche cron).
+	 */
+	private static function balises_agent_courant(): array {
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			return [ 'agent_prenom' => '', 'agent_nom' => '' ];
+		}
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return [ 'agent_prenom' => '', 'agent_nom' => '' ];
+		}
+		$prenom = $user->first_name;
+		$nom    = $user->last_name;
+		if ( ! $prenom && ! $nom ) {
+			// À défaut de prénom/nom renseignés dans le profil WordPress,
+			// on retombe sur le nom d'affichage en un seul bloc.
+			$prenom = $user->display_name;
+			$nom    = '';
+		}
+		return [ 'agent_prenom' => $prenom, 'agent_nom' => $nom ];
+	}
+
+	/**
 	 * Sous-ensemble des types de notification pour lesquels un modèle
 	 * personnalisé peut remplacer le texte par défaut (les emails "système"
 	 * composés d'informations structurées, pas les échanges libres entre
@@ -260,13 +287,13 @@ class GRC_Notifications {
 	 * $rdv_id est fourni (nécessite une consultation en base).
 	 */
 	private static function balises_rdv( int $rdv_id, string $debut, string $service_nom = '' ): array {
-		$balises = [
+		$balises = array_merge( self::balises_agent_courant(), [
 			'numero'  => '',
 			'prenom'  => '',
 			'nom'     => '',
 			'service' => $service_nom,
 			'date'    => date_i18n( 'l d F Y à H:i', strtotime( $debut ) ),
-		];
+		] );
 
 		if ( $rdv_id ) {
 			global $wpdb;
@@ -298,14 +325,14 @@ class GRC_Notifications {
 			$demande_id
 		) );
 		$labels_courts = [ 'nouveau' => 'Nouveau', 'en_cours' => 'En cours', 'assigne' => 'Assigné', 'resolu' => 'Résolu', 'cloture' => 'Clôturé', 'reouvert' => 'Réouvert' ];
-		$balises = [
+		$balises = array_merge( self::balises_agent_courant(), [
 			'numero' => $row->numero_suivi ?? '',
 			'titre'  => $row->titre ?? '',
 			'prenom' => $row && $row->prenom ? GRC_Encryption::decrypt( $row->prenom ) : '',
 			'nom'    => $row && $row->nom ? GRC_Encryption::decrypt( $row->nom ) : '',
 			'statut' => $labels_courts[ $nouveau_statut ] ?? $nouveau_statut,
 			'date'   => date_i18n( 'd/m/Y' ),
-		];
+		] );
 		if ( self::envoyer_via_modele_personnalise( 'demande_statut_change_citoyen', $email, $balises ) ) {
 			return;
 		}
@@ -458,14 +485,14 @@ class GRC_Notifications {
 		) );
 		$labels_courts = [ 'en_attente' => 'En attente', 'en_cours' => 'En cours', 'valide' => 'Validé', 'rejete' => 'Rejeté', 'complement_requis' => 'Complément requis' ];
 
-		return [
+		return array_merge( self::balises_agent_courant(), [
 			'numero' => $row->numero_dossier ?? '',
 			'prenom' => $row && $row->prenom ? GRC_Encryption::decrypt( $row->prenom ) : '',
 			'nom'    => $row && $row->nom ? GRC_Encryption::decrypt( $row->nom ) : '',
 			'statut' => $row ? ( $labels_courts[ $row->statut ] ?? $row->statut ) : '',
 			'date'   => date_i18n( 'd/m/Y' ),
 			'recap'  => self::build_recap_demarche( $demarche_id ),
-		];
+		] );
 	}
 
 	/**

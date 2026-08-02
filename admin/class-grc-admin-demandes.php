@@ -405,6 +405,8 @@ class GRC_Admin_Demandes {
 								'statut'  => $statut_libelles_courts[ $demande->statut ] ?? $demande->statut,
 								'service' => $demande->service_id ? ( wp_list_pluck( $services, 'nom', 'id' )[ $demande->service_id ] ?? '' ) : '',
 								'date'    => date_i18n( 'd/m/Y' ),
+								'agent_prenom' => wp_get_current_user()->first_name,
+								'agent_nom'    => wp_get_current_user()->last_name,
 							];
 							?>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:16px;">

@@ -475,6 +475,8 @@ class GRC_Admin_Demarches {
 						'nom'    => $citoyen && $citoyen->nom ? GRC_Encryption::decrypt( $citoyen->nom ) : '',
 						'statut' => $statut_libelles_courts_demarche[ $dossier->statut ] ?? $dossier->statut,
 						'date'   => date_i18n( 'd/m/Y' ),
+						'agent_prenom' => wp_get_current_user()->first_name,
+						'agent_nom'    => wp_get_current_user()->last_name,
 					];
 					?>
 					<?php if ( ! empty( $modeles_demarche ) ) : ?>

@@ -229,13 +229,15 @@ class GRC_Admin_Modeles {
 	 */
 	public static function balises_disponibles(): array {
 		return [
-			'{numero}'  => 'Numéro de suivi (signalement) ou de dossier (démarche)',
-			'{titre}'   => 'Objet du signalement (signalements uniquement)',
-			'{prenom}'  => 'Prénom du citoyen',
-			'{nom}'     => 'Nom du citoyen',
-			'{statut}'  => 'Statut actuel',
-			'{service}' => 'Service concerné',
-			'{date}'    => 'Date du jour',
+			'{numero}'       => 'Numéro de suivi (signalement) ou de dossier (démarche)',
+			'{titre}'        => 'Objet du signalement (signalements uniquement)',
+			'{prenom}'       => 'Prénom du citoyen',
+			'{nom}'          => 'Nom du citoyen',
+			'{statut}'       => 'Statut actuel',
+			'{service}'      => 'Service concerné',
+			'{date}'         => 'Date du jour',
+			'{agent_prenom}' => 'Prénom de l\'agent connecté qui déclenche l\'action',
+			'{agent_nom}'    => 'Nom de l\'agent connecté qui déclenche l\'action',
 		];
 	}
 
