@@ -13,6 +13,114 @@ class GRC_Admin_Modeles {
 	public static function init() {
 		add_action( 'admin_post_grc_save_modele', [ __CLASS__, 'handle_save' ] );
 		add_action( 'admin_post_grc_delete_modele', [ __CLASS__, 'handle_delete' ] );
+		add_action( 'admin_post_grc_creer_modele_defaut', [ __CLASS__, 'handle_creer_modele_defaut' ] );
+		add_action( 'admin_post_grc_creer_tous_modeles_defaut', [ __CLASS__, 'handle_creer_tous_modeles_defaut' ] );
+	}
+
+	/**
+	 * Contenu par défaut proposé pour chaque email automatique personnalisable
+	 * — reprend le texte actuellement intégré au plugin, réécrit avec les
+	 * balises, pour que l'admin ait un point de départ prêt à l'emploi plutôt
+	 * qu'une page blanche.
+	 */
+	private static function modele_par_defaut( string $notif_type ): ?array {
+		$defauts = [
+			'demande_creee_citoyen' => [
+				'titre'   => 'Accusé de réception — Signalement',
+				'sujet'   => 'Votre signalement {numero} a bien été reçu',
+				'contenu' => "Bonjour {prenom},\n\nNous avons bien reçu votre signalement (référence {numero}).\n\n{recap}\n\nVous pouvez suivre son avancement à tout moment depuis votre espace citoyen.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+			'demande_statut_change_citoyen' => [
+				'titre'   => 'Mise à jour de statut — Signalement',
+				'sujet'   => 'Mise à jour de votre signalement {numero}',
+				'contenu' => "Bonjour {prenom},\n\nVotre signalement (référence {numero}) est maintenant au statut : {statut}.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+			'demarche_creee_citoyen' => [
+				'titre'   => 'Accusé de réception — Démarche',
+				'sujet'   => 'Votre démarche {numero} a bien été reçue',
+				'contenu' => "Bonjour {prenom},\n\nNous avons bien reçu votre démarche (référence {numero}).\n\n{recap}\n\nVous pouvez suivre son avancement à tout moment depuis votre espace citoyen.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+			'demarche_statut_change_citoyen' => [
+				'titre'   => 'Mise à jour de statut — Démarche',
+				'sujet'   => 'Mise à jour de votre démarche {numero}',
+				'contenu' => "Bonjour {prenom},\n\nVotre démarche (référence {numero}) est maintenant au statut : {statut}.\n\n{recap}\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+			'rdv_creee_citoyen' => [
+				'titre'   => 'Accusé de réception — Rendez-vous',
+				'sujet'   => 'Votre demande de rendez-vous est enregistrée',
+				'contenu' => "Bonjour {prenom},\n\nVotre demande de rendez-vous a bien été enregistrée et est en attente de validation par nos services.\n\n{recap}\n\nVous recevrez un email dès qu'elle aura été traitée.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+			'rdv_valide_citoyen' => [
+				'titre'   => 'Confirmation — Rendez-vous validé',
+				'sujet'   => 'Votre rendez-vous du {date} est confirmé',
+				'contenu' => "Bonjour {prenom},\n\nVotre rendez-vous du {date} a été validé et est confirmé.\n\nSi vous ne pouvez pas vous présenter, merci de l'annuler depuis votre espace citoyen afin de libérer le créneau pour un autre usager.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+			'rdv_refuse_citoyen' => [
+				'titre'   => 'Information — Rendez-vous non confirmé',
+				'sujet'   => 'Votre demande de rendez-vous n\'a pas pu être confirmée',
+				'contenu' => "Bonjour {prenom},\n\nNous sommes au regret de vous informer que votre demande de rendez-vous du {date} n'a pas pu être confirmée.\n\nVous pouvez soumettre une nouvelle demande sur un autre créneau depuis notre site.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+			'rdv_rappel_citoyen' => [
+				'titre'   => 'Rappel — Rendez-vous le lendemain',
+				'sujet'   => 'Rappel : rendez-vous demain',
+				'contenu' => "Bonjour {prenom},\n\nPetit rappel : vous avez rendez-vous demain, {date}.\n\nCordialement,\nMairie de Berre-les-Alpes",
+			],
+		];
+
+		return $defauts[ $notif_type ] ?? null;
+	}
+
+	public static function handle_creer_modele_defaut() {
+		check_admin_referer( 'grc_creer_modele_defaut' );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		$notif_type = sanitize_key( $_GET['notif_type'] ?? '' );
+		self::inserer_modele_defaut_si_absent( $notif_type );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-modeles&grc_notice=saved' ) );
+		exit;
+	}
+
+	public static function handle_creer_tous_modeles_defaut() {
+		check_admin_referer( 'grc_creer_tous_modeles_defaut' );
+		if ( ! current_user_can( 'grc_manage_demandes' ) ) {
+			wp_die( 'Permission refusée.' );
+		}
+
+		foreach ( array_keys( GRC_Notifications::notif_types_avec_modele() ) as $notif_type ) {
+			self::inserer_modele_defaut_si_absent( $notif_type );
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=grc-modeles&grc_notice=saved' ) );
+		exit;
+	}
+
+	private static function inserer_modele_defaut_si_absent( string $notif_type ) {
+		$defaut = self::modele_par_defaut( $notif_type );
+		if ( ! $defaut ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'modeles_messages';
+		$existant = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE notif_type = %s", $notif_type ) );
+		if ( $existant ) {
+			return; // Un modèle est déjà associé à ce type : on ne l'écrase pas.
+		}
+
+		$contexte = ( 0 === strpos( $notif_type, 'demande' ) ) ? 'demande' : ( ( 0 === strpos( $notif_type, 'demarche' ) ) ? 'demarche' : 'tous' );
+
+		$wpdb->insert( $table, [
+			'titre'      => $defaut['titre'],
+			'sujet'      => $defaut['sujet'],
+			'contenu'    => $defaut['contenu'],
+			'contexte'   => $contexte,
+			'notif_type' => $notif_type,
+			'ordre'      => 0,
+		] );
+		GRC_Audit_Log::log( 'modele_message_created', 'modele_message', (int) $wpdb->insert_id, [ 'notif_type' => $notif_type, 'genere_par_defaut' => true ] );
 	}
 
 	public static function render() {
@@ -54,6 +162,20 @@ class GRC_Admin_Modeles {
 		<div class="wrap">
 			<h1>Modèles de messages</h1>
 			<p class="description">Réponses pré-rédigées que vous pouvez insérer en un clic lors d'un échange avec un citoyen (accusé de réception, demande de complément, information...).</p>
+
+			<?php
+			$notif_types_dispo = array_keys( GRC_Notifications::notif_types_avec_modele() );
+			$manquants = array_diff( $notif_types_dispo, array_keys( $notif_deja_utilises ) );
+			?>
+			<?php if ( ! empty( $manquants ) ) : ?>
+				<div class="notice notice-info" style="padding:12px 16px;">
+					<p><strong><?php echo count( $manquants ); ?> email(s) automatique(s)</strong> n'ont pas encore de modèle personnalisé associé (ils utilisent le texte par défaut intégré au plugin).</p>
+					<p>
+						<a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=grc_creer_tous_modeles_defaut' ), 'grc_creer_tous_modeles_defaut' ) ); ?>">Créer tous les modèles par défaut manquants</a>
+					</p>
+					<p class="description">Chaque modèle créé reprend le texte par défaut du plugin — vous pourrez ensuite le personnaliser librement depuis la liste ci-dessous.</p>
+				</div>
+			<?php endif; ?>
 
 			<div style="display:flex;gap:24px;align-items:flex-start;margin-top:16px;">
 				<div style="flex:1;max-width:480px;">

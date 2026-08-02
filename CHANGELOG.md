@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.36.0 — Matrice en onglet dédié (vraie grille) + création rapide des modèles par défaut
+
+### Matrice des notifications
+- Déplacée dans son propre onglet **Réglages → Matrice des notifications** (retirée de l'onglet Email)
+- Restructurée en **vraie matrice** : les événements (Signalement créé, statut modifié, RDV validé...) sont en lignes, les destinataires (Citoyen / Agents) en colonnes — une case à cocher par intersection valide, "—" pour les combinaisons qui n'existent pas
+
+### Modèles par défaut en un clic
+- **GRC Citoyenne → Modèles de messages** affiche désormais un encart listant les emails automatiques sans modèle personnalisé associé, avec un bouton **"Créer tous les modèles par défaut manquants"**
+- Chaque modèle créé reprend le texte par défaut actuellement intégré au plugin (avec balises), prêt à être personnalisé plutôt que de partir d'une page blanche
+- Un modèle déjà associé à un type n'est jamais écrasé
+
 ## 0.35.1 — Balises prénom/nom de l'agent
 
 - Nouvelles balises `{agent_prenom}` et `{agent_nom}` : résolues avec le prénom/nom de l'agent WordPress connecté qui déclenche l'action (utile pour signer un message, ex : "Cordialement, {agent_prenom}")

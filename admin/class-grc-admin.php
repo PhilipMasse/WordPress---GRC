@@ -216,6 +216,7 @@ class GRC_Admin {
 			<h2 class="nav-tab-wrapper" id="grc-settings-tabs">
 				<a href="#" class="nav-tab nav-tab-active" data-tab="rdv">Rendez-vous</a>
 				<a href="#" class="nav-tab" data-tab="email">Email</a>
+				<a href="#" class="nav-tab" data-tab="matrice">Matrice des notifications</a>
 				<a href="#" class="nav-tab" data-tab="securite">Sécurité des sessions</a>
 				<a href="#" class="nav-tab" data-tab="antirobot">Anti-robot</a>
 				<a href="#" class="nav-tab" data-tab="pages">Pages du portail citoyen</a>
@@ -302,20 +303,41 @@ class GRC_Admin {
 							</td>
 						</tr>
 					</table>
+				</div>
 
+				<div class="grc-settings-panel" data-panel="matrice" style="display:none;">
 					<h2>Matrice des notifications</h2>
-					<p class="description">Activez ou désactivez individuellement chaque type de notification. Toutes sont activées par défaut.</p>
+					<p class="description">Un événement par ligne, un type de destinataire par colonne. Cochez pour activer, décochez pour désactiver. Une cellule grisée ("—") signifie que cette combinaison n'existe pas (ex : un citoyen n'est pas notifié d'une assignation interne à un agent).</p>
 					<table class="wp-list-table widefat fixed striped" style="max-width:700px;">
-						<thead><tr><th>Notification</th><th style="width:100px;">Active</th></tr></thead>
+						<thead>
+							<tr>
+								<th>Événement</th>
+								<th style="width:120px;text-align:center;">Citoyen</th>
+								<th style="width:120px;text-align:center;">Agents</th>
+							</tr>
+						</thead>
 						<tbody>
 							<?php
 							$notif_matrix = get_option( 'grc_notif_matrix', [] );
-							foreach ( GRC_Notifications::notif_types() as $cle => $label ) :
-								$actif = ! isset( $notif_matrix[ $cle ] ) || ! empty( $notif_matrix[ $cle ] );
+							foreach ( GRC_Notifications::notif_matrice_structure() as $ligne_label => $colonnes ) :
 								?>
 								<tr>
-									<td><?php echo esc_html( $label ); ?></td>
-									<td><label><input type="checkbox" name="notif_matrix[<?php echo esc_attr( $cle ); ?>]" value="1" <?php checked( $actif ); ?>></label></td>
+									<td><?php echo esc_html( $ligne_label ); ?></td>
+									<?php foreach ( [ 'citoyen', 'agents' ] as $colonne ) : ?>
+										<td style="text-align:center;">
+											<?php if ( null === $colonnes[ $colonne ] ) : ?>
+												<span style="color:#ccc;" aria-hidden="true">—</span>
+												<span class="screen-reader-text">Non applicable</span>
+											<?php else : ?>
+												<?php $cle = $colonnes[ $colonne ]; ?>
+												<?php $actif = ! isset( $notif_matrix[ $cle ] ) || ! empty( $notif_matrix[ $cle ] ); ?>
+												<label>
+													<input type="checkbox" name="notif_matrix[<?php echo esc_attr( $cle ); ?>]" value="1" <?php checked( $actif ); ?>>
+													<span class="screen-reader-text"><?php echo esc_html( $ligne_label . ' — ' . ( 'citoyen' === $colonne ? 'Citoyen' : 'Agents' ) ); ?></span>
+												</label>
+											<?php endif; ?>
+										</td>
+									<?php endforeach; ?>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>

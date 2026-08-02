@@ -38,6 +38,28 @@ class GRC_Notifications {
 		];
 	}
 
+	/**
+	 * Version matricielle de notif_types() : une ligne par événement, une
+	 * colonne par type de destinataire (Citoyen / Agents). Chaque cellule
+	 * référence la clé de notif_types() correspondante, ou null si cette
+	 * combinaison événement/destinataire n'existe pas.
+	 */
+	public static function notif_matrice_structure(): array {
+		return [
+			'Signalement créé'            => [ 'citoyen' => 'demande_creee_citoyen', 'agents' => 'demande_creee_agents' ],
+			'Signalement — statut modifié' => [ 'citoyen' => 'demande_statut_change_citoyen', 'agents' => null ],
+			'Signalement — message'        => [ 'citoyen' => 'demande_message_citoyen', 'agents' => null ],
+			'Démarche créée'               => [ 'citoyen' => 'demarche_creee_citoyen', 'agents' => 'demarche_creee_agents' ],
+			'Démarche — statut modifié'    => [ 'citoyen' => 'demarche_statut_change_citoyen', 'agents' => null ],
+			'Démarche — message'           => [ 'citoyen' => 'demarche_message_citoyen', 'agents' => 'demarche_message_agents' ],
+			'Rendez-vous demandé'          => [ 'citoyen' => 'rdv_creee_citoyen', 'agents' => 'rdv_creee_agents' ],
+			'Rendez-vous validé'           => [ 'citoyen' => 'rdv_valide_citoyen', 'agents' => null ],
+			'Rendez-vous refusé'           => [ 'citoyen' => 'rdv_refuse_citoyen', 'agents' => null ],
+			'Rendez-vous — rappel'         => [ 'citoyen' => 'rdv_rappel_citoyen', 'agents' => null ],
+			'Assignation d\'un dossier'    => [ 'citoyen' => null, 'agents' => 'agent_assignation' ],
+		];
+	}
+
 	private static function notif_active( string $cle ): bool {
 		$matrice = get_option( 'grc_notif_matrix', [] );
 		return ! isset( $matrice[ $cle ] ) || ! empty( $matrice[ $cle ] );
