@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.34.0 — Balises de fusion, récapitulatifs, notifications bidirectionnelles et matrice d'activation
+
+### Balises dans les modèles de messages
+- `{numero}`, `{titre}`, `{prenom}`, `{nom}`, `{statut}`, `{service}`, `{date}` sont désormais remplacées automatiquement par les vraies données du dossier au moment de l'insertion d'un modèle (résolution côté serveur, avant injection dans le sélecteur)
+- Aide contextuelle listant les balises disponibles directement dans **GRC Citoyenne → Modèles de messages**
+
+### Récapitulatifs dans les accusés de réception
+- **Signalements** : l'email de confirmation inclut désormais objet, catégorie, service, lieu, date et un extrait de la description
+- **Démarches** : nouvel accusé de réception (n'existait pas jusqu'ici !) avec récapitulatif construit à partir des vrais libellés de champs du formulaire
+- **Rendez-vous** : récapitulatif enrichi (service, motif)
+
+### Notifications de réponse complétées dans les deux sens
+- Signalements : un agent qui répond notifie désormais le citoyen (gap comblé)
+- Démarches : changement de statut (notamment "Complément requis") notifie désormais le citoyen (gap comblé)
+
+### Matrice d'activation des notifications
+- Nouveau tableau dans **Réglages → Email → Matrice des notifications** : 15 types de notifications, chacun activable/désactivable indépendamment (toutes actives par défaut)
+
 ## 0.33.0 — Modèles de messages types pour les agents
 
 - Nouvel écran **GRC Citoyenne → Modèles de messages** : créez des réponses pré-rédigées (accusé de réception, demande de complément, information...), avec un contexte (signalements, démarches, ou les deux) et un ordre d'affichage

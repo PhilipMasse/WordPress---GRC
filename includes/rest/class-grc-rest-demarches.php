@@ -186,6 +186,13 @@ class GRC_REST_Demarches {
 		GRC_Audit_Log::log( 'demarche_created', 'demarche', $demarche_id, [ 'type' => $slug ] );
 		GRC_Notifications::notify_agents_nouvelle_demarche( $demarche_id );
 
+		$citoyens_table_email = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+		$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table_email} WHERE id = %d", $citoyen_id ) );
+		$email_citoyen = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : null;
+		if ( $email_citoyen ) {
+			GRC_Notifications::send_demarche_created( $demarche_id, $email_citoyen, $numero_dossier );
+		}
+
 		return [ 'id' => $demarche_id, 'numero_dossier' => $numero_dossier, 'statut' => 'en_attente' ];
 	}
 

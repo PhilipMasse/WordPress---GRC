@@ -467,11 +467,21 @@ class GRC_Admin_Demarches {
 					<input type="hidden" name="id" value="<?php echo esc_attr( $id ); ?>">
 					<?php wp_nonce_field( 'grc_demarche_message_' . $id ); ?>
 					<?php $modeles_demarche = GRC_Admin_Modeles::get_modeles_pour( 'demarche' ); ?>
+					<?php
+					$statut_libelles_courts_demarche = [ 'en_attente' => 'En attente', 'en_cours' => 'En cours', 'valide' => 'Validé', 'rejete' => 'Rejeté', 'complement_requis' => 'Complément requis' ];
+					$balises_donnees_demarche = [
+						'numero' => $dossier->numero_dossier,
+						'prenom' => $citoyen && $citoyen->prenom ? GRC_Encryption::decrypt( $citoyen->prenom ) : '',
+						'nom'    => $citoyen && $citoyen->nom ? GRC_Encryption::decrypt( $citoyen->nom ) : '',
+						'statut' => $statut_libelles_courts_demarche[ $dossier->statut ] ?? $dossier->statut,
+						'date'   => date_i18n( 'd/m/Y' ),
+					];
+					?>
 					<?php if ( ! empty( $modeles_demarche ) ) : ?>
 						<select style="margin-bottom:6px;" onchange="var m=this.options[this.selectedIndex]; if(m.dataset.contenu){document.getElementById('grc-demarche-contenu-<?php echo esc_attr( $id ); ?>').value = m.dataset.contenu;} this.selectedIndex=0;">
 							<option value="">Insérer un modèle de message...</option>
 							<?php foreach ( $modeles_demarche as $mod ) : ?>
-								<option value="<?php echo esc_attr( $mod->id ); ?>" data-contenu="<?php echo esc_attr( $mod->contenu ); ?>"><?php echo esc_html( $mod->titre ); ?></option>
+								<option value="<?php echo esc_attr( $mod->id ); ?>" data-contenu="<?php echo esc_attr( GRC_Admin_Modeles::resolve_balises( $mod->contenu, $balises_donnees_demarche ) ); ?>"><?php echo esc_html( $mod->titre ); ?></option>
 							<?php endforeach; ?>
 						</select><br>
 					<?php endif; ?>
@@ -589,6 +599,15 @@ class GRC_Admin_Demarches {
 					'created_at'  => current_time( 'mysql' ),
 				] );
 				GRC_Audit_Log::log( 'demarche_message_added', 'demarche', $id, [ 'auteur_type' => 'agent' ] );
+			}
+
+			if ( $avant && $avant->citoyen_id ) {
+				$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+				$email_encrypted = $wpdb->get_var( $wpdb->prepare( "SELECT email FROM {$citoyens_table} WHERE id = %d", $avant->citoyen_id ) );
+				$email = $email_encrypted ? GRC_Encryption::decrypt( $email_encrypted ) : null;
+				if ( $email ) {
+					GRC_Notifications::send_demarche_statut_change( $id, $email, $statut );
+				}
 			}
 		}
 

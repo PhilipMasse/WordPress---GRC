@@ -302,6 +302,24 @@ class GRC_Admin {
 							</td>
 						</tr>
 					</table>
+
+					<h2>Matrice des notifications</h2>
+					<p class="description">Activez ou désactivez individuellement chaque type de notification. Toutes sont activées par défaut.</p>
+					<table class="wp-list-table widefat fixed striped" style="max-width:700px;">
+						<thead><tr><th>Notification</th><th style="width:100px;">Active</th></tr></thead>
+						<tbody>
+							<?php
+							$notif_matrix = get_option( 'grc_notif_matrix', [] );
+							foreach ( GRC_Notifications::notif_types() as $cle => $label ) :
+								$actif = ! isset( $notif_matrix[ $cle ] ) || ! empty( $notif_matrix[ $cle ] );
+								?>
+								<tr>
+									<td><?php echo esc_html( $label ); ?></td>
+									<td><label><input type="checkbox" name="notif_matrix[<?php echo esc_attr( $cle ); ?>]" value="1" <?php checked( $actif ); ?>></label></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
 				</div>
 
 				<div class="grc-settings-panel" data-panel="securite" style="display:none;">
@@ -492,6 +510,13 @@ class GRC_Admin {
 		update_option( 'grc_smtp_from_email', sanitize_email( $_POST['smtp_from_email'] ?? '' ) );
 		update_option( 'grc_smtp_from_name', sanitize_text_field( wp_unslash( $_POST['smtp_from_name'] ?? '' ) ) );
 		update_option( 'grc_email_agents_notifications', sanitize_textarea_field( wp_unslash( $_POST['email_agents_notifications'] ?? '' ) ) );
+
+		$matrice_soumise = $_POST['notif_matrix'] ?? [];
+		$matrice = [];
+		foreach ( array_keys( GRC_Notifications::notif_types() ) as $cle ) {
+			$matrice[ $cle ] = ! empty( $matrice_soumise[ $cle ] ) ? 1 : 0;
+		}
+		update_option( 'grc_notif_matrix', $matrice );
 
 		update_option( 'grc_turnstile_site_key', sanitize_text_field( wp_unslash( $_POST['turnstile_site_key'] ?? '' ) ) );
 		update_option( 'grc_turnstile_secret_key', sanitize_text_field( wp_unslash( $_POST['turnstile_secret_key'] ?? '' ) ) );

@@ -68,7 +68,13 @@ class GRC_Admin_Modeles {
 							</select>
 
 							<label style="display:block;font-weight:600;margin-bottom:4px;">Contenu du message</label>
-							<textarea name="contenu" rows="6" required style="width:100%;margin-bottom:10px;"><?php echo esc_textarea( $modele_edite->contenu ?? '' ); ?></textarea>
+							<textarea name="contenu" rows="6" required style="width:100%;margin-bottom:6px;"><?php echo esc_textarea( $modele_edite->contenu ?? '' ); ?></textarea>
+							<p class="description" style="margin-bottom:10px;">
+								Balises disponibles, remplacées automatiquement par les informations du dossier au moment de l'insertion :
+								<?php foreach ( self::balises_disponibles() as $balise => $desc ) : ?>
+									<br><code><?php echo esc_html( $balise ); ?></code> — <?php echo esc_html( $desc ); ?>
+								<?php endforeach; ?>
+							</p>
 
 							<label style="display:block;font-weight:600;margin-bottom:4px;">Ordre d'affichage</label>
 							<input type="number" name="ordre" value="<?php echo esc_attr( $modele_edite->ordre ?? 0 ); ?>" style="width:100px;margin-bottom:14px;">
@@ -163,6 +169,35 @@ class GRC_Admin_Modeles {
 	 * Retourne les modèles applicables à un contexte donné ('demande' ou
 	 * 'demarche'), pour alimenter le sélecteur d'insertion rapide.
 	 */
+	/**
+	 * Remplace les balises {xxx} d'un modèle par les valeurs réelles du dossier
+	 * concerné (numéro, nom du citoyen, statut...). Les balises non fournies
+	 * dans $donnees sont laissées telles quelles pour rester visibles.
+	 */
+	public static function resolve_balises( string $contenu, array $donnees ): string {
+		$remplacements = [];
+		foreach ( $donnees as $cle => $valeur ) {
+			$remplacements[ '{' . $cle . '}' ] = (string) $valeur;
+		}
+		return strtr( $contenu, $remplacements );
+	}
+
+	/**
+	 * Liste des balises disponibles, affichée en aide dans l'écran de gestion
+	 * des modèles.
+	 */
+	public static function balises_disponibles(): array {
+		return [
+			'{numero}'  => 'Numéro de suivi (signalement) ou de dossier (démarche)',
+			'{titre}'   => 'Objet du signalement (signalements uniquement)',
+			'{prenom}'  => 'Prénom du citoyen',
+			'{nom}'     => 'Nom du citoyen',
+			'{statut}'  => 'Statut actuel',
+			'{service}' => 'Service concerné',
+			'{date}'    => 'Date du jour',
+		];
+	}
+
 	public static function get_modeles_pour( string $contexte ): array {
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'modeles_messages';
