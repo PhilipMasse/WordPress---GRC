@@ -238,7 +238,7 @@ class GRC_REST_RDV {
 				$services_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'services';
 				$service_nom = (string) $wpdb->get_var( $wpdb->prepare( "SELECT nom FROM {$services_table} WHERE id = %d", $creneau->service_id ) );
 			}
-			GRC_Notifications::send_rdv_pending( $email, $creneau->debut, $service_nom, $motif );
+			GRC_Notifications::send_rdv_pending( $email, $creneau->debut, $service_nom, $motif, $rdv_id );
 		}
 
 		return [ 'success' => true, 'id' => $rdv_id, 'numero_rdv' => $numero_rdv, 'statut' => 'en_attente' ];

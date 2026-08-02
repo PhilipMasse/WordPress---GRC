@@ -277,11 +277,14 @@ class GRC_Activator {
 		$sql[] = "CREATE TABLE {$p}modeles_messages (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			titre VARCHAR(191) NOT NULL,
+			sujet VARCHAR(191) NULL,
 			contenu TEXT NOT NULL,
 			contexte VARCHAR(20) NOT NULL DEFAULT 'tous',
+			notif_type VARCHAR(50) NULL,
 			ordre INT UNSIGNED NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (id)
+			PRIMARY KEY (id),
+			UNIQUE KEY notif_type (notif_type)
 		) $charset_collate;";
 
 		// --- Audit log (RGPD, traçabilité) -----------------------------------

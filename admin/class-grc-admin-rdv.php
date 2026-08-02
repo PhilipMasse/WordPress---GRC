@@ -512,7 +512,7 @@ class GRC_Admin_RDV {
 			$creneau = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$creneaux_table} WHERE id = %d", $rdv->creneau_id ) );
 			$email   = self::get_rdv_email( $rdv->citoyen_id );
 			if ( $email && $creneau ) {
-				GRC_Notifications::send_rdv_validated( $email, $creneau->debut );
+				GRC_Notifications::send_rdv_validated( $email, $creneau->debut, $id );
 			}
 		}
 
@@ -560,7 +560,7 @@ class GRC_Admin_RDV {
 		$creneau = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$creneaux_table} WHERE id = %d", $rdv->creneau_id ) );
 		$email   = self::get_rdv_email( $rdv->citoyen_id );
 		if ( $email && $creneau ) {
-			GRC_Notifications::send_rdv_refused( $email, $creneau->debut, $automatique );
+			GRC_Notifications::send_rdv_refused( $email, $creneau->debut, $automatique, $id );
 		}
 	}
 

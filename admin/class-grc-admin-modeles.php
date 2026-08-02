@@ -43,6 +43,13 @@ class GRC_Admin_Modeles {
 
 		$contexte_labels = [ 'tous' => 'Signalements et démarches', 'demande' => 'Signalements uniquement', 'demarche' => 'Démarches uniquement' ];
 
+		$notif_deja_utilises = [];
+		foreach ( $modeles as $m ) {
+			if ( $m->notif_type ) {
+				$notif_deja_utilises[ $m->notif_type ] = $m->id;
+			}
+		}
+
 		?>
 		<div class="wrap">
 			<h1>Modèles de messages</h1>
@@ -67,6 +74,21 @@ class GRC_Admin_Modeles {
 								<?php endforeach; ?>
 							</select>
 
+							<label style="display:block;font-weight:600;margin-bottom:4px;">Utiliser comme contenu d'un email automatique</label>
+							<select name="notif_type" style="width:100%;margin-bottom:6px;">
+								<option value="">— Aucun (insertion manuelle uniquement) —</option>
+								<?php foreach ( GRC_Notifications::notif_types_avec_modele() as $cle => $label ) : ?>
+									<?php $deja_pris = isset( $notif_deja_utilises[ $cle ] ) && $notif_deja_utilises[ $cle ] != ( $modele_edite->id ?? 0 ); ?>
+									<option value="<?php echo esc_attr( $cle ); ?>" <?php selected( $modele_edite->notif_type ?? '', $cle ); ?>>
+										<?php echo esc_html( $label ); ?><?php echo $deja_pris ? ' (remplacera le modèle actuellement associé)' : ''; ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description" style="margin-bottom:10px;">Si sélectionné, ce modèle remplace le texte par défaut de cet email automatique (un seul modèle par type). Sinon, ce modèle reste disponible pour insertion manuelle par les agents.</p>
+
+							<label style="display:block;font-weight:600;margin-bottom:4px;">Sujet de l'email (si utilisé comme email automatique)</label>
+							<input type="text" name="sujet" value="<?php echo esc_attr( $modele_edite->sujet ?? '' ); ?>" style="width:100%;margin-bottom:10px;" placeholder="Ex : Votre signalement {numero} a bien été reçu">
+
 							<label style="display:block;font-weight:600;margin-bottom:4px;">Contenu du message</label>
 							<textarea name="contenu" rows="6" required style="width:100%;margin-bottom:6px;"><?php echo esc_textarea( $modele_edite->contenu ?? '' ); ?></textarea>
 							<p class="description" style="margin-bottom:10px;">
@@ -89,15 +111,17 @@ class GRC_Admin_Modeles {
 
 				<div style="flex:2;">
 					<table class="wp-list-table widefat fixed striped">
-						<thead><tr><th>Titre</th><th>Contexte</th><th>Aperçu</th><th>Action</th></tr></thead>
+						<thead><tr><th>Titre</th><th>Contexte</th><th>Email automatique</th><th>Aperçu</th><th>Action</th></tr></thead>
 						<tbody>
 							<?php if ( empty( $modeles ) ) : ?>
-								<tr><td colspan="4">Aucun modèle créé pour le moment.</td></tr>
+								<tr><td colspan="5">Aucun modèle créé pour le moment.</td></tr>
 							<?php endif; ?>
+							<?php $notif_labels = GRC_Notifications::notif_types_avec_modele(); ?>
 							<?php foreach ( $modeles as $m ) : ?>
 								<tr>
 									<td><?php echo esc_html( $m->titre ); ?></td>
 									<td><?php echo esc_html( $contexte_labels[ $m->contexte ] ?? $m->contexte ); ?></td>
+									<td><?php echo $m->notif_type ? '✅ ' . esc_html( $notif_labels[ $m->notif_type ] ?? $m->notif_type ) : '—'; ?></td>
 									<td><?php echo esc_html( wp_trim_words( $m->contenu, 12 ) ); ?></td>
 									<td style="white-space:nowrap;">
 										<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=grc-modeles&modele_id=' . $m->id ) ); ?>">Modifier</a>
@@ -121,9 +145,15 @@ class GRC_Admin_Modeles {
 
 		$id       = absint( $_POST['id'] ?? 0 );
 		$titre    = sanitize_text_field( wp_unslash( $_POST['titre'] ?? '' ) );
+		$sujet    = sanitize_text_field( wp_unslash( $_POST['sujet'] ?? '' ) );
 		$contenu  = sanitize_textarea_field( wp_unslash( $_POST['contenu'] ?? '' ) );
 		$contexte = sanitize_key( $_POST['contexte'] ?? 'tous' );
 		$ordre    = absint( $_POST['ordre'] ?? 0 );
+		$notif_type = sanitize_key( $_POST['notif_type'] ?? '' );
+
+		if ( $notif_type && ! array_key_exists( $notif_type, GRC_Notifications::notif_types_avec_modele() ) ) {
+			$notif_type = '';
+		}
 
 		if ( ! in_array( $contexte, [ 'tous', 'demande', 'demarche' ], true ) ) {
 			$contexte = 'tous';
@@ -136,7 +166,18 @@ class GRC_Admin_Modeles {
 
 		global $wpdb;
 		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'modeles_messages';
-		$data  = [ 'titre' => $titre, 'contenu' => $contenu, 'contexte' => $contexte, 'ordre' => $ordre ];
+
+		// Un seul modèle peut être associé à un type d'email automatique donné :
+		// on retire l'association de tout autre modèle qui l'aurait actuellement.
+		if ( $notif_type ) {
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$table} SET notif_type = NULL WHERE notif_type = %s AND id != %d",
+				$notif_type,
+				$id
+			) );
+		}
+
+		$data = [ 'titre' => $titre, 'sujet' => $sujet ?: null, 'contenu' => $contenu, 'contexte' => $contexte, 'ordre' => $ordre, 'notif_type' => $notif_type ?: null ];
 
 		if ( $id ) {
 			$wpdb->update( $table, $data, [ 'id' => $id ] );

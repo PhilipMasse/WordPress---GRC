@@ -44,6 +44,43 @@ class GRC_Notifications {
 	}
 
 	/**
+	 * Sous-ensemble des types de notification pour lesquels un modèle
+	 * personnalisé peut remplacer le texte par défaut (les emails "système"
+	 * composés d'informations structurées, pas les échanges libres entre
+	 * agent et citoyen).
+	 */
+	public static function notif_types_avec_modele(): array {
+		$tous = self::notif_types();
+		$cles = [
+			'demande_creee_citoyen', 'demande_statut_change_citoyen',
+			'demarche_creee_citoyen', 'demarche_statut_change_citoyen',
+			'rdv_creee_citoyen', 'rdv_valide_citoyen', 'rdv_refuse_citoyen', 'rdv_rappel_citoyen',
+		];
+		return array_intersect_key( $tous, array_flip( $cles ) );
+	}
+
+	/**
+	 * Si un modèle personnalisé est associé à ce type de notification, envoie
+	 * l'email avec son contenu (balises résolues) et retourne true. Sinon,
+	 * retourne false pour laisser l'appelant utiliser le texte par défaut.
+	 */
+	private static function envoyer_via_modele_personnalise( string $notif_type, string $email, array $balises ): bool {
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'modeles_messages';
+		$modele = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE notif_type = %s", $notif_type ) );
+
+		if ( ! $modele ) {
+			return false;
+		}
+
+		$sujet = $modele->sujet ? GRC_Admin_Modeles::resolve_balises( $modele->sujet, $balises ) : '[Mairie de Berre-les-Alpes] Notification';
+		$corps = GRC_Admin_Modeles::resolve_balises( $modele->contenu, $balises );
+
+		wp_mail( $email, $sujet, $corps );
+		return true;
+	}
+
+	/**
 	 * Configure PHPMailer pour utiliser un serveur SMTP plutôt que la fonction
 	 * mail() native de PHP — souvent absente, mal configurée ou bloquée sur
 	 * les hébergements mutualisés, ce qui empêche silencieusement l'envoi de
@@ -97,6 +134,26 @@ class GRC_Notifications {
 		if ( ! self::notif_active( 'demande_creee_citoyen' ) ) {
 			return;
 		}
+
+		global $wpdb;
+		$demandes_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
+		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+		$row = $wpdb->get_row( $wpdb->prepare(
+			"SELECT d.titre, c.prenom, c.nom FROM {$demandes_table} d LEFT JOIN {$citoyens_table} c ON c.id = d.citoyen_id WHERE d.id = %d",
+			$demande_id
+		) );
+		$balises = [
+			'numero' => $numero_suivi,
+			'titre'  => $row->titre ?? '',
+			'prenom' => $row && $row->prenom ? GRC_Encryption::decrypt( $row->prenom ) : '',
+			'nom'    => $row && $row->nom ? GRC_Encryption::decrypt( $row->nom ) : '',
+			'date'   => date_i18n( 'd/m/Y' ),
+			'recap'  => self::build_recap_demande( $demande_id ),
+		];
+		if ( self::envoyer_via_modele_personnalise( 'demande_creee_citoyen', $email, $balises ) ) {
+			return;
+		}
+
 		$subject = sprintf( '[Mairie de Berre-les-Alpes] Votre signalement %s a bien été reçu', $numero_suivi );
 		$body    = self::render_template( 'demande_created', [
 			'numero_suivi' => $numero_suivi,
@@ -106,11 +163,10 @@ class GRC_Notifications {
 		wp_mail( $email, $subject, $body );
 	}
 
-	public static function send_rdv_pending( string $email, string $debut, string $service_nom = '', string $motif = '' ) {
+	public static function send_rdv_pending( string $email, string $debut, string $service_nom = '', string $motif = '', int $rdv_id = 0 ) {
 		if ( ! self::notif_active( 'rdv_creee_citoyen' ) ) {
 			return;
 		}
-		$subject = '[Mairie de Berre-les-Alpes] Votre demande de rendez-vous est enregistrée';
 		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
 
 		$recap  = "Récapitulatif de votre demande :\n";
@@ -122,6 +178,13 @@ class GRC_Notifications {
 			$recap .= '- Motif : ' . $motif . "\n";
 		}
 
+		$balises = self::balises_rdv( $rdv_id, $debut, $service_nom );
+		$balises['recap'] = $recap;
+		if ( self::envoyer_via_modele_personnalise( 'rdv_creee_citoyen', $email, $balises ) ) {
+			return;
+		}
+
+		$subject = '[Mairie de Berre-les-Alpes] Votre demande de rendez-vous est enregistrée';
 		$body = sprintf(
 			"Bonjour,\n\nVotre demande de rendez-vous a bien été enregistrée et est en attente de validation par nos services.\n\n%s\nVous recevrez un email de confirmation ou d'information dès qu'elle aura été traitée.\n\nCordialement,\nMairie de Berre-les-Alpes",
 			$recap
@@ -129,12 +192,18 @@ class GRC_Notifications {
 		wp_mail( $email, $subject, $body );
 	}
 
-	public static function send_rdv_validated( string $email, string $debut ) {
+	public static function send_rdv_validated( string $email, string $debut, int $rdv_id = 0 ) {
 		if ( ! self::notif_active( 'rdv_valide_citoyen' ) ) {
 			return;
 		}
-		$subject = '[Mairie de Berre-les-Alpes] Votre rendez-vous est confirmé';
 		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
+
+		$balises = self::balises_rdv( $rdv_id, $debut );
+		if ( self::envoyer_via_modele_personnalise( 'rdv_valide_citoyen', $email, $balises ) ) {
+			return;
+		}
+
+		$subject = '[Mairie de Berre-les-Alpes] Votre rendez-vous est confirmé';
 		$body = sprintf(
 			"Bonjour,\n\nVotre rendez-vous du %s a été validé et est confirmé.\n\nSi vous ne pouvez pas vous présenter, merci de l'annuler depuis votre espace citoyen afin de libérer le créneau pour un autre usager.\n\nCordialement,\nMairie de Berre-les-Alpes",
 			$date_formatee
@@ -142,39 +211,105 @@ class GRC_Notifications {
 		wp_mail( $email, $subject, $body );
 	}
 
-	public static function send_rdv_refused( string $email, string $debut, bool $automatique = false ) {
+	public static function send_rdv_refused( string $email, string $debut, bool $automatique = false, int $rdv_id = 0 ) {
 		if ( ! self::notif_active( 'rdv_refuse_citoyen' ) ) {
 			return;
 		}
-		$subject = '[Mairie de Berre-les-Alpes] Votre demande de rendez-vous n\'a pas pu être confirmée';
 		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
-		$motif = $automatique
+		$motif_texte = $automatique
 			? "\n\nCette demande n'a pas été traitée dans le délai imparti et a été automatiquement annulée."
 			: '';
+
+		$balises = self::balises_rdv( $rdv_id, $debut );
+		$balises['motif_refus'] = trim( $motif_texte );
+		if ( self::envoyer_via_modele_personnalise( 'rdv_refuse_citoyen', $email, $balises ) ) {
+			return;
+		}
+
+		$subject = '[Mairie de Berre-les-Alpes] Votre demande de rendez-vous n\'a pas pu être confirmée';
 		$body = sprintf(
 			"Bonjour,\n\nNous sommes au regret de vous informer que votre demande de rendez-vous du %s n'a pas pu être confirmée.%s\n\nVous pouvez soumettre une nouvelle demande sur un autre créneau depuis notre site.\n\nCordialement,\nMairie de Berre-les-Alpes",
 			$date_formatee,
-			$motif
+			$motif_texte
 		);
 		wp_mail( $email, $subject, $body );
 	}
 
-	public static function send_rdv_reminder( string $email, string $debut ) {
+	public static function send_rdv_reminder( string $email, string $debut, int $rdv_id = 0 ) {
 		if ( ! self::notif_active( 'rdv_rappel_citoyen' ) ) {
 			return;
 		}
-		$subject = '[Mairie de Berre-les-Alpes] Rappel : rendez-vous demain';
 		$date_formatee = date_i18n( 'l d F Y à H:i', strtotime( $debut ) );
+
+		$balises = self::balises_rdv( $rdv_id, $debut );
+		if ( self::envoyer_via_modele_personnalise( 'rdv_rappel_citoyen', $email, $balises ) ) {
+			return;
+		}
+
+		$subject = '[Mairie de Berre-les-Alpes] Rappel : rendez-vous demain';
 		$body = sprintf(
 			"Bonjour,\n\nPetit rappel : vous avez rendez-vous demain, %s.\n\nCordialement,\nMairie de Berre-les-Alpes",
 			$date_formatee
 		);
 		wp_mail( $email, $subject, $body );
 	}
+
+	/**
+	 * Construit les balises disponibles pour les emails automatiques liés à
+	 * un rendez-vous. Le prénom/nom du citoyen ne sont résolus que si
+	 * $rdv_id est fourni (nécessite une consultation en base).
+	 */
+	private static function balises_rdv( int $rdv_id, string $debut, string $service_nom = '' ): array {
+		$balises = [
+			'numero'  => '',
+			'prenom'  => '',
+			'nom'     => '',
+			'service' => $service_nom,
+			'date'    => date_i18n( 'l d F Y à H:i', strtotime( $debut ) ),
+		];
+
+		if ( $rdv_id ) {
+			global $wpdb;
+			$rdv_table      = $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv';
+			$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+			$row = $wpdb->get_row( $wpdb->prepare(
+				"SELECT r.numero_rdv, c.prenom, c.nom FROM {$rdv_table} r LEFT JOIN {$citoyens_table} c ON c.id = r.citoyen_id WHERE r.id = %d",
+				$rdv_id
+			) );
+			if ( $row ) {
+				$balises['numero'] = $row->numero_rdv;
+				$balises['prenom'] = $row->prenom ? GRC_Encryption::decrypt( $row->prenom ) : '';
+				$balises['nom']    = $row->nom ? GRC_Encryption::decrypt( $row->nom ) : '';
+			}
+		}
+
+		return $balises;
+	}
 	public static function send_statut_change( int $demande_id, string $email, string $nouveau_statut ) {
 		if ( ! self::notif_active( 'demande_statut_change_citoyen' ) ) {
 			return;
 		}
+
+		global $wpdb;
+		$demandes_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
+		$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+		$row = $wpdb->get_row( $wpdb->prepare(
+			"SELECT d.numero_suivi, d.titre, c.prenom, c.nom FROM {$demandes_table} d LEFT JOIN {$citoyens_table} c ON c.id = d.citoyen_id WHERE d.id = %d",
+			$demande_id
+		) );
+		$labels_courts = [ 'nouveau' => 'Nouveau', 'en_cours' => 'En cours', 'assigne' => 'Assigné', 'resolu' => 'Résolu', 'cloture' => 'Clôturé', 'reouvert' => 'Réouvert' ];
+		$balises = [
+			'numero' => $row->numero_suivi ?? '',
+			'titre'  => $row->titre ?? '',
+			'prenom' => $row && $row->prenom ? GRC_Encryption::decrypt( $row->prenom ) : '',
+			'nom'    => $row && $row->nom ? GRC_Encryption::decrypt( $row->nom ) : '',
+			'statut' => $labels_courts[ $nouveau_statut ] ?? $nouveau_statut,
+			'date'   => date_i18n( 'd/m/Y' ),
+		];
+		if ( self::envoyer_via_modele_personnalise( 'demande_statut_change_citoyen', $email, $balises ) ) {
+			return;
+		}
+
 		$labels = [
 			'en_cours' => 'est en cours de traitement',
 			'resolu'   => 'a été résolue',
@@ -254,6 +389,10 @@ class GRC_Notifications {
 		}
 
 		$recap = self::build_recap_demarche( $demarche_id );
+		$balises = self::balises_demarche( $demarche_id );
+		if ( self::envoyer_via_modele_personnalise( 'demarche_creee_citoyen', $email, $balises ) ) {
+			return;
+		}
 
 		$sujet = sprintf( '[Mairie de Berre-les-Alpes] Votre démarche %s a bien été reçue', $numero_dossier );
 		$corps = sprintf(
@@ -287,6 +426,11 @@ class GRC_Notifications {
 
 		$recap = self::build_recap_demarche( $demarche_id );
 
+		$balises = self::balises_demarche( $demarche_id );
+		if ( self::envoyer_via_modele_personnalise( 'demarche_statut_change_citoyen', $email, $balises ) ) {
+			return;
+		}
+
 		$sujet = sprintf( '[Mairie de Berre-les-Alpes] Mise à jour de votre démarche %s', $numero_dossier );
 		$corps = sprintf( "Bonjour,\n\nVotre démarche (référence %s) %s.\n\n%s", $numero_dossier, $label, $recap );
 
@@ -296,6 +440,32 @@ class GRC_Notifications {
 		$corps .= "\n\nCordialement,\nMairie de Berre-les-Alpes";
 
 		wp_mail( $email, $sujet, $corps );
+	}
+
+	/**
+	 * Construit les balises disponibles pour les emails automatiques liés à
+	 * une démarche (numéro, prénom, nom, statut, date).
+	 */
+	private static function balises_demarche( int $demarche_id ): array {
+		global $wpdb;
+		$demarches_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demarches';
+		$citoyens_table  = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
+
+		$row = $wpdb->get_row( $wpdb->prepare(
+			"SELECT d.numero_dossier, d.statut, c.prenom, c.nom FROM {$demarches_table} d
+			 LEFT JOIN {$citoyens_table} c ON c.id = d.citoyen_id WHERE d.id = %d",
+			$demarche_id
+		) );
+		$labels_courts = [ 'en_attente' => 'En attente', 'en_cours' => 'En cours', 'valide' => 'Validé', 'rejete' => 'Rejeté', 'complement_requis' => 'Complément requis' ];
+
+		return [
+			'numero' => $row->numero_dossier ?? '',
+			'prenom' => $row && $row->prenom ? GRC_Encryption::decrypt( $row->prenom ) : '',
+			'nom'    => $row && $row->nom ? GRC_Encryption::decrypt( $row->nom ) : '',
+			'statut' => $row ? ( $labels_courts[ $row->statut ] ?? $row->statut ) : '',
+			'date'   => date_i18n( 'd/m/Y' ),
+			'recap'  => self::build_recap_demarche( $demarche_id ),
+		];
 	}
 
 	/**

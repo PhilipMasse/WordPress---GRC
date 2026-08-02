@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.35.0 — Modèles personnalisables pour les emails automatiques
+
+- Dans **GRC Citoyenne → Modèles de messages**, un modèle peut désormais être associé à un **email automatique précis** (accusé de réception signalement, accusé de réception démarche, changement de statut, validation/refus de rendez-vous, rappel...) via un nouveau champ "Utiliser comme contenu d'un email automatique"
+- Un seul modèle peut être associé à un type d'email donné (sélectionner un nouveau modèle pour ce type retire automatiquement l'association de l'ancien)
+- Nouveau champ **Sujet** sur les modèles, utilisé pour l'objet de l'email quand le modèle est associé à une notification automatique
+- Les balises (`{numero}`, `{prenom}`, `{nom}`, `{statut}`, `{service}`, `{date}`, `{recap}`...) sont résolues avec les vraies données au moment de l'envoi
+- 8 emails automatiques concernés : accusé de réception (signalement, démarche, RDV), changement de statut (signalement, démarche), validation/refus/rappel de RDV
+- Sans modèle associé à un type donné, le texte par défaut intégré au plugin continue d'être utilisé — aucune rupture
+
 ## 0.34.0 — Balises de fusion, récapitulatifs, notifications bidirectionnelles et matrice d'activation
 
 ### Balises dans les modèles de messages
