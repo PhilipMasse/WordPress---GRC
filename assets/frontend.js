@@ -517,8 +517,38 @@
 			'</div>';
 		document.body.appendChild( overlay );
 
+		// Gestion du focus clavier (RGAA/WCAG 2.4.3, 2.1.2) : le focus doit
+		// entrer dans la boîte de dialogue à l'ouverture, y rester piégé tant
+		// qu'elle est affichée, et revenir à l'élément d'origine à la fermeture.
+		var elementAvantOuverture = document.activeElement;
+		var boiteDialogue = el( '.grc-2fa-prompt-box', overlay );
+		var elementsFocusables = boiteDialogue.querySelectorAll( 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])' );
+		var premierFocusable = elementsFocusables[ 0 ];
+		var dernierFocusable = elementsFocusables[ elementsFocusables.length - 1 ];
+
+		function piegerFocus( e ) {
+			if ( 'Tab' !== e.key ) {
+				return;
+			}
+			if ( e.shiftKey && document.activeElement === premierFocusable ) {
+				e.preventDefault();
+				dernierFocusable.focus();
+			} else if ( ! e.shiftKey && document.activeElement === dernierFocusable ) {
+				e.preventDefault();
+				premierFocusable.focus();
+			}
+		}
+		overlay.addEventListener( 'keydown', piegerFocus );
+
+		if ( premierFocusable ) {
+			premierFocusable.focus();
+		}
+
 		function fermerPrompt() {
 			overlay.remove();
+			if ( elementAvantOuverture && elementAvantOuverture.focus ) {
+				elementAvantOuverture.focus();
+			}
 		}
 
 		document.getElementById( 'grc-2fa-prompt-plus-tard' ).addEventListener( 'click', function () {
@@ -533,6 +563,10 @@
 			if ( panel ) {
 				panel.style.display = 'block';
 				panel.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+				var cible = el( '#grc-2fa-activer-email', bar );
+				if ( cible && cible.focus ) {
+					cible.focus();
+				}
 			}
 		} );
 

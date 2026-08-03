@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.41.2 — Accessibilité RGAA : piège de focus sur la pop-up 2FA
+
+- La pop-up d'incitation à la double authentification (ajoutée en 0.41.1) piège désormais le focus clavier tant qu'elle est ouverte (Tab/Shift+Tab ne permettent plus d'en sortir accidentellement), avec restauration du focus sur l'élément d'origine à la fermeture — conforme WCAG 2.4.3 / 2.1.2
+- Le focus se déplace automatiquement dans la pop-up à l'ouverture, et vers le bon champ du panneau profil lors du clic sur "Activer maintenant"
+- Vérification des associations label/champ et des contrastes sur l'ensemble des nouveaux formulaires (mot de passe oublié, réinitialisation, code 2FA) : déjà conformes
+
 ## 0.41.1 — Pop-up d'incitation à la double authentification
 
 - Une pop-up s'affiche désormais pour tout citoyen connecté n'ayant pas encore activé la double authentification, l'invitant à le faire
