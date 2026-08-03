@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.0 — Détection des signalements similaires à proximité
+
+- Nouvel endpoint `GET /demandes/proches` : détecte les signalements non résolus dans un rayon de 100 mètres autour d'un point (formule de Haversine calculée en SQL)
+- Dès que le citoyen positionne son repère sur la mini-carte du formulaire de signalement, un encart s'affiche automatiquement si des signalements similaires existent déjà à proximité (titre, statut, distance, date) — **informatif, non bloquant** : le citoyen peut tout de même envoyer son signalement si ce n'est pas le même problème
+- Objectif : réduire les doublons (ex : plusieurs signalements du même nid-de-poule) sans jamais empêcher un citoyen de signaler
+
 ## 0.37.0 — Recherche globale unifiée
 
 - Nouvel écran **GRC Citoyenne → Recherche** : un seul champ pour retrouver un signalement, une démarche, un rendez-vous ou un citoyen, sans naviguer entre plusieurs écrans

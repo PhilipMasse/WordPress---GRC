@@ -30,6 +30,16 @@ class GRC_REST_Demandes {
 			],
 		] );
 
+		register_rest_route( $ns, '/demandes/proches', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'proches' ],
+			'permission_callback' => '__return_true',
+			'args'                => [
+				'lat' => [ 'required' => true ],
+				'lng' => [ 'required' => true ],
+			],
+		] );
+
 		register_rest_route( $ns, '/demandes', [
 			'methods'             => 'GET',
 			'callback'            => [ __CLASS__, 'list_demandes' ],
@@ -141,6 +151,51 @@ class GRC_REST_Demandes {
 	/**
 	 * Suivi en mode invité : numéro de suivi + email (vérifié via hash, jamais en clair).
 	 */
+	/**
+	 * Retourne les signalements non résolus situés à proximité d'un point
+	 * donné (rayon fixe de 100 mètres), pour aider le citoyen à repérer un
+	 * doublon potentiel avant d'envoyer son propre signalement. Formule de
+	 * Haversine calculée directement en SQL (léger, pas besoin d'extension
+	 * géospatiale MySQL pour un rayon aussi restreint).
+	 */
+	public static function proches( WP_REST_Request $request ) {
+		$lat = (float) $request->get_param( 'lat' );
+		$lng = (float) $request->get_param( 'lng' );
+		if ( ! $lat || ! $lng ) {
+			return [];
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'demandes';
+		$rayon_metres = 100;
+
+		// 6371000 = rayon terrestre moyen en mètres.
+		$sql = "SELECT id, numero_suivi, titre, statut, created_at,
+				( 6371000 * acos(
+					cos( radians(%f) ) * cos( radians(latitude) ) * cos( radians(longitude) - radians(%f) )
+					+ sin( radians(%f) ) * sin( radians(latitude) )
+				) ) AS distance_m
+			FROM {$table}
+			WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+			AND statut NOT IN ('resolu', 'cloture')
+			HAVING distance_m <= %d
+			ORDER BY distance_m ASC
+			LIMIT 5";
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $lat, $lng, $lat, $rayon_metres ) );
+
+		$statut_labels = [ 'nouveau' => 'Nouveau', 'en_cours' => 'En cours', 'assigne' => 'Assigné', 'reouvert' => 'Réouvert' ];
+
+		return array_map( function ( $d ) use ( $statut_labels ) {
+			return [
+				'titre'      => $d->titre,
+				'statut'     => $statut_labels[ $d->statut ] ?? $d->statut,
+				'distance_m' => (int) round( $d->distance_m ),
+				'date'       => mysql2date( 'd/m/Y', $d->created_at ),
+			];
+		}, $rows );
+	}
+
 	public static function guest_lookup( WP_REST_Request $request ) {
 		if ( ! GRC_REST_API::check_rate_limit( 'guest_lookup', 10, 60 ) ) {
 			return new WP_Error( 'grc_rate_limited', 'Trop de tentatives.', [ 'status' => 429 ] );

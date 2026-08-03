@@ -140,6 +140,21 @@
 	left: 0;
 }
 
+#grc-signalements-proches {
+	background: #fff3cd;
+	border: 1px solid #ffe69c;
+	color: #664d03;
+	border-radius: 8px;
+	padding: 12px 14px;
+	margin-top: 10px;
+	font-size: 13px;
+}
+
+#grc-signalements-proches ul {
+	margin: 8px 0 8px 20px;
+	list-style: disc;
+}
+
 .grc-demandes-cards {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

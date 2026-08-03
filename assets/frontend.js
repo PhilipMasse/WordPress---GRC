@@ -692,6 +692,26 @@
 						}
 					} )
 					.catch( function () { /* Adresse non trouvée : le citoyen peut la saisir manuellement. */ } );
+
+				var prochesEl = el( '#grc-signalements-proches', form );
+				if ( prochesEl ) {
+					fetch( grcConfig.restUrl + '/demandes/proches?lat=' + latlng.lat + '&lng=' + latlng.lng )
+						.then( function ( res ) { return res.ok ? res.json() : []; } )
+						.then( function ( proches ) {
+							if ( ! proches || ! proches.length ) {
+								prochesEl.style.display = 'none';
+								return;
+							}
+							var html = '<p><strong>⚠️ ' + proches.length + ' signalement(s) déjà en cours à proximité (moins de 100 m)</strong> — vérifiez qu\'il ne s\'agit pas du même problème avant d\'envoyer :</p><ul>';
+							proches.forEach( function ( p ) {
+								html += '<li>' + p.titre + ' — ' + p.statut + ', à ' + p.distance_m + ' m (signalé le ' + p.date + ')</li>';
+							} );
+							html += '</ul><p class="grc-hint">Vous pouvez tout de même envoyer votre signalement si ce n\'est pas le même problème.</p>';
+							prochesEl.innerHTML = html;
+							prochesEl.style.display = 'block';
+						} )
+						.catch( function () { prochesEl.style.display = 'none'; } );
+				}
 			}, 600 );
 		}
 
