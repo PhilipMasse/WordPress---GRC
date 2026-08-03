@@ -86,3 +86,4 @@ require_once __DIR__ . '/../includes/class-grc-encryption.php';
 require_once __DIR__ . '/../includes/class-grc-jwt.php';
 require_once __DIR__ . '/../includes/class-grc-captcha.php';
 require_once __DIR__ . '/../includes/class-grc-citoyen-helper.php';
+require_once __DIR__ . '/../includes/class-grc-totp.php';

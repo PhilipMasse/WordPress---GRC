@@ -515,6 +515,24 @@
 					'<button type="submit" class="grc-btn-submit">Changer le mot de passe</button>' +
 					'<div class="grc-form-message" style="display:none;"></div>' +
 				'</form>' +
+				'<hr style="margin:16px 0;border:none;border-top:1px solid #ddd;">' +
+				'<div id="grc-2fa-section">' +
+					'<h4>Double authentification</h4>' +
+					'<p id="grc-2fa-statut" class="grc-hint">Vérification du statut...</p>' +
+					'<div id="grc-2fa-choix" style="display:none;">' +
+						'<button type="button" id="grc-2fa-activer-email" class="button">Activer par email</button> ' +
+						'<button type="button" id="grc-2fa-activer-totp" class="button">Activer par application</button>' +
+					'</div>' +
+					'<div id="grc-2fa-totp-setup" style="display:none;margin-top:10px;">' +
+						'<p class="grc-hint">Scannez ce QR code avec votre application d\'authentification (Google Authenticator, Authy...), puis saisissez le code affiché pour confirmer.</p>' +
+						'<div id="grc-2fa-qrcode" style="margin:10px 0;"></div>' +
+						'<p class="grc-hint">Ou saisissez cette clé manuellement : <code id="grc-2fa-secret-manuel"></code></p>' +
+						'<input type="text" id="grc-2fa-totp-code" inputmode="numeric" placeholder="123456" style="max-width:120px;">' +
+						'<button type="button" id="grc-2fa-totp-confirmer" class="button button-primary">Confirmer l\'activation</button>' +
+					'</div>' +
+					'<button type="button" id="grc-2fa-desactiver" class="button" style="display:none;color:#b32d2e;">Désactiver la double authentification</button>' +
+					'<div id="grc-2fa-message" class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>' +
+				'</div>' +
 			'</div>';
 
 		document.body.insertBefore( bar, document.body.firstChild );
@@ -608,6 +626,101 @@
 					e.target.reset();
 				} )
 				.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+		} );
+
+		// --- Double authentification ------------------------------------
+		var statutEl = el( '#grc-2fa-statut', bar );
+		var choixEl = el( '#grc-2fa-choix', bar );
+		var totpSetupEl = el( '#grc-2fa-totp-setup', bar );
+		var desactiverBtn = el( '#grc-2fa-desactiver', bar );
+		var msg2fa = el( '#grc-2fa-message', bar );
+
+		function rafraichir2faStatut() {
+			authFetch( grcConfig.restUrl + '/citoyen/me' )
+				.then( function ( res ) { return res.ok ? res.json() : null; } )
+				.then( function ( me ) {
+					if ( ! me ) { return; }
+					totpSetupEl.style.display = 'none';
+					if ( me.two_factor_method ) {
+						var label = 'totp' === me.two_factor_method ? 'application d\'authentification' : 'email';
+						statutEl.textContent = '✅ Double authentification active (' + label + ').';
+						choixEl.style.display = 'none';
+						desactiverBtn.style.display = 'inline-block';
+					} else {
+						statutEl.textContent = 'Double authentification non activée. Recommandée pour renforcer la sécurité de votre compte.';
+						choixEl.style.display = 'block';
+						desactiverBtn.style.display = 'none';
+					}
+				} )
+				.catch( function () { statutEl.textContent = ''; } );
+		}
+		rafraichir2faStatut();
+
+		el( '#grc-2fa-activer-email', bar ).addEventListener( 'click', function () {
+			authFetch( grcConfig.restUrl + '/citoyen/2fa/email/activer', { method: 'POST' } )
+				.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+				.then( function ( result ) {
+					if ( ! result.ok ) { throw new Error( result.data.message || 'Erreur.' ); }
+					showMessage( msg2fa, result.data.message, 'success' );
+					rafraichir2faStatut();
+				} )
+				.catch( function ( err ) { showMessage( msg2fa, err.message, 'error' ); } );
+		} );
+
+		el( '#grc-2fa-activer-totp', bar ).addEventListener( 'click', function () {
+			loadQrcodeThenSetupTotp();
+		} );
+
+		function loadQrcodeThenSetupTotp() {
+			if ( typeof QRCode !== 'undefined' ) {
+				demarrerSetupTotp();
+				return;
+			}
+			var script = document.createElement( 'script' );
+			script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+			script.onload = demarrerSetupTotp;
+			document.body.appendChild( script );
+		}
+
+		function demarrerSetupTotp() {
+			authFetch( grcConfig.restUrl + '/citoyen/2fa/totp/demarrer', { method: 'POST' } )
+				.then( function ( res ) { return res.json(); } )
+				.then( function ( data ) {
+					totpSetupEl.style.display = 'block';
+					el( '#grc-2fa-secret-manuel', bar ).textContent = data.secret;
+					var qrEl = el( '#grc-2fa-qrcode', bar );
+					qrEl.innerHTML = '';
+					new QRCode( qrEl, { text: data.uri, width: 180, height: 180 } );
+				} )
+				.catch( function () { showMessage( msg2fa, 'Impossible de démarrer l\'activation.', 'error' ); } );
+		}
+
+		el( '#grc-2fa-totp-confirmer', bar ).addEventListener( 'click', function () {
+			var code = el( '#grc-2fa-totp-code', bar ).value;
+			authFetch( grcConfig.restUrl + '/citoyen/2fa/totp/confirmer', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify( { code: code } )
+			} )
+				.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+				.then( function ( result ) {
+					if ( ! result.ok ) { throw new Error( result.data.message || 'Code invalide.' ); }
+					showMessage( msg2fa, result.data.message, 'success' );
+					rafraichir2faStatut();
+				} )
+				.catch( function ( err ) { showMessage( msg2fa, err.message, 'error' ); } );
+		} );
+
+		desactiverBtn.addEventListener( 'click', function () {
+			if ( ! confirm( 'Désactiver la double authentification ? Votre compte sera moins protégé.' ) ) { return; }
+			authFetch( grcConfig.restUrl + '/citoyen/2fa/desactiver', { method: 'POST' } )
+				.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+				.then( function ( result ) {
+					if ( ! result.ok ) { throw new Error( result.data.message || 'Erreur.' ); }
+					showMessage( msg2fa, result.data.message, 'success' );
+					rafraichir2faStatut();
+				} )
+				.catch( function ( err ) { showMessage( msg2fa, err.message, 'error' ); } );
 		} );
 	}
 
@@ -1562,9 +1675,35 @@
 		// ---- Connexion ----
 		var loginForm = panels.login;
 		if ( loginForm ) {
+			var pendingToken2fa = null;
+
 			loginForm.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
 				var msgBox = el( '.grc-form-message', loginForm );
+
+				if ( pendingToken2fa ) {
+					// Second temps : le mot de passe a déjà été validé, on
+					// envoie maintenant le code de vérification.
+					fetch( grcConfig.restUrl + '/citoyen/2fa/verifier', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify( {
+							pending_token: pendingToken2fa,
+							code: el( '#grc-login-2fa-code', loginForm ).value
+						} )
+					} )
+						.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+						.then( function ( result ) {
+							if ( ! result.ok ) {
+								throw new Error( result.data.message || 'Code invalide.' );
+							}
+							storeSession( result.data );
+							showConnecteView();
+						} )
+						.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+					return;
+				}
+
 				fetch( grcConfig.restUrl + '/citoyen/login', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -1578,8 +1717,81 @@
 						if ( ! result.ok ) {
 							throw new Error( result.data.message || 'Identifiants invalides.' );
 						}
+						if ( result.data.requires_2fa ) {
+							pendingToken2fa = result.data.pending_token;
+							el( '#grc-login-email', loginForm ).disabled = true;
+							el( '#grc-login-password', loginForm ).disabled = true;
+							var champ2fa = el( '#grc-login-2fa-field', loginForm );
+							champ2fa.style.display = 'block';
+							var hint = el( '#grc-login-2fa-hint', loginForm );
+							hint.textContent = 'email' === result.data.method
+								? 'Un code vous a été envoyé par email.'
+								: 'Saisissez le code affiché par votre application d\'authentification.';
+							showMessage( msgBox, 'Vérification supplémentaire requise.', 'success' );
+							return;
+						}
 						storeSession( result.data );
 						showConnecteView();
+					} )
+					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
+			} );
+		}
+
+		// ---- Mot de passe oublié ----
+		var mdpOublieBtn = el( '#grc-mdp-oublie-lien' );
+		var mdpOublieForm = el( '#grc-mdp-oublie-form' );
+		var retourLoginBtn = el( '#grc-retour-login-lien' );
+		if ( mdpOublieBtn && mdpOublieForm && loginForm ) {
+			mdpOublieBtn.addEventListener( 'click', function () {
+				loginForm.style.display = 'none';
+				mdpOublieForm.style.display = 'block';
+			} );
+			if ( retourLoginBtn ) {
+				retourLoginBtn.addEventListener( 'click', function () {
+					mdpOublieForm.style.display = 'none';
+					loginForm.style.display = 'block';
+				} );
+			}
+			mdpOublieForm.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var msgBox = el( '.grc-form-message', mdpOublieForm );
+				fetch( grcConfig.restUrl + '/citoyen/mot-de-passe-oublie', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( { email: el( '#grc-mdp-oublie-email' ).value } )
+				} )
+					.then( function ( res ) { return res.json(); } )
+					.then( function ( data ) { showMessage( msgBox, data.message, 'success' ); } )
+					.catch( function () { showMessage( msgBox, 'Erreur lors de l\'envoi.', 'error' ); } );
+			} );
+		}
+
+		// ---- Réinitialisation du mot de passe (arrivée via lien email) ----
+		var resetForm = el( '#grc-reset-mdp-form' );
+		var resetTokenUrl = new URLSearchParams( window.location.search ).get( 'reset_token' );
+		if ( resetForm && resetTokenUrl ) {
+			var authFormsWrapper = el( '#grc-auth-forms' );
+			if ( authFormsWrapper ) {
+				authFormsWrapper.querySelectorAll( '.grc-auth-panel' ).forEach( function ( p ) { p.style.display = 'none'; } );
+				var tabsWrapper = el( '.grc-auth-tabs' );
+				if ( tabsWrapper ) { tabsWrapper.style.display = 'none'; }
+			}
+			resetForm.style.display = 'block';
+			resetForm.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var msgBox = el( '.grc-form-message', resetForm );
+				fetch( grcConfig.restUrl + '/citoyen/reinitialiser-mot-de-passe', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( { token: resetTokenUrl, mot_de_passe: el( '#grc-reset-mdp-nouveau' ).value } )
+				} )
+					.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
+					.then( function ( result ) {
+						if ( ! result.ok ) {
+							throw new Error( result.data.message || 'Erreur.' );
+						}
+						showMessage( msgBox, result.data.message + ' Redirection...', 'success' );
+						setTimeout( function () { window.location.href = window.location.pathname; }, 2000 );
 					} )
 					.catch( function ( err ) { showMessage( msgBox, err.message, 'error' ); } );
 			} );

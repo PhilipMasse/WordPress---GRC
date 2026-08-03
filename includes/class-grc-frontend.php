@@ -91,7 +91,7 @@ class GRC_Frontend {
 		] );
 	}
 
-	private static function page_url( string $option_name ): ?string {
+	public static function page_url( string $option_name ): ?string {
 		$page_id = (int) get_option( $option_name );
 		return $page_id ? get_permalink( $page_id ) : null;
 	}
@@ -200,7 +200,34 @@ class GRC_Frontend {
 						<label for="grc-login-password">Mot de passe</label>
 						<input type="password" id="grc-login-password" name="password" required>
 					</div>
+					<div id="grc-login-2fa-field" class="grc-field" style="display:none;">
+						<label for="grc-login-2fa-code">Code de vérification</label>
+						<input type="text" id="grc-login-2fa-code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+						<p id="grc-login-2fa-hint" class="grc-hint"></p>
+					</div>
 					<button type="submit" class="grc-btn-submit">Se connecter</button>
+					<p><button type="button" id="grc-mdp-oublie-lien" class="grc-btn-link">Mot de passe oublié ?</button></p>
+					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
+				</form>
+
+				<form id="grc-mdp-oublie-form" class="grc-form grc-auth-panel" style="display:none;">
+					<p class="grc-hint">Indiquez votre email : si un compte existe, un lien de réinitialisation vous sera envoyé.</p>
+					<div class="grc-field">
+						<label for="grc-mdp-oublie-email">Email</label>
+						<input type="email" id="grc-mdp-oublie-email" required>
+					</div>
+					<button type="submit" class="grc-btn-submit">Envoyer le lien de réinitialisation</button>
+					<p><button type="button" id="grc-retour-login-lien" class="grc-btn-link">← Retour à la connexion</button></p>
+					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
+				</form>
+
+				<form id="grc-reset-mdp-form" class="grc-form grc-auth-panel" style="display:none;">
+					<p class="grc-hint">Choisissez votre nouveau mot de passe (8 caractères minimum).</p>
+					<div class="grc-field">
+						<label for="grc-reset-mdp-nouveau">Nouveau mot de passe</label>
+						<input type="password" id="grc-reset-mdp-nouveau" minlength="8" required>
+					</div>
+					<button type="submit" class="grc-btn-submit">Valider le nouveau mot de passe</button>
 					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 				</form>
 

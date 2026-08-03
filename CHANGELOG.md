@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.41.0 — Mot de passe oublié et double authentification (citoyens)
+
+### Mot de passe oublié
+- Nouveau lien "Mot de passe oublié ?" sur le formulaire de connexion citoyen
+- Email avec lien de réinitialisation valable 1 heure, à usage unique (token à 32 octets, haché en base)
+- Réponse volontairement identique que le compte existe ou non, pour ne pas permettre de déduire quels emails sont enregistrés
+- Toute session existante est révoquée à la réinitialisation, par précaution
+
+### Double authentification (citoyens)
+- Le citoyen choisit sa méthode depuis "Mon profil" : **par email** (code à usage unique envoyé à la connexion) ou **par application d'authentification** (TOTP — Google Authenticator, Authy, FreeOTP...)
+- Implémentation TOTP conforme RFC 6238, **validée contre le vecteur de test officiel**, sans dépendance externe (`GRC_TOTP`, 8 tests dédiés)
+- QR code généré **entièrement côté client** (bibliothèque chargée en CDN) — le secret TOTP ne transite jamais vers un service tiers
+- Connexion en deux temps si la 2FA est active : mot de passe puis code de vérification, via un token temporaire de 5 minutes non utilisable pour l'API
+
+### Suite de tests
+- 37 tests désormais (contre 29), avec la couverture complète de `GRC_TOTP`
+
 ## 0.40.0 — Export / Import de configuration
 
 - Nouvel écran **GRC Citoyenne → Export / Import**

@@ -400,6 +400,34 @@
 	border-bottom: 1px solid #ddd;
 }
 
+#grc-2fa-section h4 {
+	margin: 0 0 6px;
+	font-size: 14px;
+}
+
+#grc-2fa-choix .button {
+	margin-right: 8px;
+}
+
+#grc-2fa-totp-setup {
+	background: #f5f7fa;
+	border-radius: 8px;
+	padding: 12px 14px;
+}
+
+#grc-2fa-qrcode {
+	display: inline-block;
+	background: #fff;
+	padding: 8px;
+	border-radius: 6px;
+}
+
+#grc-login-2fa-field {
+	background: #eef4fa;
+	border-radius: 8px;
+	padding: 10px 12px;
+}
+
 .grc-demarche-toggle-thread {
 	margin-top: 10px;
 }
