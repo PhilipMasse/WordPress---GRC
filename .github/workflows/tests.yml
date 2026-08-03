@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: sodium, mbstring, gd
+          tools: phpunit
+
+      - name: Vérifier la syntaxe PHP (lint)
+        run: |
+          find . -name "*.php" -not -path "*/plugin-update-checker/*" -not -path "*/lib/*" -not -path "*/vendor/*" \
+            -exec php -l {} \; | grep -v "No syntax errors" && exit 1 || true
+
+      - name: Exécuter les tests unitaires
+        run: phpunit
