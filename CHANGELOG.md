@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.40.0 — Export / Import de configuration
+
+- Nouvel écran **GRC Citoyenne → Export / Import**
+- **Export** : génère un fichier JSON contenant services, catégories de signalement, types de démarches (avec leurs champs), modèles de messages, et réglages généraux (délais, session, matrice de notifications, fournisseur de captcha choisi)
+- **Import** : charge un fichier JSON exporté depuis un autre environnement — les éléments existants (identifiés par nom ou slug) sont mis à jour, les nouveaux sont créés, rien n'est jamais supprimé automatiquement
+- Les catégories avec sous-catégories sont gérées correctement (résolution du parent par nom, en deux passes)
+- **Volontairement exclus** de l'export/import : toutes les données citoyennes (demandes, démarches, RDV, citoyens), les clés de chiffrement/JWT, les identifiants SMTP et les clés secrètes des fournisseurs de captcha — ces éléments restent propres à chaque environnement
+- Cas d'usage typique : configurer les catégories/types de démarches/modèles sur `test3.berrelesalpes.fr`, exporter, puis importer directement en production sans ressaisie manuelle
+
 ## 0.39.0 — Tests automatisés (PHPUnit)
 
 - Suite de **29 tests unitaires** (54 assertions) couvrant les points les plus sensibles du plugin :

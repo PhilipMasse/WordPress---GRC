@@ -18,6 +18,7 @@ class GRC_Admin {
 		GRC_Admin_Citoyens::init();
 		GRC_Admin_Stats::init();
 		GRC_Admin_Modeles::init();
+		GRC_Admin_Export_Import::init();
 	}
 
 	/**
@@ -92,6 +93,7 @@ class GRC_Admin {
 		add_submenu_page( 'grc-dashboard', 'Réglages', 'Réglages', 'grc_manage_settings', 'grc-settings', [ __CLASS__, 'render_settings' ] );
 		add_submenu_page( 'grc-dashboard', 'Modèles de messages', 'Modèles de messages', 'grc_manage_demandes', 'grc-modeles', [ __CLASS__, 'render_modeles' ] );
 		add_submenu_page( 'grc-dashboard', 'Journal d\'audit', 'Journal d\'audit', 'grc_view_all', 'grc-audit', [ __CLASS__, 'render_audit' ] );
+		add_submenu_page( 'grc-dashboard', 'Export / Import', 'Export / Import', 'grc_manage_settings', 'grc-export-import', [ __CLASS__, 'render_export_import' ] );
 	}
 
 	public static function enqueue_assets( $hook ) {
@@ -114,6 +116,10 @@ class GRC_Admin {
 
 	public static function render_recherche() {
 		GRC_Admin_Recherche::render();
+	}
+
+	public static function render_export_import() {
+		GRC_Admin_Export_Import::render();
 	}
 
 	public static function render_dashboard() {
