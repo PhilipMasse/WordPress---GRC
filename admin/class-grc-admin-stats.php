@@ -137,10 +137,10 @@ class GRC_Admin_Stats {
 			'en_attente' => 'En attente', 'confirme' => 'Confirmé', 'refuse' => 'Refusé', 'annule' => 'Annulé',
 		];
 		$couleurs_statut = [
-			'nouveau' => '#2D6AB0', 'en_cours' => '#DEA128', 'assigne' => '#DEA128',
-			'resolu' => '#587526', 'cloture' => '#777', 'reouvert' => '#b32d2e',
+			'nouveau' => '#2D6AB0', 'en_cours' => '#8a6414', 'assigne' => '#8a6414',
+			'resolu' => '#587526', 'cloture' => '#666', 'reouvert' => '#b32d2e',
 			'en_attente' => '#2D6AB0', 'valide' => '#587526', 'confirme' => '#587526',
-			'rejete' => '#b32d2e', 'refuse' => '#b32d2e', 'annule' => '#777', 'complement_requis' => '#DEA128',
+			'rejete' => '#b32d2e', 'refuse' => '#b32d2e', 'annule' => '#666', 'complement_requis' => '#8a6414',
 		];
 
 		$to_chart_data = function ( $rows, array $labels_map, array $couleurs ) {
@@ -287,7 +287,7 @@ class GRC_Admin_Stats {
 		document.addEventListener( 'DOMContentLoaded', function () {
 			if ( typeof Chart === 'undefined' ) { return; }
 
-			var GRC_COLORS = { blue: '#2D6AB0', green: '#587526', gold: '#DEA128' };
+			var GRC_COLORS = { blue: '#2D6AB0', green: '#587526', gold: '#8a6414' };
 
 			new Chart( document.getElementById( 'grc-chart-evolution' ), {
 				type: 'line',

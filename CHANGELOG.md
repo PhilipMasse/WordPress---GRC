@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.42.1 — Accessibilité RGAA : balayage des contrastes + hiérarchie des titres
+
+### Contrastes
+- Badge "Clôturé" (front) : gris #777 sur blanc était à 4.48, sous le seuil requis de 4.5 pour du texte de petite taille — assombri à #666 (5.74)
+- Badges admin "En cours"/"Assigné" (fonction distincte, dupliquée par rapport au CSS déjà corrigé) : texte blanc sur fond doré à 2.27 — corrigé avec le même texte foncé que côté front
+- Couleurs des graphiques et légendes de la page Statistiques (doré) : 2.27 contre le fond blanc, sous le seuil non-texte de 3:1 (WCAG 1.4.11) — remplacées par une nuance plus foncée déjà utilisée ailleurs dans le plugin
+
+### Hiérarchie des titres
+- Le panneau "Mon profil" passait directement à un `<h4>` ("Double authentification") sans titre parent — ajout d'un `<h3>Mon profil</h3>` en tête du panneau pour une hiérarchie correcte
+
 ## 0.42.0 — Accessibilité RGAA : navigation clavier de la bannière/panneau profil
 
 - Bouton "Mon profil" : `aria-expanded`/`aria-controls` synchronisés avec l'état ouvert/fermé, annoncés correctement aux lecteurs d'écran

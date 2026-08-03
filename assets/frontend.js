@@ -607,6 +607,7 @@
 				'<button type="button" id="grc-global-logout-btn" class="grc-btn-link">Se déconnecter</button>' +
 			'</div>' +
 			'<div id="grc-global-profil-panel" class="grc-global-profil-panel" role="region" aria-label="Mon profil" tabindex="-1" style="display:none;">' +
+				'<h3>Mon profil</h3>' +
 				'<form id="grc-global-profil-form" class="grc-form">' +
 					'<div class="grc-field"><label>Prénom</label><input type="text" id="grc-gb-prenom"></div>' +
 					'<div class="grc-field"><label>Nom</label><input type="text" id="grc-gb-nom"></div>' +

@@ -264,7 +264,7 @@
 .grc-badge--en_cours,
 .grc-badge--assigne { background: #DEA128; color: #4a3200; }
 .grc-badge--resolu { background: #587526; }
-.grc-badge--cloture { background: #777; }
+.grc-badge--cloture { background: #666; }
 .grc-badge--reouvert { background: #b32d2e; }
 .grc-badge--en_attente { background: #2D6AB0; }
 .grc-badge--valide { background: #587526; }

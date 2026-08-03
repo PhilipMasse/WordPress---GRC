@@ -260,6 +260,10 @@ class GRC_Admin_Demandes {
 			'cloture'  => '#666',
 			'reouvert' => '#b32d2e',
 		];
+		$text_colors = [
+			'en_cours' => '#4a3200',
+			'assigne'  => '#4a3200',
+		];
 		$labels = [
 			'nouveau'  => 'Nouveau',
 			'en_cours' => 'En cours',
@@ -269,10 +273,12 @@ class GRC_Admin_Demandes {
 			'reouvert' => 'Réouvert',
 		];
 		$color = $colors[ $statut ] ?? '#666';
+		$text_color = $text_colors[ $statut ] ?? '#fff';
 		$label = $labels[ $statut ] ?? $statut;
 		printf(
-			'<span style="background:%s;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;">%s</span>',
+			'<span style="background:%s;color:%s;padding:2px 10px;border-radius:12px;font-size:12px;">%s</span>',
 			esc_attr( $color ),
+			esc_attr( $text_color ),
 			esc_html( $label )
 		);
 	}
