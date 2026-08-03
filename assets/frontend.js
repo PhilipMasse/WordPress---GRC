@@ -484,6 +484,75 @@
 		} );
 	}
 
+	/**
+	 * Affiche une pop-up incitant le citoyen à activer la double
+	 * authentification s'il ne l'a pas encore fait — non bloquante, avec un
+	 * délai de rappel de 7 jours si l'utilisateur choisit "Plus tard".
+	 */
+	function maybeAfficherPromptDeuxFacteurs( me ) {
+		if ( me.two_factor_method ) {
+			return; // Déjà activée, rien à faire.
+		}
+		if ( document.getElementById( 'grc-2fa-prompt-overlay' ) ) {
+			return; // Déjà affichée dans cette page.
+		}
+
+		var cleRappel = 'grc_2fa_prompt_reporte_jusqua';
+		var reporteJusqua = parseInt( localStorage.getItem( cleRappel ) || '0', 10 );
+		if ( Date.now() < reporteJusqua ) {
+			return;
+		}
+
+		var overlay = document.createElement( 'div' );
+		overlay.id = 'grc-2fa-prompt-overlay';
+		overlay.className = 'grc-2fa-prompt-overlay';
+		overlay.innerHTML =
+			'<div class="grc-2fa-prompt-box" role="dialog" aria-modal="true" aria-labelledby="grc-2fa-prompt-titre">' +
+				'<h3 id="grc-2fa-prompt-titre">🔒 Protégez votre compte</h3>' +
+				'<p>Votre espace citoyen n\'est protégé que par un mot de passe. Activez la double authentification (par email ou application) pour renforcer sa sécurité — cela prend moins d\'une minute.</p>' +
+				'<div class="grc-2fa-prompt-actions">' +
+					'<button type="button" id="grc-2fa-prompt-activer" class="grc-btn-submit">Activer maintenant</button>' +
+					'<button type="button" id="grc-2fa-prompt-plus-tard" class="grc-btn-link">Plus tard</button>' +
+				'</div>' +
+			'</div>';
+		document.body.appendChild( overlay );
+
+		function fermerPrompt() {
+			overlay.remove();
+		}
+
+		document.getElementById( 'grc-2fa-prompt-plus-tard' ).addEventListener( 'click', function () {
+			localStorage.setItem( cleRappel, String( Date.now() + 7 * 24 * 60 * 60 * 1000 ) );
+			fermerPrompt();
+		} );
+
+		document.getElementById( 'grc-2fa-prompt-activer' ).addEventListener( 'click', function () {
+			fermerPrompt();
+			var bar = document.getElementById( 'grc-global-bar' );
+			var panel = bar ? el( '#grc-global-profil-panel', bar ) : null;
+			if ( panel ) {
+				panel.style.display = 'block';
+				panel.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+			}
+		} );
+
+		// Fermeture au clic en dehors de la boîte, ou à la touche Échap —
+		// équivaut à "Plus tard" (ne bloque jamais l'accès au site).
+		overlay.addEventListener( 'click', function ( e ) {
+			if ( e.target === overlay ) {
+				localStorage.setItem( cleRappel, String( Date.now() + 7 * 24 * 60 * 60 * 1000 ) );
+				fermerPrompt();
+			}
+		} );
+		document.addEventListener( 'keydown', function gestionEchap( e ) {
+			if ( 'Escape' === e.key && document.getElementById( 'grc-2fa-prompt-overlay' ) ) {
+				localStorage.setItem( cleRappel, String( Date.now() + 7 * 24 * 60 * 60 * 1000 ) );
+				fermerPrompt();
+				document.removeEventListener( 'keydown', gestionEchap );
+			}
+		} );
+	}
+
 	function initGlobalCitoyenBar() {
 		if ( ! isCitoyenLoggedIn() ) {
 			return;
@@ -571,6 +640,7 @@
 				el( '#grc-gb-nom', bar ).value = me.nom || '';
 				el( '#grc-gb-email', bar ).value = me.email || '';
 				el( '#grc-gb-telephone', bar ).value = me.telephone || '';
+				maybeAfficherPromptDeuxFacteurs( me );
 			} );
 
 		el( '#grc-global-profil-btn', bar ).addEventListener( 'click', function () {

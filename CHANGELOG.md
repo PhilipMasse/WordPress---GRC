@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.41.1 — Pop-up d'incitation à la double authentification
+
+- Une pop-up s'affiche désormais pour tout citoyen connecté n'ayant pas encore activé la double authentification, l'invitant à le faire
+- **Non bloquante** : "Activer maintenant" ouvre directement la section 2FA du profil, "Plus tard" (ou clic en dehors, ou touche Échap) la referme et reporte le rappel de 7 jours (mémorisé dans le navigateur, pas de sollicitation à chaque page)
+- Ne s'affiche jamais une fois la double authentification activée
+
 ## 0.41.0 — Mot de passe oublié et double authentification (citoyens)
 
 ### Mot de passe oublié
