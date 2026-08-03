@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.37.0 — Recherche globale unifiée
+
+- Nouvel écran **GRC Citoyenne → Recherche** : un seul champ pour retrouver un signalement, une démarche, un rendez-vous ou un citoyen, sans naviguer entre plusieurs écrans
+- **Correspondance exacte** (numéro de suivi `GRC-...`, de dossier `DEM-...`, de rendez-vous `RDV-...`, numéro citoyen `CIT-...`, ou email exact) → redirection directe vers la fiche concernée
+- **Recherche texte libre** : titre de signalement, type de démarche, motif ou service de rendez-vous — résultats groupés par catégorie avec liens directs
+- La recherche par nom reste volontairement indisponible (noms chiffrés en base) ; la note l'explique directement dans l'écran
+
 ## 0.36.0 — Matrice en onglet dédié (vraie grille) + création rapide des modèles par défaut
 
 ### Matrice des notifications

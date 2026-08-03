@@ -81,6 +81,7 @@ class GRC_Admin {
 		);
 
 		add_submenu_page( 'grc-dashboard', 'Tableau de bord', 'Tableau de bord', 'grc_manage_demandes', 'grc-dashboard', [ __CLASS__, 'render_dashboard' ] );
+		add_submenu_page( 'grc-dashboard', 'Recherche', 'Recherche', 'grc_manage_demandes', 'grc-recherche', [ __CLASS__, 'render_recherche' ] );
 		add_submenu_page( 'grc-dashboard', 'Signalements', 'Signalements', 'grc_manage_demandes', 'grc-demandes', [ __CLASS__, 'render_demandes' ] );
 		add_submenu_page( 'grc-dashboard', 'Citoyens', 'Citoyens', 'grc_manage_demandes', 'grc-citoyens', [ __CLASS__, 'render_citoyens' ] );
 		add_submenu_page( 'grc-dashboard', 'Rendez-vous', 'Rendez-vous', 'grc_manage_demandes', 'grc-rdv', [ __CLASS__, 'render_rdv' ] );
@@ -109,6 +110,10 @@ class GRC_Admin {
 			wp_enqueue_script( 'grc-leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js', [], '1.9.4', true );
 			wp_enqueue_style( 'grc-leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css', [], '1.9.4' );
 		}
+	}
+
+	public static function render_recherche() {
+		GRC_Admin_Recherche::render();
 	}
 
 	public static function render_dashboard() {
