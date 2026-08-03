@@ -1,0 +1,12 @@
+{
+    "name": "mairie-berre-les-alpes/gestion-relation-citoyenne",
+    "description": "Plugin WordPress de Gestion de la Relation Citoyenne (GRC) - Mairie de Berre-les-Alpes",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "require-dev": {
+        "phpunit/phpunit": "^10 || ^9"
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}

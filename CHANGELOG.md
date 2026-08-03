@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.39.0 — Tests automatisés (PHPUnit)
+
+- Suite de **29 tests unitaires** (54 assertions) couvrant les points les plus sensibles du plugin :
+  - `GRC_Encryption` : aller-retour chiffrement/déchiffrement, non-déterminisme du chiffrement, déterminisme du hash de recherche, robustesse face aux données corrompues
+  - `GRC_JWT` : émission/vérification, expiration, rejet d'un token falsifié ou signé avec un autre secret
+  - `GRC_Captcha` : génération, vérification, rejet d'un token falsifié ou malformé
+  - `GRC_Citoyen_Helper` : formatage et extraction du numéro citoyen
+- Tests unitaires en isolation (`tests/bootstrap.php` fournit des substituts minimalistes aux quelques fonctions WordPress nécessaires) — aucune base de données requise, exécutables avec un simple `phpunit` local
+- `composer.json` (dépendance de dev `phpunit/phpunit`) + `phpunit.xml` + `tests/README.md` documentant la portée et les limites de la suite
+- Nouveau workflow **GitHub Actions** (`.github/workflows/tests.yml`) : exécute automatiquement le lint PHP et la suite de tests sur PHP 8.1/8.2/8.3 à chaque push et pull request
+
 ## 0.38.0 — Détection des signalements similaires à proximité
 
 - Nouvel endpoint `GET /demandes/proches` : détecte les signalements non résolus dans un rayon de 100 mètres autour d'un point (formule de Haversine calculée en SQL)
