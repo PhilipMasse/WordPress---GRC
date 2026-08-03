@@ -400,6 +400,11 @@
 	border-bottom: 1px solid #ddd;
 }
 
+.grc-global-profil-panel:focus-visible {
+	outline: 2px solid #2D6AB0;
+	outline-offset: -2px;
+}
+
 #grc-2fa-section h4 {
 	margin: 0 0 6px;
 	font-size: 14px;

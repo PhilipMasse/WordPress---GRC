@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.42.0 — Accessibilité RGAA : navigation clavier de la bannière/panneau profil
+
+- Bouton "Mon profil" : `aria-expanded`/`aria-controls` synchronisés avec l'état ouvert/fermé, annoncés correctement aux lecteurs d'écran
+- Le focus se déplace automatiquement dans le panneau à l'ouverture, et revient sur le bouton "Mon profil" à la fermeture
+- **Touche Échap** pour fermer le panneau profil, avec restitution du focus — cohérent avec le comportement standard attendu de ce type de composant
+- Lien de navigation actif marqué `aria-current="page"` (en plus de la classe CSS) pour une identification fiable par les lecteurs d'écran
+- Nav de la barre citoyenne explicitement libellée (`aria-label`) pour la distinguer d'une éventuelle navigation du thème
+- QR code de configuration TOTP marqué décoratif (`aria-hidden`) : un équivalent texte (la clé à saisir manuellement) est déjà fourni juste à côté
+
 ## 0.41.2 — Accessibilité RGAA : piège de focus sur la pop-up 2FA
 
 - La pop-up d'incitation à la double authentification (ajoutée en 0.41.1) piège désormais le focus clavier tant qu'elle est ouverte (Tab/Shift+Tab ne permettent plus d'en sortir accidentellement), avec restauration du focus sur l'élément d'origine à la fermeture — conforme WCAG 2.4.3 / 2.1.2

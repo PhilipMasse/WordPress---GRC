@@ -562,6 +562,10 @@
 			var panel = bar ? el( '#grc-global-profil-panel', bar ) : null;
 			if ( panel ) {
 				panel.style.display = 'block';
+				var boutonProfil = el( '#grc-global-profil-btn', bar );
+				if ( boutonProfil ) {
+					boutonProfil.setAttribute( 'aria-expanded', 'true' );
+				}
 				panel.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 				var cible = el( '#grc-2fa-activer-email', bar );
 				if ( cible && cible.focus ) {
@@ -597,12 +601,12 @@
 		bar.innerHTML =
 			'<div class="grc-global-bar-inner">' +
 				'<span id="grc-global-bar-name">Connecté</span>' +
-				'<nav id="grc-global-nav" class="grc-global-nav"></nav>' +
+				'<nav id="grc-global-nav" class="grc-global-nav" aria-label="Navigation de l\'espace citoyen"></nav>' +
 				'<span class="grc-global-bar-spacer"></span>' +
-				'<button type="button" id="grc-global-profil-btn" class="grc-btn-link">Mon profil</button>' +
+				'<button type="button" id="grc-global-profil-btn" class="grc-btn-link" aria-expanded="false" aria-controls="grc-global-profil-panel">Mon profil</button>' +
 				'<button type="button" id="grc-global-logout-btn" class="grc-btn-link">Se déconnecter</button>' +
 			'</div>' +
-			'<div id="grc-global-profil-panel" class="grc-global-profil-panel" style="display:none;">' +
+			'<div id="grc-global-profil-panel" class="grc-global-profil-panel" role="region" aria-label="Mon profil" tabindex="-1" style="display:none;">' +
 				'<form id="grc-global-profil-form" class="grc-form">' +
 					'<div class="grc-field"><label>Prénom</label><input type="text" id="grc-gb-prenom"></div>' +
 					'<div class="grc-field"><label>Nom</label><input type="text" id="grc-gb-nom"></div>' +
@@ -628,7 +632,7 @@
 					'</div>' +
 					'<div id="grc-2fa-totp-setup" style="display:none;margin-top:10px;">' +
 						'<p class="grc-hint">Scannez ce QR code avec votre application d\'authentification (Google Authenticator, Authy...), puis saisissez le code affiché pour confirmer.</p>' +
-						'<div id="grc-2fa-qrcode" style="margin:10px 0;"></div>' +
+						'<div id="grc-2fa-qrcode" aria-hidden="true" style="margin:10px 0;"></div>' +
 						'<p class="grc-hint">Ou saisissez cette clé manuellement : <code id="grc-2fa-secret-manuel"></code></p>' +
 						'<input type="text" id="grc-2fa-totp-code" inputmode="numeric" placeholder="123456" style="max-width:120px;">' +
 						'<button type="button" id="grc-2fa-totp-confirmer" class="button button-primary">Confirmer l\'activation</button>' +
@@ -656,6 +660,7 @@
 			a.textContent = link.label;
 			if ( window.location.href.split( '?' )[ 0 ].replace( /\/$/, '' ) === link.url.replace( /\/$/, '' ) ) {
 				a.className = 'grc-global-nav-active';
+				a.setAttribute( 'aria-current', 'page' );
 			}
 			navEl.appendChild( a );
 		} );
@@ -677,8 +682,22 @@
 				maybeAfficherPromptDeuxFacteurs( me );
 			} );
 
-		el( '#grc-global-profil-btn', bar ).addEventListener( 'click', function () {
-			panel.style.display = 'block' === panel.style.display ? 'none' : 'block';
+		var profilBtn = el( '#grc-global-profil-btn', bar );
+		profilBtn.addEventListener( 'click', function () {
+			var ouvrir = 'block' !== panel.style.display;
+			panel.style.display = ouvrir ? 'block' : 'none';
+			profilBtn.setAttribute( 'aria-expanded', ouvrir ? 'true' : 'false' );
+			if ( ouvrir ) {
+				panel.focus();
+			}
+		} );
+
+		document.addEventListener( 'keydown', function ( e ) {
+			if ( 'Escape' === e.key && 'block' === panel.style.display ) {
+				panel.style.display = 'none';
+				profilBtn.setAttribute( 'aria-expanded', 'false' );
+				profilBtn.focus();
+			}
 		} );
 
 		el( '#grc-global-logout-btn', bar ).addEventListener( 'click', function () {
