@@ -35,7 +35,9 @@ class GRC_Cron {
 		global $wpdb;
 		$rdv_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'rdv';
 
-		$limite = gmdate( 'Y-m-d H:i:s', time() - ( $delai_heures * HOUR_IN_SECONDS ) );
+		$limite = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - ( $delai_heures * HOUR_IN_SECONDS ) );
+		// Note : current_time('timestamp') + gmdate() (plutôt que time() + gmdate()) pour rester
+		// cohérent avec created_at, stocké via current_time('mysql') — heure locale du site, pas UTC.
 
 		$expires = $wpdb->get_col( $wpdb->prepare(
 			"SELECT id FROM {$rdv_table} WHERE statut = 'en_attente' AND created_at <= %s",

@@ -352,7 +352,7 @@ class GRC_REST_Citoyen {
 		$row = $wpdb->get_row( $wpdb->prepare(
 			"SELECT * FROM {$table} WHERE refresh_token_hash = %s AND revoked = 0 AND expires_at > %s AND device_label = %s",
 			$token_hash,
-			current_time( 'mysql' ),
+			current_time( 'mysql', true ), // GMT, cohérent avec gmdate() utilisé au moment du stockage.
 			'citoyen'
 		) );
 
@@ -427,7 +427,7 @@ class GRC_REST_Citoyen {
 		$citoyen = $wpdb->get_row( $wpdb->prepare(
 			"SELECT * FROM {$table} WHERE reset_token_hash = %s AND reset_token_expires > %s",
 			hash( 'sha256', $token ),
-			current_time( 'mysql' )
+			current_time( 'mysql', true ) // GMT, cohérent avec gmdate() utilisé au moment du stockage.
 		) );
 
 		if ( ! $citoyen ) {

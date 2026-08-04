@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.42.2 — Correctif critique : lien de réinitialisation de mot de passe toujours invalide
+
+- **Bug** : le lien de réinitialisation de mot de passe était signalé "invalide ou expiré" même en cliquant dessus immédiatement après l'avoir demandé. Cause : l'expiration était stockée en heure UTC (`gmdate()`) mais comparée à l'heure locale du site (`current_time('mysql')`) — sur le fuseau Europe/Paris, l'heure locale est toujours en avance sur l'UTC, rendant le lien invalide dès sa création.
+- **Même bug corrigé sur deux autres mécanismes** découverts au même endroit :
+  - Rafraîchissement de session agent (jetons valables 90 jours)
+  - Rafraîchissement de session citoyen (jetons valables 90 jours)
+  - Ces deux cas n'étaient pas visibles en usage normal (l'écart n'est que de quelques heures sur une fenêtre de 90 jours), mais relevaient de la même erreur et ont été corrigés par cohérence.
+- **Correctif supplémentaire** : le délai avant refus automatique d'une demande de rendez-vous non traitée (cron quotidien) présentait un décalage similaire, retardant légèrement le refus automatique par rapport au délai réellement configuré — corrigé en alignant le calcul sur la même base horaire que l'enregistrement du rendez-vous.
+
 ## 0.42.1 — Accessibilité RGAA : balayage des contrastes + hiérarchie des titres
 
 ### Contrastes

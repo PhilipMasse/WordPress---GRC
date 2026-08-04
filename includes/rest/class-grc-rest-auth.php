@@ -77,7 +77,7 @@ class GRC_REST_Auth {
 		$row = $wpdb->get_row( $wpdb->prepare(
 			"SELECT * FROM {$table} WHERE refresh_token_hash = %s AND revoked = 0 AND expires_at > %s AND ( device_label IS NULL OR device_label != 'citoyen' )",
 			$token_hash,
-			current_time( 'mysql' )
+			current_time( 'mysql', true ) // GMT, cohérent avec gmdate() utilisé au moment du stockage.
 		) );
 
 		if ( ! $row ) {
