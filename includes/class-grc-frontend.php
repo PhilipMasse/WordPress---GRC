@@ -154,8 +154,9 @@ class GRC_Frontend {
 				</div>
 
 				<div class="grc-field">
-					<label for="grc-photo">Photo (facultatif)</label>
-					<input type="file" id="grc-photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif">
+					<label for="grc-photo">Photos (facultatif)</label>
+					<input type="file" id="grc-photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+					<p class="grc-hint">Plusieurs photos peuvent être sélectionnées.</p>
 				</div>
 
 				<div class="grc-field grc-consent">

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.0 — Plusieurs photos sur un signalement
+
+- Le formulaire de signalement ([grc_signalement_form]) n'acceptait qu'une seule photo — le serveur gérait déjà l'envoi multiple (utilisé côté démarches), seule l'interface citoyenne limitait à un fichier
+- Champ photo passé en sélection multiple, toutes les photos sélectionnées sont désormais envoyées
+
 ## 0.42.2 — Correctif critique : lien de réinitialisation de mot de passe toujours invalide
 
 - **Bug** : le lien de réinitialisation de mot de passe était signalé "invalide ou expiré" même en cliquant dessus immédiatement après l'avoir demandé. Cause : l'expiration était stockée en heure UTC (`gmdate()`) mais comparée à l'heure locale du site (`current_time('mysql')`) — sur le fuseau Europe/Paris, l'heure locale est toujours en avance sur l'UTC, rendant le lien invalide dès sa création.

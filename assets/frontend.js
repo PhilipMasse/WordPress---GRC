@@ -1134,9 +1134,11 @@
 						var demande = result.data;
 						var photoInput = el( '#grc-photo', form );
 
-						if ( photoInput && photoInput.files && photoInput.files[ 0 ] ) {
+						if ( photoInput && photoInput.files && photoInput.files.length ) {
 							var fd = new FormData();
-							fd.append( 'file', photoInput.files[ 0 ] );
+							Array.prototype.slice.call( photoInput.files ).forEach( function ( file ) {
+								fd.append( 'files[]', file );
+							} );
 							if ( payload.email ) {
 								fd.append( 'email', payload.email );
 							}
