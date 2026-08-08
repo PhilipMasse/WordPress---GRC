@@ -20,6 +20,12 @@ class GRC_REST_Demandes {
 			'permission_callback' => '__return_true',
 		] );
 
+		register_rest_route( $ns, '/categories', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'list_categories' ],
+			'permission_callback' => '__return_true',
+		] );
+
 		register_rest_route( $ns, '/demandes/guest-lookup', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'guest_lookup' ],
@@ -223,6 +229,27 @@ class GRC_REST_Demandes {
 		GRC_Audit_Log::log( 'demande_guest_lookup', 'demande', (int) $demande->id );
 
 		return self::format_demande_public( $demande );
+	}
+
+	/**
+	 * Liste des catégories de signalement actives, pour peupler le sélecteur
+	 * du formulaire côté application mobile (le site web les insère
+	 * directement côté serveur dans la page, d'où l'absence historique de
+	 * cette route jusqu'ici).
+	 */
+	public static function list_categories( WP_REST_Request $request ) {
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'categories';
+		$rows  = $wpdb->get_results( "SELECT id, nom, parent_id, service_id FROM {$table} WHERE actif = 1 ORDER BY ordre, nom" );
+
+		return array_map( function ( $c ) {
+			return [
+				'id'         => (int) $c->id,
+				'nom'        => $c->nom,
+				'parent_id'  => $c->parent_id ? (int) $c->parent_id : null,
+				'service_id' => $c->service_id ? (int) $c->service_id : null,
+			];
+		}, $rows );
 	}
 
 	public static function my_demandes( WP_REST_Request $request ) {

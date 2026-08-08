@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.2 — Nouvel endpoint public /categories (préparation module Signalements mobile)
+
+- Ajout de `GET /categories` : liste des catégories de signalement actives (id, nom, parent_id, service_id), utilisée par l'application Android pour construire le sélecteur de catégorie du formulaire de signalement
+- Jusqu'ici, les catégories n'étaient disponibles que rendues côté serveur dans la page du site web — aucune route REST n'existait pour un client externe comme l'application mobile
+- Route publique (pas d'authentification requise), cohérent avec le reste du formulaire de signalement
+
 ## 0.43.1 — JPG/PNG acceptés pour les pièces jointes de démarche
 
 - Les démarches administratives acceptent désormais aussi les images JPG et PNG en pièce jointe, en plus du PDF et du Word (.docx) — à la création d'un dossier et dans les réponses du fil de messages
