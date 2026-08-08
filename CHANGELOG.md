@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.1 — JPG/PNG acceptés pour les pièces jointes de démarche
+
+- Les démarches administratives acceptent désormais aussi les images JPG et PNG en pièce jointe, en plus du PDF et du Word (.docx) — à la création d'un dossier et dans les réponses du fil de messages
+- Détection du contenu réel du fichier (pas seulement l'extension) déjà en place pour ces formats, réutilisée telle quelle
+- Sélecteurs de fichiers du site web mis à jour (formulaire de démarche + réponse au fil de messages)
+
 ## 0.43.0 — Plusieurs photos sur un signalement
 
 - Le formulaire de signalement ([grc_signalement_form]) n'acceptait qu'une seule photo — le serveur gérait déjà l'envoi multiple (utilisé côté démarches), seule l'interface citoyenne limitait à un fichier

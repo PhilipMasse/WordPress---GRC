@@ -34,6 +34,8 @@ class GRC_File_Scanner {
 	const ALLOWED_DOCUMENT_MIME = [
 		'application/pdf' => 'pdf',
 		'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+		'image/jpeg' => 'jpg',
+		'image/png'  => 'png',
 	];
 
 	const ALLOWED_IMAGE_MIME = [

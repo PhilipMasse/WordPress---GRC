@@ -268,7 +268,7 @@
 		var html = '<div class="grc-field"><label for="grc-champ-' + key + '">' + label + star + '</label>';
 
 		if ( 'file' === champ.type ) {
-			html += '<input type="file" id="grc-champ-' + key + '" data-key="' + key + '" data-filetype="1" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ' + requis + '>';
+			html += '<input type="file" id="grc-champ-' + key + '" data-key="' + key + '" data-filetype="1" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png" ' + requis + '>';
 			html += '<p class="grc-hint">Formats acceptés : PDF ou Word (.docx), 8 Mo maximum par fichier. Plusieurs fichiers peuvent être sélectionnés.</p>';
 		} else if ( 'date' === champ.type ) {
 			html += '<input type="date" id="grc-champ-' + key + '" data-key="' + key + '" ' + requis + '>';
@@ -1577,7 +1577,7 @@
 						html += '<p class="grc-hint">Aucun message pour le moment.</p>';
 					}
 					html += '<textarea class="grc-thread-reply" rows="2" placeholder="Votre réponse..."></textarea>';
-					html += '<input type="file" class="grc-thread-reply-files" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">';
+					html += '<input type="file" class="grc-thread-reply-files" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png">';
 					html += '<p class="grc-hint">Vous pouvez joindre un ou plusieurs documents (PDF/.docx) à votre réponse.</p>';
 					html += '<div class="grc-form-message grc-thread-error" style="display:none;"></div>';
 					html += '<button type="button" class="grc-btn-submit grc-thread-send" data-demarche-id="' + id + '">Envoyer</button>';
