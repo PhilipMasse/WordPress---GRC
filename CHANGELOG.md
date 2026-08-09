@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.43.3 — Latitude/longitude/adresse dans la réponse API des signalements
+
+- `GET /mes-demandes` inclut désormais `latitude`, `longitude` et `adresse_lieu` pour chaque signalement — nécessaire pour que l'application mobile puisse afficher une carte sur la fiche détaillée d'un signalement (jusqu'ici absent de la réponse, alors que ces données sont bien enregistrées en base à la création)
+
 ## 0.43.2 — Nouvel endpoint public /categories (préparation module Signalements mobile)
 
 - Ajout de `GET /categories` : liste des catégories de signalement actives (id, nom, parent_id, service_id), utilisée par l'application Android pour construire le sélecteur de catégorie du formulaire de signalement
