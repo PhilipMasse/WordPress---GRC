@@ -73,6 +73,7 @@ class GRC_REST_API {
 			'#^/grc/v1/demandes/proches$#',
 			'#^/grc/v1/demandes/public-submit$#',
 			'#^/grc/v1/categories$#',
+			'#^/grc/v1/services$#',
 			'#^/grc/v1/demandes/\d+/pieces-jointes$#',
 			'#^/grc/v1/demandes/\d+/satisfaction$#',
 			'#^/grc/v1/pieces-jointes/\d+$#',

@@ -26,6 +26,12 @@ class GRC_REST_Demandes {
 			'permission_callback' => '__return_true',
 		] );
 
+		register_rest_route( $ns, '/services', [
+			'methods'             => 'GET',
+			'callback'            => [ __CLASS__, 'list_services' ],
+			'permission_callback' => '__return_true',
+		] );
+
 		register_rest_route( $ns, '/demandes/guest-lookup', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'guest_lookup' ],
@@ -248,6 +254,25 @@ class GRC_REST_Demandes {
 				'nom'        => $c->nom,
 				'parent_id'  => $c->parent_id ? (int) $c->parent_id : null,
 				'service_id' => $c->service_id ? (int) $c->service_id : null,
+			];
+		}, $rows );
+	}
+
+	/**
+	 * Liste des services actifs, pour peupler le sélecteur de service côté
+	 * application mobile (formulaire de prise de rendez-vous notamment) —
+	 * même situation que list_categories() : jusqu'ici uniquement rendu
+	 * côté serveur dans les pages du site web.
+	 */
+	public static function list_services( WP_REST_Request $request ) {
+		global $wpdb;
+		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'services';
+		$rows  = $wpdb->get_results( "SELECT id, nom FROM {$table} WHERE actif = 1 ORDER BY nom" );
+
+		return array_map( function ( $s ) {
+			return [
+				'id'  => (int) $s->id,
+				'nom' => $s->nom,
 			];
 		}, $rows );
 	}

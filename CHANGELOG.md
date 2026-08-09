@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.43.4 — Nouvel endpoint public /services (préparation module Rendez-vous mobile)
+
+- Ajout de `GET /services` : liste des services actifs (id, nom), utilisée par l'application Android pour construire le sélecteur de service du formulaire de prise de rendez-vous — même situation que `/categories` (v0.43.2) : jusqu'ici uniquement rendu côté serveur dans les pages du site web
+
 ## 0.43.3 — Latitude/longitude/adresse dans la réponse API des signalements
 
 - `GET /mes-demandes` inclut désormais `latitude`, `longitude` et `adresse_lieu` pour chaque signalement — nécessaire pour que l'application mobile puisse afficher une carte sur la fiche détaillée d'un signalement (jusqu'ici absent de la réponse, alors que ces données sont bien enregistrées en base à la création)
