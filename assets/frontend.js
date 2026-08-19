@@ -31,6 +31,10 @@
 		if ( data.refresh_token ) {
 			localStorage.setItem( STORAGE_REFRESH, data.refresh_token );
 		}
+		// Affiche immédiatement la barre citoyenne (connexion, inscription ou
+		// validation 2FA venant de réussir) plutôt que d'attendre un
+		// rechargement de page pour qu'elle apparaisse.
+		initGlobalCitoyenBar();
 	}
 
 	function clearSession() {
@@ -594,6 +598,9 @@
 	function initGlobalCitoyenBar() {
 		if ( ! isCitoyenLoggedIn() ) {
 			return;
+		}
+		if ( document.getElementById( 'grc-global-bar' ) ) {
+			return; // Déjà affichée (ex: appelée à nouveau juste après une connexion réussie).
 		}
 
 		var bar = document.createElement( 'div' );

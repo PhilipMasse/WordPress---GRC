@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.5 — Correctif : bannière citoyenne absente jusqu'au rechargement de page
+
+- Bug : après une connexion, inscription ou validation 2FA réussie, la bannière citoyenne en haut de page (nom, navigation, "Mon profil", "Se déconnecter") n'apparaissait qu'après avoir rechargé manuellement la page — elle ne s'affichait jusqu'ici qu'une seule fois, au chargement initial de la page (avant que la connexion n'ait eu lieu)
+- Corrigé : la bannière s'affiche désormais immédiatement dès que la session démarre, sans attendre de rechargement
+- Garde ajoutée pour éviter toute bannière dupliquée si la fonction est appelée plusieurs fois
+
 ## 0.43.4 — Nouvel endpoint public /services (préparation module Rendez-vous mobile)
 
 - Ajout de `GET /services` : liste des services actifs (id, nom), utilisée par l'application Android pour construire le sélecteur de service du formulaire de prise de rendez-vous — même situation que `/categories` (v0.43.2) : jusqu'ici uniquement rendu côté serveur dans les pages du site web
