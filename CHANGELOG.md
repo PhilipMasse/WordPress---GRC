@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.7 — Accessibilité RGAA : annonce des messages, boutons du calendrier, hiérarchie des titres
+
+- **Correctif centralisé** : la fonction JS partagée `showMessage()` (utilisée par pratiquement tous les formulaires du site — connexion, inscription, RDV, fil de messages, profil...) ne rendait annonçable par un lecteur d'écran que les messages du formulaire 2FA. Ajout de `role="status"` + `aria-live="polite"` directement dans cette fonction commune : tous les messages de succès/erreur du site sont désormais annoncés automatiquement, sans avoir à corriger chaque gabarit individuellement
+- Boutons de navigation du calendrier de rendez-vous (‹ ›) : ajout d'un nom accessible ("Mois précédent"/"Mois suivant"), ils n'avaient que des caractères de ponctuation comme contenu
+- Page "Mes demandes" (démarches, signalements, rendez-vous) : les trois titres de section ("Mes demandes", "Mes démarches", "Mes rendez-vous") étaient en `<h3>` alors qu'ils sont les tout premiers titres du contenu de la page, juste après le titre de page — remontés en `<h2>` pour ne pas sauter de niveau
+
 ## 0.43.6 — Accessibilité RGAA : étiquettes de champs de la barre citoyenne + widgets composites RDV
 
 - Barre citoyenne globale ("Mon profil") : les 6 champs (prénom, nom, email, téléphone, mot de passe actuel, nouveau mot de passe) avaient un `<label>` sans attribut `for`, sans aucune association programmatique avec leur champ — un lecteur d'écran n'annonçait donc pas leur nom. Corrigé.

@@ -289,7 +289,7 @@ class GRC_Frontend {
 
 			<div id="grc-citoyen-connecte" class="grc-citoyen-connecte" style="display:none;">
 				<div class="grc-liste-toolbar">
-					<h3>Mes demandes</h3>
+					<h2>Mes demandes</h2>
 					<div class="grc-liste-controls">
 						<select class="grc-statut-filter" data-target="demandes">
 							<option value="">Tous les statuts</option>
@@ -306,7 +306,7 @@ class GRC_Frontend {
 				<div id="grc-demandes-liste" class="grc-demandes-liste"><p>Chargement de vos demandes...</p></div>
 
 				<div class="grc-liste-toolbar" style="margin-top:24px;">
-					<h3>Mes démarches</h3>
+					<h2>Mes démarches</h2>
 					<div class="grc-liste-controls">
 						<select class="grc-statut-filter" data-target="demarches">
 							<option value="">Tous les statuts</option>
@@ -322,7 +322,7 @@ class GRC_Frontend {
 				<div id="grc-demarches-liste" class="grc-demandes-liste"><p>Chargement de vos démarches...</p></div>
 
 				<div class="grc-liste-toolbar" style="margin-top:24px;">
-					<h3>Mes rendez-vous</h3>
+					<h2>Mes rendez-vous</h2>
 					<div class="grc-liste-controls">
 						<select class="grc-statut-filter" data-target="rdv">
 							<option value="">Tous les statuts</option>
@@ -458,9 +458,9 @@ class GRC_Frontend {
 						<span><i class="grc-legend-dot grc-legend-dot--full"></i> Complet</span>
 					</div>
 					<div class="grc-calendar-nav">
-						<button type="button" id="grc-cal-prev" class="button">‹</button>
+						<button type="button" id="grc-cal-prev" class="button" aria-label="Mois précédent">‹</button>
 						<span id="grc-cal-month-label"></span>
-						<button type="button" id="grc-cal-next" class="button">›</button>
+						<button type="button" id="grc-cal-next" class="button" aria-label="Mois suivant">›</button>
 					</div>
 					<div id="grc-calendar-grid" class="grc-calendar-grid"></div>
 				</div>

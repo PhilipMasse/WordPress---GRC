@@ -16,6 +16,13 @@
 		container.textContent = text;
 		container.className = 'grc-form-message grc-form-message--' + ( type || 'info' );
 		container.style.display = 'block';
+		// role="status" + aria-live="polite" : garantit qu'un message de
+		// succès ou d'erreur affiché dans N'IMPORTE QUEL formulaire du site
+		// (connexion, inscription, RDV, fil de messages, profil...) soit
+		// annoncé automatiquement par un lecteur d'écran, sans que
+		// l'utilisateur ait à naviguer manuellement pour le découvrir.
+		container.setAttribute( 'role', 'status' );
+		container.setAttribute( 'aria-live', 'polite' );
 	}
 
 	function getAccessToken() {
