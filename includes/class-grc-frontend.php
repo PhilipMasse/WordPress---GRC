@@ -186,13 +186,13 @@ class GRC_Frontend {
 			<a href="#grc-auth-tabs-first" class="grc-skip-link">Aller au formulaire de connexion</a>
 
 			<div id="grc-auth-forms" class="grc-auth-forms">
-				<div class="grc-auth-tabs">
-					<button type="button" id="grc-auth-tabs-first" class="grc-auth-tab grc-auth-tab--active" data-tab="login">Se connecter</button>
-					<button type="button" class="grc-auth-tab" data-tab="register">Créer un compte</button>
-					<button type="button" class="grc-auth-tab" data-tab="guest">Suivi invité</button>
+				<div class="grc-auth-tabs" role="tablist" aria-label="Authentification">
+					<button type="button" id="grc-auth-tabs-first" class="grc-auth-tab grc-auth-tab--active" data-tab="login" role="tab" aria-selected="true" aria-controls="grc-citoyen-login-form">Se connecter</button>
+					<button type="button" id="grc-auth-tab-register" class="grc-auth-tab" data-tab="register" role="tab" aria-selected="false" aria-controls="grc-citoyen-register-form">Créer un compte</button>
+					<button type="button" id="grc-auth-tab-guest" class="grc-auth-tab" data-tab="guest" role="tab" aria-selected="false" aria-controls="grc-guest-lookup-form">Suivi invité</button>
 				</div>
 
-				<form id="grc-citoyen-login-form" class="grc-form grc-auth-panel">
+				<form id="grc-citoyen-login-form" class="grc-form grc-auth-panel" role="tabpanel" aria-labelledby="grc-auth-tabs-first">
 					<div class="grc-field">
 						<label for="grc-login-email">Email</label>
 						<input type="email" id="grc-login-email" name="email" required>
@@ -232,7 +232,7 @@ class GRC_Frontend {
 					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 				</form>
 
-				<form id="grc-citoyen-register-form" class="grc-form grc-auth-panel" style="display:none;">
+				<form id="grc-citoyen-register-form" class="grc-form grc-auth-panel" style="display:none;" role="tabpanel" aria-labelledby="grc-auth-tab-register">
 					<div class="grc-field">
 						<label for="grc-reg-prenom">Prénom</label>
 						<input type="text" id="grc-reg-prenom" name="prenom">
@@ -273,7 +273,7 @@ class GRC_Frontend {
 					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 				</form>
 
-				<form id="grc-guest-lookup-form" class="grc-form grc-auth-panel" style="display:none;">
+				<form id="grc-guest-lookup-form" class="grc-form grc-auth-panel" style="display:none;" role="tabpanel" aria-labelledby="grc-auth-tab-guest">
 					<p class="grc-hint">Retrouvez votre demande avec son numéro de suivi et votre email.</p>
 					<div class="grc-field">
 						<label for="grc-lookup-numero">Numéro de suivi</label>

@@ -1351,14 +1351,18 @@
 				creneauxDuJour.forEach( function ( c ) {
 					var d = new Date( c.debut );
 					var heure = d.toLocaleTimeString( 'fr-FR', { hour: '2-digit', minute: '2-digit' } );
-					html += '<button type="button" class="grc-creneau-btn" data-id="' + c.id + '">' + heure + '</button>';
+					html += '<button type="button" class="grc-creneau-btn" data-id="' + c.id + '" aria-pressed="false">' + heure + '</button>';
 				} );
 				rdvCreneauxContainer.innerHTML = html;
 
 				rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( btn ) {
 					btn.addEventListener( 'click', function () {
-						rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-creneau-btn--selected' ); } );
+						rdvCreneauxContainer.querySelectorAll( '.grc-creneau-btn' ).forEach( function ( b ) {
+							b.classList.remove( 'grc-creneau-btn--selected' );
+							b.setAttribute( 'aria-pressed', 'false' );
+						} );
 						btn.classList.add( 'grc-creneau-btn--selected' );
+						btn.setAttribute( 'aria-pressed', 'true' );
 						selectedCreneauId = btn.dataset.id;
 						rdvSubmitBtn.disabled = false;
 					} );
@@ -1381,13 +1385,17 @@
 							rdvDureeField.style.display = 'block';
 							rdvDureeToggle.innerHTML = durees.map( function ( d, i ) {
 								var label = d >= 60 ? ( d / 60 ) + ' h' + ( d % 60 ? ( d % 60 ) : '' ) : d + ' min';
-								return '<button type="button" class="grc-duree-btn' + ( 0 === i ? ' grc-duree-btn--active' : '' ) + '" data-duree="' + d + '">' + label + '</button>';
+								return '<button type="button" class="grc-duree-btn' + ( 0 === i ? ' grc-duree-btn--active' : '' ) + '" data-duree="' + d + '" aria-pressed="' + ( 0 === i ) + '">' + label + '</button>';
 							} ).join( '' );
 
 							rdvDureeToggle.querySelectorAll( '.grc-duree-btn' ).forEach( function ( btn ) {
 								btn.addEventListener( 'click', function () {
-									rdvDureeToggle.querySelectorAll( '.grc-duree-btn' ).forEach( function ( b ) { b.classList.remove( 'grc-duree-btn--active' ); } );
+									rdvDureeToggle.querySelectorAll( '.grc-duree-btn' ).forEach( function ( b ) {
+										b.classList.remove( 'grc-duree-btn--active' );
+										b.setAttribute( 'aria-pressed', 'false' );
+									} );
 									btn.classList.add( 'grc-duree-btn--active' );
+									btn.setAttribute( 'aria-pressed', 'true' );
 									selectedDuree = parseInt( btn.dataset.duree, 10 );
 									selectedDay = null;
 									rdvCreneauxField.style.display = 'none';
@@ -1802,8 +1810,12 @@
 		};
 		tabs.forEach( function ( tab ) {
 			tab.addEventListener( 'click', function () {
-				tabs.forEach( function ( t ) { t.classList.remove( 'grc-auth-tab--active' ); } );
+				tabs.forEach( function ( t ) {
+					t.classList.remove( 'grc-auth-tab--active' );
+					t.setAttribute( 'aria-selected', 'false' );
+				} );
 				tab.classList.add( 'grc-auth-tab--active' );
+				tab.setAttribute( 'aria-selected', 'true' );
 				Object.keys( panels ).forEach( function ( key ) {
 					if ( panels[ key ] ) {
 						panels[ key ].style.display = key === tab.dataset.tab ? 'block' : 'none';

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.8 — Accessibilité RGAA : état de sélection non exposé (créneaux, durée, onglets)
+
+- Boutons de créneau horaire et de durée du formulaire de rendez-vous : la sélection n'était indiquée que visuellement (classe CSS), sans `aria-pressed` — corrigé, à l'identique du motif déjà utilisé sur les jours du calendrier
+- Onglets Connexion / Créer un compte / Suivi invité : aucune sémantique ARIA Tabs (`role="tablist"`, `role="tab"`, `aria-selected`, `role="tabpanel"`) — entièrement ajoutée, l'état sélectionné bascule désormais correctement au clic
+
 ## 0.43.7 — Accessibilité RGAA : annonce des messages, boutons du calendrier, hiérarchie des titres
 
 - **Correctif centralisé** : la fonction JS partagée `showMessage()` (utilisée par pratiquement tous les formulaires du site — connexion, inscription, RDV, fil de messages, profil...) ne rendait annonçable par un lecteur d'écran que les messages du formulaire 2FA. Ajout de `role="status"` + `aria-live="polite"` directement dans cette fonction commune : tous les messages de succès/erreur du site sont désormais annoncés automatiquement, sans avoir à corriger chaque gabarit individuellement
