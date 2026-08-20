@@ -321,6 +321,9 @@ class GRC_Admin_Demandes {
 		$pj_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'pieces_jointes';
 		$pieces   = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$pj_table} WHERE demande_id = %d ORDER BY created_at ASC", $demande_id ) );
 
+		$satisfaction_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'satisfaction';
+		$satisfaction = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$satisfaction_table} WHERE demande_id = %d", $demande_id ) );
+
 		$nom      = $citoyen && $citoyen->nom ? GRC_Encryption::decrypt( $citoyen->nom ) : '';
 		$prenom   = $citoyen && $citoyen->prenom ? GRC_Encryption::decrypt( $citoyen->prenom ) : '';
 		$email    = $citoyen && $citoyen->email ? GRC_Encryption::decrypt( $citoyen->email ) : '';
@@ -383,6 +386,23 @@ class GRC_Admin_Demandes {
 								</a>
 							<?php endforeach; ?>
 						</div>
+					</div>
+					<?php endif; ?>
+
+					<?php if ( $satisfaction ) : ?>
+					<div class="card" style="padding:16px;margin-bottom:16px;background:#fffbea;border-left:4px solid #DEA128;">
+						<h2>Avis du citoyen</h2>
+						<p>
+							<strong>Note :</strong>
+							<?php echo str_repeat( '⭐', (int) $satisfaction->note ) . str_repeat( '☆', 5 - (int) $satisfaction->note ); ?>
+							(<?php echo (int) $satisfaction->note; ?>/5)
+						</p>
+						<?php if ( ! empty( $satisfaction->commentaire ) ) : ?>
+							<p><strong>Commentaire :</strong><br><?php echo nl2br( esc_html( $satisfaction->commentaire ) ); ?></p>
+						<?php endif; ?>
+						<p style="color:#666;font-size:12px;">
+							Évalué le <?php echo esc_html( date_i18n( 'd/m/Y à H:i', strtotime( $satisfaction->created_at ) ) ); ?>
+						</p>
 					</div>
 					<?php endif; ?>
 

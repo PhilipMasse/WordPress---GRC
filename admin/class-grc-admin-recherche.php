@@ -18,6 +18,16 @@ class GRC_Admin_Recherche {
 
 		$q = trim( sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) ) );
 
+		// Traité AVANT toute sortie HTML (y compris celle d'un hook tiers,
+		// comme le thème actif) : wp_safe_redirect() échoue silencieusement
+		// dès qu'un seul octet a déjà été envoyé au navigateur — c'était la
+		// cause du "headers already sent" quand une correspondance exacte
+		// était trouvée après que le formulaire de recherche ait déjà été
+		// affiché.
+		if ( '' !== $q ) {
+			self::rediriger_si_correspondance_exacte( $q );
+		}
+
 		?>
 		<div class="wrap">
 			<h1>Recherche</h1>
@@ -37,10 +47,15 @@ class GRC_Admin_Recherche {
 		<?php
 	}
 
-	private static function render_resultats( string $q ) {
+	/**
+	 * Ne gère QUE les cas pouvant aboutir à une redirection (numéro exact,
+	 * email exact) — appelé avant tout affichage HTML par render(). Si rien
+	 * ne correspond, ne fait rien : l'affichage (y compris le message
+	 * "aucun résultat" éventuel) reste géré par render_resultats().
+	 */
+	private static function rediriger_si_correspondance_exacte( string $q ) {
 		global $wpdb;
 
-		// --- 1. Correspondance directe par numéro (préfixes reconnus) -------
 		if ( preg_match( '/^(GRC|DEM|RDV)-\d{4}-[A-Z0-9]{6}$/i', $q ) ) {
 			self::rediriger_si_trouve_par_numero( strtoupper( $q ) );
 		}
@@ -52,8 +67,6 @@ class GRC_Admin_Recherche {
 				exit;
 			}
 		}
-
-		// --- 2. Email exact (via hash, l'email étant chiffré) ---------------
 		if ( is_email( $q ) ) {
 			$citoyens_table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
 			$citoyen_id = $wpdb->get_var( $wpdb->prepare(
@@ -63,11 +76,20 @@ class GRC_Admin_Recherche {
 				wp_safe_redirect( admin_url( 'admin.php?page=grc-citoyens&citoyen_id=' . $citoyen_id ) );
 				exit;
 			}
+			// Pas trouvé : le message "aucun citoyen" reste affiché par
+			// render_resultats(), au bon moment du cycle de la page.
+		}
+	}
+
+	private static function render_resultats( string $q ) {
+		// Les cas de redirection ont déjà été traités plus haut (voir
+		// rediriger_si_correspondance_exacte(), appelée avant toute sortie
+		// HTML par render()) — cette méthode ne gère plus que l'affichage.
+		if ( is_email( $q ) ) {
 			echo '<p>Aucun citoyen trouvé avec cet email.</p>';
 			return;
 		}
 
-		// --- 3. Recherche texte libre sur les champs non chiffrés -----------
 		self::render_recherche_texte( $q );
 	}
 

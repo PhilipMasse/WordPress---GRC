@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.9 — Deux correctifs : avis citoyen invisible en admin, erreur "headers already sent" sur la recherche
+
+- **Avis citoyen (note + commentaire de satisfaction)** : jamais affiché côté admin après clôture d'un signalement — seules les statistiques agrégées étaient exploitées. Ajout d'une section dédiée sur la fiche détail d'un signalement, si une évaluation existe.
+- **Recherche admin (GRC Citoyenne → Recherche)** : en cas de correspondance exacte (numéro GRC-/DEM-/RDV- ou email), la page tentait une redirection (`wp_safe_redirect`) *après* avoir déjà affiché le formulaire de recherche — provoquant un "headers already sent" dès qu'un octet avait été envoyé plus tôt dans la page (par exemple par le thème actif), avec pour conséquence une redirection silencieusement échouée. Corrigé en traitant la redirection éventuelle avant toute sortie HTML.
+
 ## 0.43.8 — Accessibilité RGAA : état de sélection non exposé (créneaux, durée, onglets)
 
 - Boutons de créneau horaire et de durée du formulaire de rendez-vous : la sélection n'était indiquée que visuellement (classe CSS), sans `aria-pressed` — corrigé, à l'identique du motif déjà utilisé sur les jours du calendrier
