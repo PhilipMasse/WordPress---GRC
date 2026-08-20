@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.10 — Accessibilité RGAA : contrastes de couleur insuffisants
+
+- Libellés des jours de la semaine du calendrier de rendez-vous (`#888` sur fond blanc, ratio 3,7:1) : remontés à `#595959` (~7:1)
+- Étoiles non sélectionnées du widget de notation de satisfaction (`#ccc`, ratio 1,6:1) : remontées à `#949494` (~3:1, seuil applicable aux composants d'interface)
+- Les jours du calendrier sans disponibilité ou complets restent volontairement à faible contraste : ce sont des états non sélectionnables (équivalent à un contrôle désactivé), exemptés par les critères de contraste RGAA/WCAG — le jour complet dispose en complément d'un barré, indice non basé sur la couleur
+
 ## 0.43.9 — Deux correctifs : avis citoyen invisible en admin, erreur "headers already sent" sur la recherche
 
 - **Avis citoyen (note + commentaire de satisfaction)** : jamais affiché côté admin après clôture d'un signalement — seules les statistiques agrégées étaient exploitées. Ajout d'une section dédiée sur la fiche détail d'un signalement, si une évaluation existe.

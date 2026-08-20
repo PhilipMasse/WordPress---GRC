@@ -635,7 +635,7 @@ input[type="file"].grc-thread-reply-files {
 	grid-template-columns: repeat(7, 1fr);
 	text-align: center;
 	font-size: 11px;
-	color: #888;
+	color: #595959;
 	margin-bottom: 4px;
 }
 
@@ -717,7 +717,7 @@ button.grc-cal-day:focus-visible {
 	background: none;
 	border: none;
 	font-size: 24px;
-	color: #ccc;
+	color: #949494;
 	cursor: pointer;
 	padding: 0;
 	line-height: 1;
