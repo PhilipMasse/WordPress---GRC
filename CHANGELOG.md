@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.6 — Accessibilité RGAA : étiquettes de champs de la barre citoyenne + widgets composites RDV
+
+- Barre citoyenne globale ("Mon profil") : les 6 champs (prénom, nom, email, téléphone, mot de passe actuel, nouveau mot de passe) avaient un `<label>` sans attribut `for`, sans aucune association programmatique avec leur champ — un lecteur d'écran n'annonçait donc pas leur nom. Corrigé.
+- Formulaire de rendez-vous : les trois widgets composites personnalisés (choix de durée, calendrier, grille de créneaux) utilisaient un `<label>` sans cible valide (pas de champ natif à associer) — remplacé par un regroupement `role="group"` + `aria-labelledby`, sémantiquement correct pour ce type de contenu
+
 ## 0.43.5 — Correctif : bannière citoyenne absente jusqu'au rechargement de page
 
 - Bug : après une connexion, inscription ou validation 2FA réussie, la bannière citoyenne en haut de page (nom, navigation, "Mon profil", "Se déconnecter") n'apparaissait qu'après avoir rechargé manuellement la page — elle ne s'affichait jusqu'ici qu'une seule fois, au chargement initial de la page (avant que la connexion n'ait eu lieu)

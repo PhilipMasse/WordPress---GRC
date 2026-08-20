@@ -445,13 +445,13 @@ class GRC_Frontend {
 					</select>
 				</div>
 
-				<div class="grc-field" id="grc-rdv-duree-field" style="display:none;">
-					<label>Durée du rendez-vous</label>
+				<div class="grc-field" id="grc-rdv-duree-field" style="display:none;" role="group" aria-labelledby="grc-rdv-duree-label">
+					<label id="grc-rdv-duree-label">Durée du rendez-vous</label>
 					<div class="grc-duree-toggle" id="grc-rdv-duree-toggle"></div>
 				</div>
 
-				<div class="grc-field" id="grc-rdv-calendar-field" style="display:none;">
-					<label>Choisissez une date</label>
+				<div class="grc-field" id="grc-rdv-calendar-field" style="display:none;" role="group" aria-labelledby="grc-rdv-calendar-label">
+					<label id="grc-rdv-calendar-label">Choisissez une date</label>
 					<div class="grc-calendar-legend">
 						<span><i class="grc-legend-dot grc-legend-dot--available"></i> Places disponibles</span>
 						<span><i class="grc-legend-dot grc-legend-dot--few"></i> Dernières places</span>
@@ -465,8 +465,8 @@ class GRC_Frontend {
 					<div id="grc-calendar-grid" class="grc-calendar-grid"></div>
 				</div>
 
-				<div class="grc-field" id="grc-rdv-creneaux-field" style="display:none;">
-					<label>Créneau disponible <span class="required">*</span></label>
+				<div class="grc-field" id="grc-rdv-creneaux-field" style="display:none;" role="group" aria-labelledby="grc-rdv-creneaux-label">
+					<label id="grc-rdv-creneaux-label">Créneau disponible <span class="required">*</span></label>
 					<div id="grc-rdv-creneaux" class="grc-creneaux-grid"></div>
 				</div>
 

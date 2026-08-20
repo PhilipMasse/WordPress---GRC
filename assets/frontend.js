@@ -616,17 +616,17 @@
 			'<div id="grc-global-profil-panel" class="grc-global-profil-panel" role="region" aria-label="Mon profil" tabindex="-1" style="display:none;">' +
 				'<h3>Mon profil</h3>' +
 				'<form id="grc-global-profil-form" class="grc-form">' +
-					'<div class="grc-field"><label>Prénom</label><input type="text" id="grc-gb-prenom"></div>' +
-					'<div class="grc-field"><label>Nom</label><input type="text" id="grc-gb-nom"></div>' +
-					'<div class="grc-field"><label>Email</label><input type="email" id="grc-gb-email"></div>' +
-					'<div class="grc-field"><label>Téléphone</label><input type="tel" id="grc-gb-telephone"></div>' +
+					'<div class="grc-field"><label for="grc-gb-prenom">Prénom</label><input type="text" id="grc-gb-prenom"></div>' +
+					'<div class="grc-field"><label for="grc-gb-nom">Nom</label><input type="text" id="grc-gb-nom"></div>' +
+					'<div class="grc-field"><label for="grc-gb-email">Email</label><input type="email" id="grc-gb-email"></div>' +
+					'<div class="grc-field"><label for="grc-gb-telephone">Téléphone</label><input type="tel" id="grc-gb-telephone"></div>' +
 					'<button type="submit" class="grc-btn-submit">Enregistrer</button>' +
 					'<div class="grc-form-message" style="display:none;"></div>' +
 				'</form>' +
 				'<hr style="margin:16px 0;border:none;border-top:1px solid #ddd;">' +
 				'<form id="grc-global-password-form" class="grc-form">' +
-					'<div class="grc-field"><label>Mot de passe actuel</label><input type="password" id="grc-gb-current-password" required></div>' +
-					'<div class="grc-field"><label>Nouveau mot de passe</label><input type="password" id="grc-gb-new-password" minlength="8" required></div>' +
+					'<div class="grc-field"><label for="grc-gb-current-password">Mot de passe actuel</label><input type="password" id="grc-gb-current-password" required></div>' +
+					'<div class="grc-field"><label for="grc-gb-new-password">Nouveau mot de passe</label><input type="password" id="grc-gb-new-password" minlength="8" required></div>' +
 					'<button type="submit" class="grc-btn-submit">Changer le mot de passe</button>' +
 					'<div class="grc-form-message" style="display:none;"></div>' +
 				'</form>' +
