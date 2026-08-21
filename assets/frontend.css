@@ -684,7 +684,7 @@ button.grc-cal-day:focus-visible {
 
 .grc-cal-day--few {
 	background: #fbeecb;
-	color: #8a6817;
+	color: #6b4e0f;
 	cursor: pointer;
 	font-weight: 600;
 }
@@ -724,7 +724,7 @@ button.grc-cal-day:focus-visible {
 }
 
 .grc-star--active {
-	color: #DEA128;
+	color: #B8860B;
 }
 
 .grc-satisfaction-comment {

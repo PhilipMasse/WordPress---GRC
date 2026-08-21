@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.43.17 — Accessibilité RGAA : audit très étendu (contrastes calculés, tableaux, rôles ARIA)
+
+Recherche méthodique, au-delà des vérifications manuelles habituelles :
+
+- **Contrastes recalculés mathématiquement** (formule de luminance relative WCAG) sur toutes les paires couleur/fond du CSS, plutôt qu'à l'œil : trouvé et corrigé le jour "dernières places" du calendrier RDV (`#8a6817` sur fond clair, 4,47:1, sous le seuil) et l'étoile de notation sélectionnée (`#DEA128`, la couleur or de la charte, seulement 2,27:1 en tant que composant d'interface) → `#B8860B` (3,25:1)
+- **3 tableaux** (mes signalements/démarches/rendez-vous, vue liste) : en-têtes `<th>` sans `scope="col"`, corrigé ; colonnes d'action sans libellé dotées d'un texte masqué visuellement ("Avis"/"Actions")
+- **`role="grid"`** sur le calendrier de rendez-vous : structure ARIA incomplète (pas de `role="row"`/`gridcell` associés, potentiellement déroutant pour un lecteur d'écran) — remplacé par `role="group"`, plus sûr. Les jours cliquables sont en revanche déjà de vrais `<button>` avec `aria-label`/`aria-pressed` complets, aucun souci d'accessibilité clavier là
+- Vérification exhaustive : tous les attributs `aria-*` et `role=` du site recensés et confirmés valides (aucune faute de frappe) ; aucun `id` HTML dupliqué ; aucun groupe de cases à cocher/boutons radio nécessitant `<fieldset>`/`<legend>`
+
 ## 0.43.16 — Accessibilité RGAA : recherche élargie, 3 champs sans label corrigés dont un mal ciblé
 
 - Champ de réponse du fil de messages d'une démarche (texte + pièces jointes) : aucun `<label>`, seul un `placeholder` — ajoutés (visuellement masqués, le contexte visuel restant inchangé)

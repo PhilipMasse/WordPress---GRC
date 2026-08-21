@@ -148,7 +148,7 @@
 		}
 
 		if ( 'list' === vue ) {
-			var rows = '<table class="grc-liste-table"><thead><tr><th>N° suivi</th><th>Titre</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>';
+			var rows = '<table class="grc-liste-table"><thead><tr><th scope="col">N° suivi</th><th scope="col">Titre</th><th scope="col">Statut</th><th scope="col">Date</th><th scope="col"><span class="grc-visually-hidden">Avis</span></th></tr></thead><tbody>';
 			demandes.forEach( function ( d ) {
 				rows += '<tr>';
 				rows += '<td><code>' + d.numero_suivi + '</code></td>';
@@ -1307,7 +1307,7 @@
 
 				var html = '<div class="grc-calendar-weekdays">';
 				[ 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim' ].forEach( function ( d ) { html += '<span aria-hidden="true">' + d + '</span>'; } );
-				html += '</div><div class="grc-calendar-days" role="grid" aria-label="Calendrier des jours disponibles pour la prise de rendez-vous">';
+				html += '</div><div class="grc-calendar-days" role="group" aria-label="Calendrier des jours disponibles pour la prise de rendez-vous">';
 
 				for ( var i = 0; i < startOffset; i++ ) {
 					html += '<span class="grc-cal-day grc-cal-day--empty" aria-hidden="true"></span>';
@@ -1542,7 +1542,7 @@
 			}
 
 			if ( 'list' === vue ) {
-				var rows = '<table class="grc-liste-table"><thead><tr><th>N° dossier</th><th>Type</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>';
+				var rows = '<table class="grc-liste-table"><thead><tr><th scope="col">N° dossier</th><th scope="col">Type</th><th scope="col">Statut</th><th scope="col">Date</th><th scope="col"><span class="grc-visually-hidden">Actions</span></th></tr></thead><tbody>';
 				demarches.forEach( function ( d ) {
 					var needsAction = 'rejete' === d.statut || 'complement_requis' === d.statut;
 					rows += '<tr>';
@@ -1677,7 +1677,7 @@
 			var badgeClasses = { en_attente: 'assigne', confirme: 'resolu', refuse: 'rejete', annule: 'cloture' };
 
 			if ( 'list' === vue ) {
-				var rows = '<table class="grc-liste-table"><thead><tr><th>Service</th><th>Date</th><th>Motif</th><th>Statut</th><th></th></tr></thead><tbody>';
+				var rows = '<table class="grc-liste-table"><thead><tr><th scope="col">Service</th><th scope="col">Date</th><th scope="col">Motif</th><th scope="col">Statut</th><th scope="col"><span class="grc-visually-hidden">Actions</span></th></tr></thead><tbody>';
 				rdvList.forEach( function ( r ) {
 					var isPast = r.debut && new Date( r.debut ) < new Date();
 					rows += '<tr>';
