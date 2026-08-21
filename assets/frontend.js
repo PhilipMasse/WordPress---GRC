@@ -684,7 +684,6 @@
 						'<input type="text" id="grc-2fa-totp-code" inputmode="numeric" placeholder="123456" style="max-width:120px;">' +
 						'<button type="button" id="grc-2fa-totp-confirmer" class="button button-primary">Confirmer l\'activation</button>' +
 					'</div>' +
-					'<button type="button" id="grc-2fa-desactiver" class="button" style="display:none;color:#b32d2e;">Désactiver la double authentification</button>' +
 					'<div id="grc-2fa-message" class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>' +
 				'</div>' +
 			'</div>';
@@ -802,7 +801,8 @@
 		var statutEl = el( '#grc-2fa-statut', bar );
 		var choixEl = el( '#grc-2fa-choix', bar );
 		var totpSetupEl = el( '#grc-2fa-totp-setup', bar );
-		var desactiverBtn = el( '#grc-2fa-desactiver', bar );
+		var activerEmailBtn = el( '#grc-2fa-activer-email', bar );
+		var activerTotpBtn = el( '#grc-2fa-activer-totp', bar );
 		var msg2fa = el( '#grc-2fa-message', bar );
 
 		function rafraichir2faStatut() {
@@ -811,15 +811,20 @@
 				.then( function ( me ) {
 					if ( ! me ) { return; }
 					totpSetupEl.style.display = 'none';
+					// La 2FA ne peut pas être désactivée une fois activée
+					// (choix de sécurité) — seul le changement de méthode
+					// reste possible : le bouton de la méthode déjà active
+					// est masqué, l'autre reste disponible pour basculer.
+					choixEl.style.display = 'block';
 					if ( me.two_factor_method ) {
 						var label = 'totp' === me.two_factor_method ? 'application d\'authentification' : 'email';
-						statutEl.textContent = '✅ Double authentification active (' + label + ').';
-						choixEl.style.display = 'none';
-						desactiverBtn.style.display = 'inline-block';
+						statutEl.textContent = '✅ Double authentification active (' + label + '). Vous pouvez changer de méthode ci-dessous.';
+						activerEmailBtn.style.display = 'email' === me.two_factor_method ? 'none' : 'inline-block';
+						activerTotpBtn.style.display = 'totp' === me.two_factor_method ? 'none' : 'inline-block';
 					} else {
 						statutEl.textContent = 'Double authentification non activée. Recommandée pour renforcer la sécurité de votre compte.';
-						choixEl.style.display = 'block';
-						desactiverBtn.style.display = 'none';
+						activerEmailBtn.style.display = 'inline-block';
+						activerTotpBtn.style.display = 'inline-block';
 					}
 				} )
 				.catch( function () { statutEl.textContent = ''; } );
@@ -875,18 +880,6 @@
 				.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
 				.then( function ( result ) {
 					if ( ! result.ok ) { throw new Error( result.data.message || 'Code invalide.' ); }
-					showMessage( msg2fa, result.data.message, 'success' );
-					rafraichir2faStatut();
-				} )
-				.catch( function ( err ) { showMessage( msg2fa, err.message, 'error' ); } );
-		} );
-
-		desactiverBtn.addEventListener( 'click', function () {
-			if ( ! confirm( 'Désactiver la double authentification ? Votre compte sera moins protégé.' ) ) { return; }
-			authFetch( grcConfig.restUrl + '/citoyen/2fa/desactiver', { method: 'POST' } )
-				.then( function ( res ) { return res.json().then( function ( d ) { return { ok: res.ok, data: d }; } ); } )
-				.then( function ( result ) {
-					if ( ! result.ok ) { throw new Error( result.data.message || 'Erreur.' ); }
 					showMessage( msg2fa, result.data.message, 'success' );
 					rafraichir2faStatut();
 				} )

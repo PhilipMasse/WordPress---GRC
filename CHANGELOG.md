@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.44.3 — Un citoyen ne peut plus désactiver sa double authentification
+
+- Une fois la 2FA activée par un citoyen (email ou application), impossible de la désactiver entièrement — seul le changement de méthode reste possible (les boutons "Activer par email"/"Activer par application" restent visibles une fois active, sauf pour la méthode déjà en cours, et basculent directement vers la nouvelle méthode)
+- Endpoint `POST /citoyen/2fa/desactiver` entièrement retiré (route et méthode), pas seulement masqué côté interface — même une requête directe vers cette route ne fonctionne plus
+- Vérifié : l'application Android n'utilisait pas cet endpoint (aucune fonctionnalité de désactivation n'y existait)
+
 ## 0.44.2 — Reconfiguration de la 2FA agents (profil) + réinitialisation par un administrateur
 
 - **Depuis son propre profil WordPress** (Utilisateurs → Mon profil) : chaque agent peut désormais changer de méthode (TOTP ↔ email) ou régénérer un secret TOTP (ex : changement de téléphone), avec confirmation par code avant application — accessible via un bouton "Changer de méthode" / "Configurer maintenant"

@@ -62,13 +62,10 @@ class GRC_REST_Citoyen {
 			},
 		] );
 
-		register_rest_route( $ns, '/citoyen/2fa/desactiver', [
-			'methods'             => 'POST',
-			'callback'            => [ __CLASS__, 'desactiver_2fa' ],
-			'permission_callback' => function ( WP_REST_Request $request ) {
-				return null !== self::get_authenticated_citoyen_id( $request );
-			},
-		] );
+		// Volontairement pas de route "/citoyen/2fa/desactiver" : une fois
+		// activée, la double authentification d'un citoyen ne peut plus être
+		// désactivée, seulement changée de méthode (voir activer_2fa_email/
+		// totp, qui basculent déjà sans condition vers la nouvelle méthode).
 
 		register_rest_route( $ns, '/captcha', [
 			'methods'             => 'GET',
@@ -520,21 +517,6 @@ class GRC_REST_Citoyen {
 		GRC_Audit_Log::log( 'citoyen_2fa_enabled', 'citoyen', $citoyen_id, [ 'methode' => 'email' ] );
 
 		return [ 'message' => 'La double authentification par email est activée.' ];
-	}
-
-	public static function desactiver_2fa( WP_REST_Request $request ) {
-		$citoyen_id = self::get_authenticated_citoyen_id( $request );
-		if ( ! $citoyen_id ) {
-			return new WP_Error( 'grc_unauthorized', 'Non authentifié.', [ 'status' => 401 ] );
-		}
-
-		global $wpdb;
-		$table = $wpdb->prefix . GRC_TABLE_PREFIX . 'citoyens';
-		$wpdb->update( $table, [ 'two_factor_method' => null, 'totp_secret' => null ], [ 'id' => $citoyen_id ] );
-
-		GRC_Audit_Log::log( 'citoyen_2fa_disabled', 'citoyen', $citoyen_id );
-
-		return [ 'message' => 'La double authentification est désactivée.' ];
 	}
 
 	public static function me( WP_REST_Request $request ) {
