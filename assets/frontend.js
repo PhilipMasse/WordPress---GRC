@@ -141,7 +141,7 @@
 		return labels[ statut ] || statut;
 	}
 
-	function renderDemandesList( container, demandes, vue ) {
+	function renderDemandesList( container, demandes, vue, guestEmail ) {
 		if ( ! demandes || ! demandes.length ) {
 			container.innerHTML = '<p>Aucune demande trouvée.</p>';
 			return;
@@ -172,7 +172,8 @@
 			html += '</div>';
 			html += '<h3>' + d.titre + '</h3>';
 			if ( d.pieces_jointes && d.pieces_jointes.length ) {
-				html += '<p class="grc-demande-pj">' + d.pieces_jointes.length + ' pièce(s) jointe(s)</p>';
+				html += '<p class="grc-demande-pj-label">' + d.pieces_jointes.length + ' pièce(s) jointe(s) :</p>';
+				html += renderMessageAttachments( d.pieces_jointes, guestEmail );
 			}
 			html += '<p class="grc-demande-date">Créée le ' + new Date( d.created_at ).toLocaleDateString( 'fr-FR' ) + '</p>';
 			if ( d.peut_etre_note ) {
@@ -1561,14 +1562,22 @@
 			} );
 		}
 
-		function renderMessageAttachments( pieces ) {
+		function renderMessageAttachments( pieces, guestEmail ) {
 			if ( ! pieces || ! pieces.length ) {
 				return '';
 			}
 			var token = getAccessToken();
 			var html = '<div class="grc-message-attachments">';
 			pieces.forEach( function ( p ) {
-				var url = p.download_url + ( token ? ( p.download_url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'token=' + encodeURIComponent( token ) : '' );
+				var url = p.download_url;
+				if ( token ) {
+					url += ( url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'token=' + encodeURIComponent( token );
+				} else if ( guestEmail ) {
+					// Mode invité (non connecté) : le serveur autorise le
+					// téléchargement si l'email correspond à celui de la
+					// demande (voir authorize_demande_access côté plugin).
+					url += ( url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'email=' + encodeURIComponent( guestEmail );
+				}
 				html += '<a href="' + url + '" target="_blank" class="grc-attachment-chip">📄 ' + p.nom_original + '</a>';
 			} );
 			html += '</div>';
@@ -2058,7 +2067,7 @@
 							return;
 						}
 						resultsContainer.dataset.guestEmail = payload.email;
-						renderDemandesList( resultsContainer, [ result.data ] );
+						renderDemandesList( resultsContainer, [ result.data ], undefined, payload.email );
 					} )
 					.catch( function () {
 						resultsContainer.innerHTML = '<p>Erreur lors de la recherche.</p>';

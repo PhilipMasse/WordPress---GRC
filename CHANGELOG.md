@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.12 — Correctif : pièces jointes invisibles/inaccessibles en suivi invité
+
+- En mode "Suivi invité" (numéro de suivi + email, sans connexion), le nombre de pièces jointes s'affichait en simple texte ("1 pièce(s) jointe(s)") sans aucun moyen de les consulter — corrigé : les pièces jointes apparaissent désormais comme de vrais liens de téléchargement, comme pour un citoyen connecté
+- Le serveur autorisait déjà ce cas (email transmis en paramètre, vérifié contre l'email du demandeur), seul le rendu côté client ne l'exploitait pas
+- Contraste de couleur corrigé au passage sur ce même libellé (`#777`, 4,4:1, sous le seuil requis) → `#595959`
+
 ## 0.43.11 — Accessibilité RGAA : attribut autocomplete manquant (14 champs)
 
 - Critère RGAA 11.13 : les champs email, mot de passe, prénom, nom et téléphone n'indiquaient jamais leur finalité via `autocomplete`, empêchant un remplissage assisté correct (gestionnaires de mots de passe, technologies d'assistance à la saisie). Ajouté sur les 14 champs concernés : connexion, mot de passe oublié/réinitialisation, inscription, suivi invité, email du formulaire de démarche, et les 6 champs du panneau "Mon profil" (identité, coordonnées, changement de mot de passe)
