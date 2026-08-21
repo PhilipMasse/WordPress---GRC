@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.44.2 — Reconfiguration de la 2FA agents (profil) + réinitialisation par un administrateur
+
+- **Depuis son propre profil WordPress** (Utilisateurs → Mon profil) : chaque agent peut désormais changer de méthode (TOTP ↔ email) ou régénérer un secret TOTP (ex : changement de téléphone), avec confirmation par code avant application — accessible via un bouton "Changer de méthode" / "Configurer maintenant"
+- **Réinitialisation par un administrateur** : nouveau lien "Réinitialiser sa 2FA" sur la liste des utilisateurs (Utilisateurs → Tous les utilisateurs), pour débloquer un agent ayant perdu l'accès à son second facteur (téléphone perdu/cassé) — la 2FA de cet agent redevient "non configurée", à reconfigurer entièrement à sa prochaine connexion
+- Correctif de conception : le mécanisme initialement prévu pour afficher un message d'erreur en cas de code invalide (`user_profile_update_errors`) se déclenche trop tôt dans le cycle de sauvegarde du profil pour être fiable depuis ce contexte — remplacé par une notice admin classique via transient
+
 ## 0.44.1 — Correctif diagnostic : le bouton "Code envoyé" confirmait même en cas d'échec réel
 
 - Le bouton "Recevoir un code par email" (configuration 2FA agent) affichait "Code envoyé" quelle que soit la réponse du serveur, y compris en cas d'échec — la réponse HTTP n'était jamais vérifiée côté JavaScript
