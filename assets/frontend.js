@@ -211,7 +211,7 @@
 				// demande (voir authorize_demande_access côté plugin).
 				url += ( url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'email=' + encodeURIComponent( guestEmail );
 			}
-			html += '<a href="' + url + '" target="_blank" class="grc-attachment-chip">📄 ' + p.nom_original + '</a>';
+			html += '<a href="' + url + '" target="_blank" rel="noopener" class="grc-attachment-chip">📄 ' + p.nom_original + '<span class="grc-visually-hidden"> (nouvelle fenêtre)</span></a>';
 		} );
 		html += '</div>';
 		return html;

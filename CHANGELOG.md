@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.43.14 — Accessibilité RGAA : lien pièce jointe ouvrant un nouvel onglet non signalé
+
+- Les liens de téléchargement des pièces jointes (`target="_blank"`) n'indiquaient nulle part qu'ils ouvrent un nouvel onglet (critère RGAA 6.2) — ajout d'un texte visuellement masqué "(nouvelle fenêtre)", perceptible uniquement par les technologies d'assistance
+- `rel="noopener"` ajouté au passage (bonne pratique de sécurité pour tout lien `target="_blank"`)
+- Nouvelle classe utilitaire réutilisable `.grc-visually-hidden`
+- Vérifié : aucun texte de lien générique ("cliquez ici", "en savoir plus"...) sur le site
+
 ## 0.43.13 — Correctif : "Erreur lors de la recherche" en suivi invité (portée JavaScript)
 
 - Le correctif précédent (v0.43.12) appelait `renderMessageAttachments()` depuis `renderDemandesList()`, mais cette fonction était déclarée dans une portée JavaScript imbriquée différente (à l'intérieur du gestionnaire `DOMContentLoaded`), la rendant invisible depuis `renderDemandesList()` — provoquant une erreur silencieusement rattrapée par le bloc `catch` du suivi invité, affichée comme "Erreur lors de la recherche."
