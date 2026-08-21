@@ -195,6 +195,28 @@
 		attachSatisfactionHandlers( container );
 	}
 
+	function renderMessageAttachments( pieces, guestEmail ) {
+		if ( ! pieces || ! pieces.length ) {
+			return '';
+		}
+		var token = getAccessToken();
+		var html = '<div class="grc-message-attachments">';
+		pieces.forEach( function ( p ) {
+			var url = p.download_url;
+			if ( token ) {
+				url += ( url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'token=' + encodeURIComponent( token );
+			} else if ( guestEmail ) {
+				// Mode invité (non connecté) : le serveur autorise le
+				// téléchargement si l'email correspond à celui de la
+				// demande (voir authorize_demande_access côté plugin).
+				url += ( url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'email=' + encodeURIComponent( guestEmail );
+			}
+			html += '<a href="' + url + '" target="_blank" class="grc-attachment-chip">📄 ' + p.nom_original + '</a>';
+		} );
+		html += '</div>';
+		return html;
+	}
+
 	function attachSatisfactionHandlers( container ) {
 		container.querySelectorAll( '.grc-satisfaction-form' ).forEach( function ( formEl ) {
 			var selectedNote = 0;
@@ -1560,28 +1582,6 @@
 					}
 				} );
 			} );
-		}
-
-		function renderMessageAttachments( pieces, guestEmail ) {
-			if ( ! pieces || ! pieces.length ) {
-				return '';
-			}
-			var token = getAccessToken();
-			var html = '<div class="grc-message-attachments">';
-			pieces.forEach( function ( p ) {
-				var url = p.download_url;
-				if ( token ) {
-					url += ( url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'token=' + encodeURIComponent( token );
-				} else if ( guestEmail ) {
-					// Mode invité (non connecté) : le serveur autorise le
-					// téléchargement si l'email correspond à celui de la
-					// demande (voir authorize_demande_access côté plugin).
-					url += ( url.indexOf( '?' ) === -1 ? '?' : '&' ) + 'email=' + encodeURIComponent( guestEmail );
-				}
-				html += '<a href="' + url + '" target="_blank" class="grc-attachment-chip">📄 ' + p.nom_original + '</a>';
-			} );
-			html += '</div>';
-			return html;
 		}
 
 		function loadDemarcheThread( id, threadEl ) {

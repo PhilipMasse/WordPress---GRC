@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.13 — Correctif : "Erreur lors de la recherche" en suivi invité (portée JavaScript)
+
+- Le correctif précédent (v0.43.12) appelait `renderMessageAttachments()` depuis `renderDemandesList()`, mais cette fonction était déclarée dans une portée JavaScript imbriquée différente (à l'intérieur du gestionnaire `DOMContentLoaded`), la rendant invisible depuis `renderDemandesList()` — provoquant une erreur silencieusement rattrapée par le bloc `catch` du suivi invité, affichée comme "Erreur lors de la recherche."
+- Déplacée au niveau supérieur (portée globale du fichier), accessible depuis tous ses points d'appel
+
 ## 0.43.12 — Correctif : pièces jointes invisibles/inaccessibles en suivi invité
 
 - En mode "Suivi invité" (numéro de suivi + email, sans connexion), le nombre de pièces jointes s'affichait en simple texte ("1 pièce(s) jointe(s)") sans aucun moyen de les consulter — corrigé : les pièces jointes apparaissent désormais comme de vrais liens de téléchargement, comme pour un citoyen connecté
