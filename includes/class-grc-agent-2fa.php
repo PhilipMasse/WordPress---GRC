@@ -183,7 +183,9 @@ class GRC_Agent_2FA {
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
 			check_admin_referer( 'grc_2fa_' . $token );
 
-			if ( ! $configuree ) {
+			if ( ! GRC_REST_API::check_rate_limit( 'agent_2fa_verify', 8, 60 ) ) {
+				$erreur = 'Trop de tentatives. Merci de patienter une minute avant de réessayer.';
+			} elseif ( ! $configuree ) {
 				$erreur = self::traiter_configuration( $user, $token, $redirect_to );
 			} else {
 				$erreur = self::traiter_verification( $user, $token, $redirect_to );
@@ -525,6 +527,11 @@ class GRC_Agent_2FA {
 		}
 		check_admin_referer( 'grc_2fa_reconfig_' . $user_id, 'grc_2fa_reconfig_nonce' );
 
+		if ( ! GRC_REST_API::check_rate_limit( 'agent_2fa_reconfig', 8, 60 ) ) {
+			set_transient( 'grc_2fa_reconfig_result_' . $user_id, 'trop_de_tentatives', 30 );
+			return;
+		}
+
 		$user = get_user_by( 'id', $user_id );
 		if ( ! $user || ! self::agent_necessite_2fa( $user ) ) {
 			return;
@@ -570,6 +577,8 @@ class GRC_Agent_2FA {
 		delete_transient( 'grc_2fa_reconfig_result_' . $user_id );
 		if ( 'ok' === $resultat ) {
 			echo '<div class="notice notice-success is-dismissible"><p>Double authentification mise à jour avec succès.</p></div>';
+		} elseif ( 'trop_de_tentatives' === $resultat ) {
+			echo '<div class="notice notice-error is-dismissible"><p>Trop de tentatives. Merci de patienter une minute avant de réessayer.</p></div>';
 		} else {
 			echo '<div class="notice notice-error is-dismissible"><p>Double authentification : code invalide (ou expiré), la méthode n\'a pas été modifiée.</p></div>';
 		}

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.44.4 — Correctif de sécurité : aucune limitation de tentatives sur la vérification du code 2FA agent
+
+- La vérification du code de double authentification agent (connexion et
+  reconfiguration depuis le profil) n'avait aucune limitation de tentatives
+  — contrairement à toutes les autres routes sensibles du plugin
+  (connexion, 2FA citoyenne, réinitialisation de mot de passe...), qui en
+  ont systématiquement une. Un mot de passe compromis aurait suffi à
+  contourner totalement la protection par force brute sur le code à 6
+  chiffres.
+- Corrigé : 8 tentatives par minute et par adresse IP, à l'identique de la
+  2FA citoyenne (`check_rate_limit`, déjà utilisé partout ailleurs dans le
+  plugin — mécanisme réutilisé, pas de nouveau code de sécurité à auditer)
+
 ## 0.44.3 — Un citoyen ne peut plus désactiver sa double authentification
 
 - Une fois la 2FA activée par un citoyen (email ou application), impossible de la désactiver entièrement — seul le changement de méthode reste possible (les boutons "Activer par email"/"Activer par application" restent visibles une fois active, sauf pour la méthode déjà en cours, et basculent directement vers la nouvelle méthode)
