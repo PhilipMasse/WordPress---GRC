@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.43.15 — Accessibilité RGAA : bannières d'état non annoncées
+
+- 5 bannières affichées/masquées dynamiquement selon l'état de connexion ("Connecté en tant que...", "Vous devez être connecté(e)...") n'étaient jamais annoncées aux lecteurs d'écran lors de leur apparition — `role="status"` + `aria-live="polite"` ajoutés, à l'identique du motif déjà utilisé pour la bannière de doublons de signalement
+
 ## 0.43.14 — Accessibilité RGAA : lien pièce jointe ouvrant un nouvel onglet non signalé
 
 - Les liens de téléchargement des pièces jointes (`target="_blank"`) n'indiquaient nulle part qu'ils ouvrent un nouvel onglet (critère RGAA 6.2) — ajout d'un texte visuellement masqué "(nouvelle fenêtre)", perceptible uniquement par les technologies d'assistance

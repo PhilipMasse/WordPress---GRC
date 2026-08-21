@@ -109,11 +109,11 @@ class GRC_Frontend {
 		?>
 		<div class="grc-form-wrapper">
 			<a href="#grc-titre" class="grc-skip-link">Aller au formulaire de signalement</a>
-			<div id="grc-connected-banner" class="grc-connected-banner" style="display:none;">
+			<div id="grc-connected-banner" class="grc-connected-banner" role="status" aria-live="polite" style="display:none;">
 				Connecté en tant que <strong id="grc-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce signalement.
 			</div>
 
-			<div id="grc-login-required-notice" class="grc-connected-banner" style="display:none;background:#fff3cd;color:#664d03;border:1px solid #ffe69c;">
+			<div id="grc-login-required-notice" class="grc-connected-banner" role="status" aria-live="polite" style="display:none;background:#fff3cd;color:#664d03;border:1px solid #ffe69c;">
 				Vous devez être connecté(e) à votre espace citoyen pour signaler un problème.
 				<?php if ( self::page_url( 'grc_page_mes_demandes' ) ) : ?>
 					<a href="<?php echo esc_url( self::page_url( 'grc_page_mes_demandes' ) ); ?>">Se connecter ou créer un compte →</a>
@@ -359,7 +359,7 @@ class GRC_Frontend {
 		?>
 		<div class="grc-demarche-form-wrapper" data-preselect-type="<?php echo esc_attr( $atts['type'] ); ?>">
 			<a href="#grc-demarche-type-select" class="grc-skip-link">Aller au formulaire de démarche</a>
-			<div id="grc-demarche-connected-banner" class="grc-connected-banner" style="display:none;">
+			<div id="grc-demarche-connected-banner" class="grc-connected-banner" role="status" aria-live="polite" style="display:none;">
 				Connecté en tant que <strong id="grc-demarche-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce dossier.
 			</div>
 
@@ -423,11 +423,11 @@ class GRC_Frontend {
 		?>
 		<div class="grc-form-wrapper grc-rdv-wrapper">
 			<a href="#grc-rdv-service" class="grc-skip-link">Aller au formulaire de rendez-vous</a>
-			<div id="grc-rdv-connected-banner" class="grc-connected-banner" style="display:none;">
+			<div id="grc-rdv-connected-banner" class="grc-connected-banner" role="status" aria-live="polite" style="display:none;">
 				Connecté en tant que <strong id="grc-rdv-connected-name"></strong> — vos coordonnées seront automatiquement associées à ce rendez-vous.
 			</div>
 
-			<div id="grc-rdv-login-required-notice" class="grc-connected-banner" style="display:none;background:#fff3cd;color:#664d03;border:1px solid #ffe69c;">
+			<div id="grc-rdv-login-required-notice" class="grc-connected-banner" role="status" aria-live="polite" style="display:none;background:#fff3cd;color:#664d03;border:1px solid #ffe69c;">
 				Vous devez être connecté(e) à votre espace citoyen pour prendre rendez-vous.
 				<?php if ( self::page_url( 'grc_page_mes_demandes' ) ) : ?>
 					<a href="<?php echo esc_url( self::page_url( 'grc_page_mes_demandes' ) ); ?>">Se connecter ou créer un compte →</a>
