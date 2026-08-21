@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.44.0 — Double authentification obligatoire pour les agents
+
+Nouvelle classe `GRC_Agent_2FA`, entièrement distincte de la 2FA citoyenne
+(JWT, facultative) : celle-ci s'intègre au flux de connexion natif
+WordPress (cookie + nonce) et est **imposée** à tout utilisateur disposant
+de capacités GRC (rôles `grc_agent`, `grc_responsable`, `grc_elu`, et
+administrateur — voir `GRC_Roles`).
+
+- **TOTP** (application d'authentification, QR code) **ou email** (code à
+  usage unique, 5 minutes), au choix de l'agent
+- Première connexion : configuration obligatoire avant de pouvoir continuer
+  — impossible d'accéder à l'administration sans avoir choisi et validé une
+  méthode
+- Connexions suivantes : simple saisie du code correspondant à la méthode
+  déjà configurée
+- Techniquement : interception via le filtre `authenticate` (après
+  vérification du mot de passe par WordPress, mais *avant* l'établissement
+  de la session — `wp_set_auth_cookie()` n'est appelé qu'après validation du
+  second facteur), écran dédié `wp-login.php?action=grc_2fa`
+- Secret TOTP temporaire conservé le temps de la configuration (transient,
+  15 min) pour qu'une erreur de saisie ne rende pas le QR code déjà scanné
+  invalide
+- Réutilise l'infrastructure existante : `GRC_TOTP` (déjà générique),
+  `GRC_Encryption` pour le secret stocké, même gabarit d'email que la 2FA
+  citoyenne
+
+⚠️ Fonctionnalité critique pour l'accès à l'administration — **à tester
+manuellement en conditions réelles avant tout déploiement en production**
+(non couverte par les tests automatisés, qui ne peuvent pas simuler le
+flux de connexion WordPress complet). Prévoir un accès de secours
+(ex : accès direct à la base de données) en cas de blocage pendant les
+premiers tests.
+
 ## 0.43.17 — Accessibilité RGAA : audit très étendu (contrastes calculés, tableaux, rôles ARIA)
 
 Recherche méthodique, au-delà des vérifications manuelles habituelles :

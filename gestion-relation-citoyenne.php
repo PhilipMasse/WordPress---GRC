@@ -3,7 +3,7 @@
  * Plugin Name: Gestion de la Relation Citoyenne (GRC)
  * Plugin URI: https://github.com/PhilipMasse/WordPress---GRC
  * Description: Module de Gestion de la Relation Citoyenne pour la Mairie de Berre-les-Alpes : signalements, demandes, rendez-vous, démarches administratives, API REST pour application mobile.
- * Version: 0.43.17
+ * Version: 0.44.0
  * Author: Mairie de Berre-les-Alpes
  * Text Domain: grc-citoyenne
  * Requires PHP: 8.1
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Accès direct interdit.
 }
 
-define( 'GRC_VERSION', '0.43.17' );
+define( 'GRC_VERSION', '0.44.0' );
 define( 'GRC_PLUGIN_FILE', __FILE__ );
 define( 'GRC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GRC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -60,6 +60,7 @@ require_once GRC_PLUGIN_DIR . 'includes/class-grc-pdf-signalement.php';
 require_once GRC_PLUGIN_DIR . 'includes/class-grc-captcha.php';
 require_once GRC_PLUGIN_DIR . 'includes/class-grc-totp.php';
 require_once GRC_PLUGIN_DIR . 'includes/class-grc-roles.php';
+require_once GRC_PLUGIN_DIR . 'includes/class-grc-agent-2fa.php';
 require_once GRC_PLUGIN_DIR . 'includes/class-grc-rest-api.php';
 require_once GRC_PLUGIN_DIR . 'includes/class-grc-notifications.php';
 require_once GRC_PLUGIN_DIR . 'includes/class-grc-cron.php';
@@ -109,6 +110,7 @@ function grc_init_plugin() {
 	}
 
 	GRC_Roles::init();
+	GRC_Agent_2FA::init();
 	GRC_REST_API::init();
 	GRC_Notifications::init();
 	GRC_Cron::init();
