@@ -233,6 +233,7 @@ class GRC_Admin {
 				<a href="#" class="nav-tab" data-tab="antirobot">Anti-robot</a>
 				<a href="#" class="nav-tab" data-tab="pages">Pages du portail citoyen</a>
 				<a href="#" class="nav-tab" data-tab="audit">Journal d'audit</a>
+				<a href="#" class="nav-tab" data-tab="cron">Tâches planifiées</a>
 			</h2>
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -468,6 +469,90 @@ class GRC_Admin {
 					</table>
 				</div>
 
+				<div class="grc-settings-panel" data-panel="cron" style="display:none;">
+					<?php
+					$derniere_quotidienne = (int) get_option( 'grc_cron_derniere_execution_quotidienne', 0 );
+					$derniere_horaire = (int) get_option( 'grc_cron_derniere_execution_horaire', 0 );
+					?>
+					<h2>État des tâches planifiées</h2>
+					<table class="wp-list-table widefat fixed striped" style="max-width:700px;">
+						<thead>
+							<tr>
+								<th>Tâche</th>
+								<th>Fréquence attendue</th>
+								<th>Dernière exécution</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Rappels de RDV, refus SLA, purge RGPD, purge du journal d'audit, génération des créneaux</td>
+								<td>Quotidienne</td>
+								<td>
+									<?php if ( $derniere_quotidienne ) : ?>
+										<?php echo esc_html( human_time_diff( $derniere_quotidienne ) ); ?> avant maintenant
+									<?php else : ?>
+										<em>Jamais encore exécutée</em>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<td>Refus automatique des rendez-vous non traités</td>
+								<td>Toutes les heures</td>
+								<td>
+									<?php if ( $derniere_horaire ) : ?>
+										<?php echo esc_html( human_time_diff( $derniere_horaire ) ); ?> avant maintenant
+									<?php else : ?>
+										<em>Jamais encore exécutée</em>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<h2 style="margin-top:24px;">Pourquoi ces tâches peuvent prendre du retard</h2>
+					<p class="description">
+						Par défaut, WordPress n'exécute ses tâches planifiées (« WP-Cron ») qu'au
+						moment où un visiteur charge une page du site — il n'y a <strong>aucun vrai
+						cron système</strong> qui tourne en arrière-plan. Sur un site à faible
+						fréquentation (nuits, week-ends, jours creux), une tâche censée s'exécuter
+						chaque heure peut donc être retardée de plusieurs heures, voire ne pas
+						s'exécuter du tout un jour donné faute de visite.
+					</p>
+					<p class="description">
+						Concrètement, cela peut retarder : les rappels de rendez-vous envoyés la
+						veille, le refus automatique d'une demande de rendez-vous non traitée, les
+						alertes de dépassement de délai (SLA), ou la purge RGPD programmée.
+					</p>
+
+					<h2 style="margin-top:24px;">Configurer un vrai cron serveur (recommandé)</h2>
+					<p class="description">
+						La solution fiable consiste à désactiver le déclenchement de WP-Cron par
+						les visites, et à le remplacer par un véritable cron système, qui
+						s'exécute à intervalle régulier <strong>indépendamment de la
+						fréquentation du site</strong>. Cette configuration se fait en dehors de
+						ce plugin (contactez votre hébergeur si besoin) :
+					</p>
+					<ol class="description">
+						<li>
+							Dans <code>wp-config.php</code>, ajoutez la ligne suivante (avant la ligne
+							<code>/* That's all, stop editing! */</code>) :<br>
+							<code>define( 'DISABLE_WP_CRON', true );</code>
+						</li>
+						<li>
+							Configurez un vrai cron système (crontab, ou l'équivalent dans le panneau
+							de votre hébergeur mutualisé) pour appeler l'URL suivante toutes les 15
+							minutes :<br>
+							<code>wget -q -O /dev/null "<?php echo esc_url( site_url( 'wp-cron.php?doing_wp_cron' ) ); ?>"</code>
+						</li>
+					</ol>
+					<p class="description">
+						Sur un hébergement mutualisé classique, cette configuration se fait
+						généralement depuis une section « Tâches planifiées » / « Cron Jobs » du
+						panneau d'administration de l'hébergeur (cPanel, Plesk...), sans avoir
+						besoin d'un accès SSH.
+					</p>
+				</div>
+
 				<p class="submit"><button type="submit" class="button button-primary">Enregistrer</button></p>
 			</form>
 		</div>
@@ -476,16 +561,25 @@ class GRC_Admin {
 		document.addEventListener( 'DOMContentLoaded', function () {
 			var tabs = document.querySelectorAll( '#grc-settings-tabs .nav-tab' );
 			var panels = document.querySelectorAll( '.grc-settings-panel' );
+
+			function activerOnglet( nomOnglet ) {
+				tabs.forEach( function ( t ) { t.classList.toggle( 'nav-tab-active', t.dataset.tab === nomOnglet ); } );
+				panels.forEach( function ( p ) { p.style.display = p.dataset.panel === nomOnglet ? 'block' : 'none'; } );
+			}
+
 			tabs.forEach( function ( tab ) {
 				tab.addEventListener( 'click', function ( e ) {
 					e.preventDefault();
-					tabs.forEach( function ( t ) { t.classList.remove( 'nav-tab-active' ); } );
-					tab.classList.add( 'nav-tab-active' );
-					panels.forEach( function ( p ) {
-						p.style.display = p.dataset.panel === tab.dataset.tab ? 'block' : 'none';
-					} );
+					activerOnglet( tab.dataset.tab );
 				} );
 			} );
+
+			// Permet de lier directement vers un onglet précis (ex : depuis
+			// l'avertissement de tâches planifiées en retard) via ?tab=....
+			var ongletDemande = new URLSearchParams( window.location.search ).get( 'tab' );
+			if ( ongletDemande && document.querySelector( '.grc-settings-panel[data-panel="' + ongletDemande + '"]' ) ) {
+				activerOnglet( ongletDemande );
+			}
 
 			var testBtn = document.getElementById( 'grc-test-email-btn' );
 			if ( testBtn ) {

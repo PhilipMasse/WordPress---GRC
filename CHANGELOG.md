@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.44.6 — Fiabilité des tâches planifiées (WP-Cron)
+
+WP-Cron ne s'exécute par défaut qu'à la visite d'une page du site (pas de
+vrai cron système) — sur un site à faible fréquentation, les tâches
+planifiées (rappels de RDV, refus automatique, alertes de dépassement de
+délai, purge RGPD, purge du journal d'audit) peuvent prendre du retard,
+voire ne pas s'exécuter certains jours creux.
+
+- Nouvel onglet **GRC Citoyenne → Réglages → Tâches planifiées** : affiche
+  la dernière exécution de chaque tâche (quotidienne/horaire), avec
+  instructions détaillées pour configurer un vrai cron serveur
+  (`DISABLE_WP_CRON` + appel périodique de `wp-cron.php`)
+- Avertissement automatique dans l'administration (visible des
+  administrateurs uniquement) si une tâche accuse un retard significatif
+  (26h pour les tâches quotidiennes, 3h pour les tâches horaires), avec un
+  lien direct vers cet onglet
+- Les onglets de réglages peuvent désormais être ciblés directement par
+  URL (`&tab=cron`), utilisé par ce nouvel avertissement
+
 ## 0.44.5 — Déclaration d'accessibilité (obligation légale)
 
 Ajout du shortcode `[grc_declaration_accessibilite]`, à placer sur une page

@@ -15,7 +15,10 @@ class GRC_Cron {
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'send_rdv_reminders' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'extend_creneaux_generation' ] );
 		add_action( 'grc_daily_maintenance', [ __CLASS__, 'purge_audit_log' ] );
+		add_action( 'grc_daily_maintenance', [ __CLASS__, 'marquer_execution_quotidienne' ], 999 );
 		add_action( 'grc_hourly_maintenance', [ __CLASS__, 'check_rdv_auto_refus' ] );
+		add_action( 'grc_hourly_maintenance', [ __CLASS__, 'marquer_execution_horaire' ], 999 );
+		add_action( 'admin_notices', [ __CLASS__, 'afficher_alerte_cron_en_retard' ] );
 
 		if ( ! wp_next_scheduled( 'grc_daily_maintenance' ) ) {
 			wp_schedule_event( time(), 'daily', 'grc_daily_maintenance' );
@@ -23,6 +26,61 @@ class GRC_Cron {
 		if ( ! wp_next_scheduled( 'grc_hourly_maintenance' ) ) {
 			wp_schedule_event( time(), 'hourly', 'grc_hourly_maintenance' );
 		}
+	}
+
+	/**
+	 * Mémorise l'horodatage de la dernière exécution réussie de chaque tâche
+	 * planifiée (priorité 999 : après toutes les tâches réelles du même
+	 * hook), pour permettre à afficher_alerte_cron_en_retard() de détecter
+	 * un retard — WP-Cron n'étant déclenché qu'à la visite d'une page
+	 * (aucun vrai cron système par défaut), un site à faible fréquentation
+	 * peut voir ses tâches s'exécuter en retard, voire pas du tout certains
+	 * jours creux.
+	 */
+	public static function marquer_execution_quotidienne() {
+		update_option( 'grc_cron_derniere_execution_quotidienne', time(), false );
+	}
+
+	public static function marquer_execution_horaire() {
+		update_option( 'grc_cron_derniere_execution_horaire', time(), false );
+	}
+
+	/**
+	 * Avertit dans l'administration si une tâche planifiée accuse un retard
+	 * significatif — signe que WP-Cron (déclenché uniquement par les visites
+	 * du site) ne s'exécute plus assez souvent, et qu'un vrai cron serveur
+	 * devrait être configuré (voir Réglages GRC → Tâches planifiées).
+	 */
+	public static function afficher_alerte_cron_en_retard() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$derniere_quotidienne = (int) get_option( 'grc_cron_derniere_execution_quotidienne', 0 );
+		$derniere_horaire = (int) get_option( 'grc_cron_derniere_execution_horaire', 0 );
+		$maintenant = time();
+
+		// Marge de tolérance généreuse (au-delà de la période nominale) avant
+		// d'alerter, pour éviter les faux positifs sur un site qui vient
+		// tout juste d'être installé ou activé.
+		$quotidienne_en_retard = $derniere_quotidienne && ( $maintenant - $derniere_quotidienne ) > ( 26 * HOUR_IN_SECONDS );
+		$horaire_en_retard = $derniere_horaire && ( $maintenant - $derniere_horaire ) > ( 3 * HOUR_IN_SECONDS );
+
+		if ( ! $quotidienne_en_retard && ! $horaire_en_retard ) {
+			return;
+		}
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<strong>GRC Citoyenne :</strong> certaines tâches planifiées (rappels de rendez-vous,
+				refus automatique, purge RGPD, alertes de dépassement de délai...) accusent du retard.
+				WordPress n'exécute ces tâches qu'à la visite d'une page du site (pas de vrai cron
+				système par défaut) — sur un site à faible fréquentation, ce mécanisme peut devenir
+				peu fiable. Voir <a href="<?php echo esc_url( admin_url( 'admin.php?page=grc-settings&tab=cron' ) ); ?>">Réglages GRC → Tâches planifiées</a>
+				pour configurer un vrai cron serveur, plus fiable.
+			</p>
+		</div>
+		<?php
 	}
 
 	/**
