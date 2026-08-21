@@ -195,11 +195,11 @@ class GRC_Frontend {
 				<form id="grc-citoyen-login-form" class="grc-form grc-auth-panel" role="tabpanel" aria-labelledby="grc-auth-tabs-first">
 					<div class="grc-field">
 						<label for="grc-login-email">Email</label>
-						<input type="email" id="grc-login-email" name="email" required>
+						<input type="email" id="grc-login-email" name="email" autocomplete="username" required>
 					</div>
 					<div class="grc-field">
 						<label for="grc-login-password">Mot de passe</label>
-						<input type="password" id="grc-login-password" name="password" required>
+						<input type="password" id="grc-login-password" name="password" autocomplete="current-password" required>
 					</div>
 					<div id="grc-login-2fa-field" class="grc-field" style="display:none;">
 						<label for="grc-login-2fa-code">Code de vérification</label>
@@ -215,7 +215,7 @@ class GRC_Frontend {
 					<p class="grc-hint">Indiquez votre email : si un compte existe, un lien de réinitialisation vous sera envoyé.</p>
 					<div class="grc-field">
 						<label for="grc-mdp-oublie-email">Email</label>
-						<input type="email" id="grc-mdp-oublie-email" required>
+						<input type="email" id="grc-mdp-oublie-email" autocomplete="email" required>
 					</div>
 					<button type="submit" class="grc-btn-submit">Envoyer le lien de réinitialisation</button>
 					<p><button type="button" id="grc-retour-login-lien" class="grc-btn-link">← Retour à la connexion</button></p>
@@ -226,7 +226,7 @@ class GRC_Frontend {
 					<p class="grc-hint">Choisissez votre nouveau mot de passe (8 caractères minimum).</p>
 					<div class="grc-field">
 						<label for="grc-reset-mdp-nouveau">Nouveau mot de passe</label>
-						<input type="password" id="grc-reset-mdp-nouveau" minlength="8" required>
+						<input type="password" id="grc-reset-mdp-nouveau" minlength="8" autocomplete="new-password" required>
 					</div>
 					<button type="submit" class="grc-btn-submit">Valider le nouveau mot de passe</button>
 					<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
@@ -235,19 +235,19 @@ class GRC_Frontend {
 				<form id="grc-citoyen-register-form" class="grc-form grc-auth-panel" style="display:none;" role="tabpanel" aria-labelledby="grc-auth-tab-register">
 					<div class="grc-field">
 						<label for="grc-reg-prenom">Prénom</label>
-						<input type="text" id="grc-reg-prenom" name="prenom">
+						<input type="text" id="grc-reg-prenom" name="prenom" autocomplete="given-name">
 					</div>
 					<div class="grc-field">
 						<label for="grc-reg-nom">Nom</label>
-						<input type="text" id="grc-reg-nom" name="nom">
+						<input type="text" id="grc-reg-nom" name="nom" autocomplete="family-name">
 					</div>
 					<div class="grc-field">
 						<label for="grc-reg-email">Email</label>
-						<input type="email" id="grc-reg-email" name="email" required>
+						<input type="email" id="grc-reg-email" name="email" autocomplete="email" required>
 					</div>
 					<div class="grc-field">
 						<label for="grc-reg-password">Mot de passe (8 caractères minimum)</label>
-						<input type="password" id="grc-reg-password" name="password" minlength="8" required>
+						<input type="password" id="grc-reg-password" name="password" minlength="8" autocomplete="new-password" required>
 					</div>
 
 					<div style="position:absolute;left:-9999px;" aria-hidden="true">
@@ -281,7 +281,7 @@ class GRC_Frontend {
 					</div>
 					<div class="grc-field">
 						<label for="grc-lookup-email">Email</label>
-						<input type="email" id="grc-lookup-email" name="email" required>
+						<input type="email" id="grc-lookup-email" name="email" autocomplete="email" required>
 					</div>
 					<button type="submit" class="grc-btn-submit">Rechercher</button>
 				</form>
@@ -379,7 +379,7 @@ class GRC_Frontend {
 					<p class="grc-hint">Vous n'êtes pas connecté(e) : renseignez votre email pour suivre votre dossier.</p>
 					<div class="grc-field">
 						<label for="grc-demarche-email">Email <span class="required">*</span></label>
-						<input type="email" id="grc-demarche-email" name="email">
+						<input type="email" id="grc-demarche-email" name="email" autocomplete="email">
 					</div>
 
 					<div style="position:absolute;left:-9999px;" aria-hidden="true">

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.11 — Accessibilité RGAA : attribut autocomplete manquant (14 champs)
+
+- Critère RGAA 11.13 : les champs email, mot de passe, prénom, nom et téléphone n'indiquaient jamais leur finalité via `autocomplete`, empêchant un remplissage assisté correct (gestionnaires de mots de passe, technologies d'assistance à la saisie). Ajouté sur les 14 champs concernés : connexion, mot de passe oublié/réinitialisation, inscription, suivi invité, email du formulaire de démarche, et les 6 champs du panneau "Mon profil" (identité, coordonnées, changement de mot de passe)
+- Aucun `tabindex` positif détecté sur le site (vérifié, rien à corriger)
+
 ## 0.43.10 — Accessibilité RGAA : contrastes de couleur insuffisants
 
 - Libellés des jours de la semaine du calendrier de rendez-vous (`#888` sur fond blanc, ratio 3,7:1) : remontés à `#595959` (~7:1)
