@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.43.16 — Accessibilité RGAA : recherche élargie, 3 champs sans label corrigés dont un mal ciblé
+
+- Champ de réponse du fil de messages d'une démarche (texte + pièces jointes) : aucun `<label>`, seul un `placeholder` — ajoutés (visuellement masqués, le contexte visuel restant inchangé)
+- Champ commentaire de satisfaction : même correctif
+- **Champ téléphone des démarches (indicatif + numéro)** : le `<label>` principal ciblait en réalité le `<div>` conteneur du champ, pas un vrai champ de formulaire — association totalement invalide, invisible pour un lecteur d'écran malgré une apparence correcte. Corrigé avec `role="group"` + `aria-labelledby` sur le conteneur, et un label dédié pour chacun des deux sous-champs (indicatif, numéro)
+- Recherche élargie effectuée (comparaison systématique de tous les `id` de `<div>` avec toutes les cibles `label for=`, éléments cliquables personnalisés, icônes, texte de lien) : aucun autre cas trouvé sur le site à ce stade
+
 ## 0.43.15 — Accessibilité RGAA : bannières d'état non annoncées
 
 - 5 bannières affichées/masquées dynamiquement selon l'état de connexion ("Connecté en tant que...", "Vous devez être connecté(e)...") n'étaient jamais annoncées aux lecteurs d'écran lors de leur apparition — `role="status"` + `aria-live="polite"` ajoutés, à l'identique du motif déjà utilisé pour la bannière de doublons de signalement

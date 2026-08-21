@@ -184,7 +184,8 @@
 					html += '<button type="button" class="grc-star" data-note="' + n + '" role="radio" aria-checked="false" aria-label="' + n + ' étoile' + ( n > 1 ? 's' : '' ) + ' sur 5">★</button>';
 				}
 				html += '</div>';
-				html += '<textarea class="grc-satisfaction-comment" placeholder="Commentaire (facultatif)" rows="2"></textarea>';
+				html += '<label for="grc-satisfaction-comment-' + d.id + '" class="grc-visually-hidden">Commentaire (facultatif)</label>';
+				html += '<textarea id="grc-satisfaction-comment-' + d.id + '" class="grc-satisfaction-comment" placeholder="Commentaire (facultatif)" rows="2"></textarea>';
 				html += '<button type="button" class="grc-btn-submit grc-satisfaction-submit" disabled>Envoyer mon avis</button>';
 				html += '</div>';
 			}
@@ -299,7 +300,13 @@
 		var label = champ.label || key;
 		var requis = champ.requis ? 'required' : '';
 		var star = champ.requis ? ' <span class="required">*</span>' : '';
-		var html = '<div class="grc-field"><label for="grc-champ-' + key + '">' + label + star + '</label>';
+		// Cas particulier téléphone : le label principal ne peut pas cibler le
+		// conteneur du champ (un <div>, pas un champ de formulaire) — il sert
+		// alors de simple titre visuel, associé au groupe via aria-labelledby,
+		// et chacun des deux sous-champs (indicatif, numéro) reçoit son propre
+		// label dédié (masqué visuellement, la disposition étant déjà claire).
+		var estTelephone = 'phone' === champ.type;
+		var html = '<div class="grc-field"><label id="grc-champ-' + key + '-label"' + ( estTelephone ? '' : ' for="grc-champ-' + key + '"' ) + '>' + label + star + '</label>';
 
 		if ( 'file' === champ.type ) {
 			html += '<input type="file" id="grc-champ-' + key + '" data-key="' + key + '" data-filetype="1" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png" ' + requis + '>';
@@ -307,9 +314,11 @@
 		} else if ( 'date' === champ.type ) {
 			html += '<input type="date" id="grc-champ-' + key + '" data-key="' + key + '" ' + requis + '>';
 		} else if ( 'phone' === champ.type ) {
-			html += '<div class="grc-phone-field" id="grc-champ-' + key + '" data-key="' + key + '" data-phonetype="1">';
-			html += '<select class="grc-phone-country">' + buildPhoneCountryOptions() + '</select>';
-			html += '<input type="tel" class="grc-phone-number" placeholder="6 12 34 56 78" ' + requis + '>';
+			html += '<div class="grc-phone-field" id="grc-champ-' + key + '" data-key="' + key + '" data-phonetype="1" role="group" aria-labelledby="grc-champ-' + key + '-label">';
+			html += '<label for="grc-champ-' + key + '-country" class="grc-visually-hidden">Indicatif du pays</label>';
+			html += '<select id="grc-champ-' + key + '-country" class="grc-phone-country">' + buildPhoneCountryOptions() + '</select>';
+			html += '<label for="grc-champ-' + key + '-number" class="grc-visually-hidden">' + label + '</label>';
+			html += '<input type="tel" id="grc-champ-' + key + '-number" class="grc-phone-number" placeholder="6 12 34 56 78" ' + requis + '>';
 			html += '</div>';
 		} else if ( 'textarea' === champ.type ) {
 			html += '<textarea id="grc-champ-' + key + '" data-key="' + key + '" rows="4" ' + requis + '></textarea>';
@@ -1607,8 +1616,10 @@
 					if ( ! dossier.messages || ! dossier.messages.length ) {
 						html += '<p class="grc-hint">Aucun message pour le moment.</p>';
 					}
-					html += '<textarea class="grc-thread-reply" rows="2" placeholder="Votre réponse..."></textarea>';
-					html += '<input type="file" class="grc-thread-reply-files" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png">';
+					html += '<label for="grc-thread-reply-' + id + '" class="grc-visually-hidden">Votre réponse</label>';
+					html += '<textarea id="grc-thread-reply-' + id + '" class="grc-thread-reply" rows="2" placeholder="Votre réponse..."></textarea>';
+					html += '<label for="grc-thread-files-' + id + '" class="grc-visually-hidden">Documents à joindre à votre réponse</label>';
+					html += '<input type="file" id="grc-thread-files-' + id + '" class="grc-thread-reply-files" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png">';
 					html += '<p class="grc-hint">Vous pouvez joindre un ou plusieurs documents (PDF/.docx) à votre réponse.</p>';
 					html += '<div class="grc-form-message grc-thread-error" style="display:none;"></div>';
 					html += '<button type="button" class="grc-btn-submit grc-thread-send" data-demarche-id="' + id + '">Envoyer</button>';
