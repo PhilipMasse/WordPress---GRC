@@ -211,6 +211,7 @@ class GRC_Admin {
 		$smtp_from_email  = get_option( 'grc_smtp_from_email', '' );
 		$smtp_from_name   = get_option( 'grc_smtp_from_name', 'Mairie de Berre-les-Alpes' );
 		$email_agents     = get_option( 'grc_email_agents_notifications', '' );
+		$email_accessibilite = get_option( 'grc_email_accessibilite', '' );
 		?>
 		<div class="wrap">
 			<h1>Réglages GRC</h1>
@@ -311,6 +312,19 @@ class GRC_Admin {
 									Une ou plusieurs adresses (séparées par des virgules), notifiées pour tout nouveau signalement, démarche ou rendez-vous. Si un service concerné a sa propre adresse de contact configurée (<strong>GRC Citoyenne → Services</strong>), elle est utilisée en complément.
 								</p>
 								<p class="description">L'agent auquel une demande est assignée reçoit également un email automatique à son adresse WordPress, indépendamment de ce réglage.</p>
+							</td>
+						</tr>
+					</table>
+
+					<h2>Accessibilité</h2>
+					<table class="form-table">
+						<tr>
+							<th><label for="grc-email-accessibilite">Email du référent accessibilité</label></th>
+							<td>
+								<input type="email" id="grc-email-accessibilite" name="email_accessibilite" style="width:400px;" placeholder="accessibilite@berrelesalpes.fr" value="<?php echo esc_attr( $email_accessibilite ); ?>">
+								<p class="description">
+									Utilisé dans la <a href="<?php echo esc_url( home_url( '/declaration-accessibilite/' ) ); ?>">déclaration d'accessibilité</a> (shortcode <code>[grc_declaration_accessibilite]</code>) comme moyen de contact pour signaler un défaut d'accessibilité — obligation légale pour un site de collectivité (RGAA, décret n°2019-768).
+								</p>
 							</td>
 						</tr>
 					</table>
@@ -543,6 +557,7 @@ class GRC_Admin {
 		update_option( 'grc_smtp_from_email', sanitize_email( $_POST['smtp_from_email'] ?? '' ) );
 		update_option( 'grc_smtp_from_name', sanitize_text_field( wp_unslash( $_POST['smtp_from_name'] ?? '' ) ) );
 		update_option( 'grc_email_agents_notifications', sanitize_textarea_field( wp_unslash( $_POST['email_agents_notifications'] ?? '' ) ) );
+		update_option( 'grc_email_accessibilite', sanitize_email( wp_unslash( $_POST['email_accessibilite'] ?? '' ) ) );
 
 		$matrice_soumise = $_POST['notif_matrix'] ?? [];
 		$matrice = [];

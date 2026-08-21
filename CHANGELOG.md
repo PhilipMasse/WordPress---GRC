@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.44.5 — Déclaration d'accessibilité (obligation légale)
+
+Ajout du shortcode `[grc_declaration_accessibilite]`, à placer sur une page
+dédiée du site (ex : "Déclaration d'accessibilité", lien généralement placé
+en pied de page) — obligation légale pour tout site de collectivité
+publique (article 47 de la loi n° 2005-102, décret n°2019-768, RGAA 4.1).
+
+Contient : état de conformité (partielle, honnêtement qualifiée compte tenu
+de l'audit mené — voir ci-dessous), contenus non accessibles connus, moyen
+de contact pour signaler un défaut (email configurable), voies de recours
+légales (Défenseur des droits).
+
+Nouveau réglage **GRC Citoyenne → Réglages → Accessibilité** : email du
+référent accessibilité, utilisé dans la déclaration.
+
+⚠️ **À valider avant publication définitive** : le taux de conformité
+affiché ("partiellement conforme", sans pourcentage chiffré) reflète
+l'audit approfondi mené sur le code (labels, contrastes calculés,
+hiérarchie des titres, ARIA, autocomplete, tableaux, navigation clavier...)
+mais ne constitue pas un audit RGAA complet et certifié au sens strict de
+la méthodologie officielle (grille des 106 critères sur un échantillon de
+pages figé, tests utilisateurs réels avec lecteurs d'écran). Un tel audit,
+mené par un prestataire ou un agent formé, reste nécessaire pour établir
+un taux de conformité précis et pleinement opposable.
+
 ## 0.44.4 — Correctif de sécurité : aucune limitation de tentatives sur la vérification du code 2FA agent
 
 - La vérification du code de double authentification agent (connexion et

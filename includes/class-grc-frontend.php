@@ -15,6 +15,7 @@ class GRC_Frontend {
 		add_shortcode( 'grc_mes_demandes', [ __CLASS__, 'render_mes_demandes' ] );
 		add_shortcode( 'grc_demarche_form', [ __CLASS__, 'render_demarche_form' ] );
 		add_shortcode( 'grc_rdv_form', [ __CLASS__, 'render_rdv_form' ] );
+		add_shortcode( 'grc_declaration_accessibilite', [ __CLASS__, 'render_declaration_accessibilite' ] );
 		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'maybe_enqueue_assets' ] );
 	}
 
@@ -478,6 +479,104 @@ class GRC_Frontend {
 				<button type="submit" class="grc-btn-submit" disabled>Confirmer le rendez-vous</button>
 				<div class="grc-form-message" role="status" aria-live="polite" style="display:none;"></div>
 			</form>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Déclaration d'accessibilité — obligation légale pour tout site de
+	 * collectivité publique (décret n°2019-768, RGAA). Contenu à valider et
+	 * personnaliser par la mairie avant publication définitive : la
+	 * mention "partiellement conforme" reflète un audit approfondi mais non
+	 * exhaustif (106 critères RGAA sur un échantillon représentatif, sans
+	 * test utilisateur réel avec lecteur d'écran) — un audit RGAA complet
+	 * et certifié reste nécessaire pour affiner ce taux précisément.
+	 */
+	public static function render_declaration_accessibilite( $atts ): string {
+		$email_accessibilite = get_option( 'grc_email_accessibilite', '' );
+		ob_start();
+		?>
+		<div class="grc-declaration-accessibilite">
+			<p>
+				La Mairie de Berre-les-Alpes s'engage à rendre son site internet et son
+				application mobile accessibles conformément à l'article 47 de la loi
+				n° 2005-102 du 11 février 2005 et au référentiel général d'amélioration
+				de l'accessibilité (RGAA), dans sa version 4.1.
+			</p>
+			<p>Cette déclaration d'accessibilité s'applique au site <strong><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></strong> et à l'application mobile citoyenne « GRC Citoyenne ».</p>
+
+			<h2>État de conformité</h2>
+			<p>
+				Le site <strong><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></strong> est en
+				<strong>conformité partielle</strong> avec le RGAA 4.1, en raison des
+				non-conformités et dérogations listées ci-dessous.
+			</p>
+			<p class="description">
+				Un audit approfondi (labels de formulaire, contrastes de couleur calculés,
+				hiérarchie des titres, sémantique ARIA, navigation clavier, attributs
+				autocomplete, en-têtes de tableaux...) a été mené sur les principaux
+				parcours citoyens du site (signalements, démarches, rendez-vous, espace
+				citoyen). Il ne constitue toutefois pas un audit RGAA complet et certifié
+				au sens strict de la méthodologie officielle (échantillon de pages et
+				tests utilisateurs avec technologies d'assistance réelles) — le taux de
+				conformité exact reste à établir par un tel audit.
+			</p>
+
+			<h2>Résultats des tests</h2>
+			<p>
+				L'audit interne mené n'a pas produit de taux de conformité chiffré au
+				sens strict de la méthodologie RGAA (échantillon de pages figé, grille
+				des 106 critères testée intégralement). Un audit RGAA complet, mené par
+				un prestataire ou un agent formé à la méthodologie, permettra d'établir
+				ce taux précisément.
+			</p>
+
+			<h2>Contenus non accessibles</h2>
+			<h3>Non-conformités connues</h3>
+			<ul>
+				<li>Absence d'audit utilisateur réel avec lecteur d'écran (NVDA, JAWS, VoiceOver) sur l'ensemble des parcours</li>
+				<li>Application mobile Android : n'a pas encore fait l'objet d'un audit d'accessibilité dédié (TalkBack, tailles de zones tactiles)</li>
+			</ul>
+
+			<h3>Dérogations pour charge disproportionnée</h3>
+			<p>Aucune, à ce jour.</p>
+
+			<h2>Établissement de cette déclaration</h2>
+			<p>Cette déclaration a été établie le <?php echo esc_html( date_i18n( 'd/m/Y' ) ); ?>.</p>
+			<p>
+				<strong>Technologies utilisées :</strong> HTML5, CSS3, JavaScript, WordPress.<br>
+				<strong>Environnement de test :</strong> navigateurs de bureau à jour (Chrome, Firefox), analyse statique du code (structure sémantique, contrastes calculés selon la formule de luminance relative WCAG, attributs ARIA).
+			</p>
+
+			<h2>Retour d'information et contact</h2>
+			<p>
+				Si vous n'arrivez pas à accéder à un contenu ou à un service, vous pouvez
+				contacter le responsable du site pour être orienté(e) vers une solution
+				accessible ou obtenir le contenu sous une autre forme.
+			</p>
+			<?php if ( $email_accessibilite ) : ?>
+				<p>
+					<strong>Email :</strong>
+					<a href="mailto:<?php echo esc_attr( $email_accessibilite ); ?>"><?php echo esc_html( $email_accessibilite ); ?></a>
+				</p>
+			<?php else : ?>
+				<p class="description">⚠️ Aucune adresse de contact n'est configurée. La mairie doit renseigner un email de référent accessibilité dans <strong>GRC Citoyenne → Réglages → Accessibilité</strong> pour que cette section soit complète.</p>
+			<?php endif; ?>
+
+			<h2>Voies de recours</h2>
+			<p>
+				Cette procédure est à utiliser dans le cas suivant : vous avez signalé
+				au responsable du site internet un défaut d'accessibilité qui vous
+				empêche d'accéder à un contenu ou à un service et vous n'avez pas
+				obtenu de réponse satisfaisante.
+			</p>
+			<p>Vous pouvez :</p>
+			<ul>
+				<li>Écrire un message au <a href="https://formulaire.defenseurdesdroits.fr/" target="_blank" rel="noopener">Défenseur des droits<span class="grc-visually-hidden"> (nouvelle fenêtre)</span></a></li>
+				<li>Contacter le <a href="https://www.defenseurdesdroits.fr/carte-des-delegues" target="_blank" rel="noopener">délégué du Défenseur des droits dans votre région<span class="grc-visually-hidden"> (nouvelle fenêtre)</span></a></li>
+				<li>Envoyer un courrier par la poste (gratuit, ne pas mettre de timbre) à : Défenseur des droits — Libre réponse 71120 — 75342 Paris CEDEX 07</li>
+			</ul>
 		</div>
 		<?php
 		return ob_get_clean();
