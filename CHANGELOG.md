@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.44.1 — Correctif diagnostic : le bouton "Code envoyé" confirmait même en cas d'échec réel
+
+- Le bouton "Recevoir un code par email" (configuration 2FA agent) affichait "Code envoyé" quelle que soit la réponse du serveur, y compris en cas d'échec — la réponse HTTP n'était jamais vérifiée côté JavaScript
+- `wp_mail()` peut échouer silencieusement (configuration serveur/SMTP) sans que WordPress ne le signale par défaut — le résultat réel est désormais vérifié et reflété dans la réponse (le bouton affiche "Échec de l'envoi — réessayer" si l'email n'a pas pu être envoyé)
+- Ajout d'une consignation des échecs d'envoi (`wp_mail_failed`) dans les logs du serveur, pour diagnostiquer la cause exacte si le problème persiste
+- Mention des indésirables/spam ajoutée au message de confirmation
+
 ## 0.44.0 — Double authentification obligatoire pour les agents
 
 Nouvelle classe `GRC_Agent_2FA`, entièrement distincte de la 2FA citoyenne

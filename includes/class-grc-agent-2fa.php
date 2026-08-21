@@ -36,6 +36,12 @@ class GRC_Agent_2FA {
 		add_filter( 'authenticate', [ __CLASS__, 'intercepter_apres_mot_de_passe' ], 30, 3 );
 		add_action( 'login_form_grc_2fa', [ __CLASS__, 'gerer_ecran_2fa' ] );
 		add_action( 'login_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+		add_action( 'wp_mail_failed', [ __CLASS__, 'consigner_echec_email' ] );
+	}
+
+	/** Consigne la raison exacte de tout échec d'envoi d'email du site (visible dans les logs du serveur/wp-content/debug.log si WP_DEBUG_LOG est actif) — utile pour diagnostiquer les échecs de code 2FA par email. */
+	public static function consigner_echec_email( WP_Error $erreur ) {
+		error_log( 'GRC — échec d\'envoi d\'email (wp_mail) : ' . $erreur->get_error_message() );
 	}
 
 	/** Un utilisateur GRC (agent, responsable, élu, administrateur) doit passer par la 2FA. */
@@ -102,11 +108,11 @@ class GRC_Agent_2FA {
 		return $secret;
 	}
 
-	private static function envoyer_code_email( WP_User $user ) {
+	private static function envoyer_code_email( WP_User $user ): bool {
 		$code = str_pad( (string) wp_rand( 0, 999999 ), 6, '0', STR_PAD_LEFT );
 		set_transient( self::TRANSIENT_EMAIL_CODE . $user->ID, wp_hash_password( $code ), 5 * MINUTE_IN_SECONDS );
 
-		wp_mail(
+		return wp_mail(
 			$user->user_email,
 			'[Mairie de Berre-les-Alpes] Votre code de connexion',
 			"Bonjour,\n\nVotre code de connexion à usage unique : {$code}\n\nCe code expire dans 5 minutes. Si vous n'êtes pas à l'origine de cette tentative de connexion, contactez immédiatement l'administrateur du site.\n\nCordialement,\nMairie de Berre-les-Alpes"
@@ -151,8 +157,8 @@ class GRC_Agent_2FA {
 		// d'email), la seule protection nécessaire est la possession d'un
 		// jeton d'attente valide — déjà vérifiée par resoudre_utilisateur_en_attente().
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['grc_2fa_demander_code'] ) ) {
-			self::envoyer_code_email( $user );
-			wp_die( 'ok', '', [ 'response' => 200 ] );
+			$envoye = self::envoyer_code_email( $user );
+			wp_die( $envoye ? 'ok' : 'echec', '', [ 'response' => $envoye ? 200 : 500 ] );
 		}
 
 		$erreur = '';
@@ -318,11 +324,14 @@ class GRC_Agent_2FA {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 						body: 'grc_2fa_demander_code=1&token=<?php echo rawurlencode( $token ); ?>'
-					} ).then( function () {
-						envoyerBtn.textContent = 'Code envoyé — vérifiez vos emails';
+					} ).then( function ( response ) {
+						if ( ! response.ok ) {
+							throw new Error( 'Échec de l\'envoi (HTTP ' + response.status + ')' );
+						}
+						envoyerBtn.textContent = 'Code envoyé — vérifiez vos emails (et vos indésirables)';
 					} ).catch( function () {
 						envoyerBtn.disabled = false;
-						envoyerBtn.textContent = 'Recevoir un code par email';
+						envoyerBtn.textContent = 'Échec de l\'envoi — réessayer';
 					} );
 				} );
 			} );
