@@ -293,6 +293,18 @@ class GRC_Admin {
 							<th><label for="grc-smtp-from-name">Nom d'expéditeur</label></th>
 							<td><input type="text" id="grc-smtp-from-name" name="smtp_from_name" value="<?php echo esc_attr( $smtp_from_name ); ?>" style="width:320px;"></td>
 						</tr>
+						<tr>
+							<th><label for="grc-smtp-debug">Diagnostic</label></th>
+							<td>
+								<label>
+									<input type="checkbox" id="grc-smtp-debug" name="smtp_debug" value="1" <?php checked( get_option( 'grc_smtp_debug' ) ); ?>>
+									Journaliser le détail de la conversation SMTP (commandes envoyées, réponses du serveur)
+								</label>
+								<p class="description">
+									À activer temporairement en cas d'échec d'envoi inexpliqué (ex : "Envoyé avec succès" affiché, mais l'email n'arrive jamais, même pas dans le dossier "Éléments envoyés" du compte expéditeur). Le détail apparaît dans les logs du serveur (<code>wp-content/debug.log</code> si <code>WP_DEBUG_LOG</code> est activé). <strong>À désactiver une fois le diagnostic terminé</strong> — la conversation SMTP peut contenir des informations sensibles.
+								</p>
+							</td>
+						</tr>
 					</table>
 
 					<h3>Tester l'envoi</h3>
@@ -650,6 +662,7 @@ class GRC_Admin {
 		}
 		update_option( 'grc_smtp_from_email', sanitize_email( $_POST['smtp_from_email'] ?? '' ) );
 		update_option( 'grc_smtp_from_name', sanitize_text_field( wp_unslash( $_POST['smtp_from_name'] ?? '' ) ) );
+		update_option( 'grc_smtp_debug', ! empty( $_POST['smtp_debug'] ) ? 1 : 0 );
 		update_option( 'grc_email_agents_notifications', sanitize_textarea_field( wp_unslash( $_POST['email_agents_notifications'] ?? '' ) ) );
 		update_option( 'grc_email_accessibilite', sanitize_email( wp_unslash( $_POST['email_accessibilite'] ?? '' ) ) );
 

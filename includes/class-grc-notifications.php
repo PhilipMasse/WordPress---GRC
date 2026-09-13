@@ -167,6 +167,19 @@ class GRC_Notifications {
 		if ( $from_email ) {
 			$phpmailer->setFrom( $from_email, $from_name );
 		}
+
+		// Journalisation détaillée de la conversation SMTP (commandes
+		// envoyées, réponses du serveur) — activable temporairement via
+		// Réglages GRC → Email pour diagnostiquer un envoi qui semble
+		// réussir côté PHPMailer (wp_mail() renvoie true) sans que l'email
+		// n'arrive réellement à destination, ni même dans le dossier
+		// "Éléments envoyés" du compte expéditeur.
+		if ( get_option( 'grc_smtp_debug' ) ) {
+			$phpmailer->SMTPDebug = 3;
+			$phpmailer->Debugoutput = function ( $str, $level ) {
+				error_log( 'GRC SMTP DEBUG — ' . trim( $str ) );
+			};
+		}
 	}
 
 	/**

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.44.8 — Diagnostic : journalisation détaillée de la conversation SMTP
+
+Nouvelle case à cocher **Réglages GRC → Email → Diagnostic** : journalise
+la conversation SMTP complète (commandes envoyées, réponses du serveur)
+dans les logs du serveur — à activer temporairement en cas d'échec d'envoi
+inexpliqué (`wp_mail()` réussit, mais l'email n'arrive jamais, pas même
+dans le dossier "Éléments envoyés" du compte expéditeur, cas actuellement
+en cours de diagnostic avec un hébergement OVH). À désactiver une fois le
+diagnostic terminé (la conversation peut contenir des informations
+sensibles).
+
 ## 0.44.7 — Correctif diagnostic : le bouton "Recevoir un code par email" du profil confirmait sans vérifier le contenu réel de la réponse
 
 - Le JavaScript ne vérifiait que le code HTTP de la réponse (200 = succès affiché), jamais son contenu réel — or un échec de vérification de sécurité (nonce) côté WordPress peut renvoyer un code 200 générique dans certains cas, faisant afficher "Code envoyé" à tort alors que `wp_mail()` n'a jamais été appelé
