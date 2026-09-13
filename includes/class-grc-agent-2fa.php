@@ -503,12 +503,17 @@ class GRC_Agent_2FA {
 						donnees.append( '_ajax_nonce', <?php echo wp_json_encode( wp_create_nonce( 'grc_2fa_demander_code_profil' ) ); ?> );
 						fetch( ajaxurl, { method: 'POST', body: donnees, credentials: 'same-origin' } )
 							.then( function ( response ) {
-								if ( ! response.ok ) { throw new Error(); }
-								envoyerBtn.textContent = 'Code envoyé — vérifiez vos emails (et vos indésirables)';
+								return response.text().then( function ( texte ) {
+									if ( ! response.ok || 'ok' !== texte.trim() ) {
+										throw new Error( 'Réponse inattendue : ' + texte );
+									}
+									envoyerBtn.textContent = 'Code envoyé — vérifiez vos emails (et vos indésirables)';
+								} );
 							} )
-							.catch( function () {
+							.catch( function ( err ) {
 								envoyerBtn.disabled = false;
 								envoyerBtn.textContent = 'Échec de l\'envoi — réessayer';
+								console.error( 'GRC 2FA — échec de la demande de code :', err.message );
 							} );
 					} );
 				}
@@ -586,10 +591,20 @@ class GRC_Agent_2FA {
 
 	/** Point d'entrée AJAX (admin-ajax.php) pour l'envoi du code email depuis la page de profil (utilisateur déjà connecté). */
 	public static function ajax_demander_code_profil() {
-		check_ajax_referer( 'grc_2fa_demander_code_profil' );
+		// check_ajax_referer( ..., false ) : ne meurt pas automatiquement en
+		// cas d'échec, pour renvoyer une réponse explicite et distinguable
+		// plutôt que le comportement par défaut de WordPress (die("-1") avec
+		// un code HTTP 200 dans certains cas), que le JavaScript pourrait
+		// interpréter à tort comme un succès.
+		if ( ! check_ajax_referer( 'grc_2fa_demander_code_profil', '_ajax_nonce', false ) ) {
+			wp_die( 'echec_nonce', '', [ 'response' => 403 ] );
+		}
 		$user = wp_get_current_user();
+		if ( ! $user || ! $user->ID ) {
+			wp_die( 'echec_utilisateur', '', [ 'response' => 401 ] );
+		}
 		$envoye = self::envoyer_code_email( $user );
-		wp_die( $envoye ? 'ok' : 'echec', '', [ 'response' => $envoye ? 200 : 500 ] );
+		wp_die( $envoye ? 'ok' : 'echec_envoi', '', [ 'response' => $envoye ? 200 : 500 ] );
 	}
 
 	// =====================================================================

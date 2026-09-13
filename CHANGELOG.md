@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.44.7 — Correctif diagnostic : le bouton "Recevoir un code par email" du profil confirmait sans vérifier le contenu réel de la réponse
+
+- Le JavaScript ne vérifiait que le code HTTP de la réponse (200 = succès affiché), jamais son contenu réel — or un échec de vérification de sécurité (nonce) côté WordPress peut renvoyer un code 200 générique dans certains cas, faisant afficher "Code envoyé" à tort alors que `wp_mail()` n'a jamais été appelé
+- Le contenu exact de la réponse ('ok' attendu) est désormais vérifié, avec un message d'erreur détaillé dans la console du navigateur en cas d'échec
+- Côté serveur, l'échec de vérification du nonce renvoie désormais une réponse explicite (403, "echec_nonce") plutôt que le comportement par défaut ambigu de WordPress
+
 ## 0.44.6 — Fiabilité des tâches planifiées (WP-Cron)
 
 WP-Cron ne s'exécute par défaut qu'à la visite d'une page du site (pas de
